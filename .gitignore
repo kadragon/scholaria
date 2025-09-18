@@ -17,4 +17,5 @@ db.sqlite3
 local_settings.py
 
 # Environment variables
+.env
 .env.local
