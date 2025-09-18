@@ -54,8 +54,11 @@ class EmbeddingServiceTest(TestCase):
         with self.assertRaises(ValueError):
             service.generate_embedding(None)
 
+    @patch("rag.retrieval.embeddings.EmbeddingCache")
     @patch("rag.retrieval.embeddings.OpenAI")
-    def test_generate_embedding_api_call(self, mock_openai: MagicMock) -> None:
+    def test_generate_embedding_api_call(
+        self, mock_openai: MagicMock, mock_cache_class: MagicMock
+    ) -> None:
         """Test that the OpenAI API is called correctly."""
         from rag.retrieval.embeddings import EmbeddingService
 
@@ -68,6 +71,11 @@ class EmbeddingServiceTest(TestCase):
         mock_response.data = [MagicMock(embedding=expected_embedding)]
         mock_client.embeddings.create.return_value = mock_response
 
+        # Mock cache to be disabled
+        mock_cache = MagicMock()
+        mock_cache.enabled.return_value = False
+        mock_cache_class.return_value = mock_cache
+
         service = EmbeddingService()
         result = service.generate_embedding("test text")
 
@@ -78,8 +86,11 @@ class EmbeddingServiceTest(TestCase):
 
         self.assertEqual(result, expected_embedding)
 
+    @patch("rag.retrieval.embeddings.EmbeddingCache")
     @patch("rag.retrieval.embeddings.OpenAI")
-    def test_generate_embedding_api_error(self, mock_openai: MagicMock) -> None:
+    def test_generate_embedding_api_error(
+        self, mock_openai: MagicMock, mock_cache_class: MagicMock
+    ) -> None:
         """Test handling of OpenAI API errors."""
         from rag.retrieval.embeddings import EmbeddingService
 
@@ -87,6 +98,11 @@ class EmbeddingServiceTest(TestCase):
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
         mock_client.embeddings.create.side_effect = Exception("API Error")
+
+        # Mock cache to be disabled
+        mock_cache = MagicMock()
+        mock_cache.enabled.return_value = False
+        mock_cache_class.return_value = mock_cache
 
         service = EmbeddingService()
 
@@ -144,8 +160,11 @@ class EmbeddingServiceTest(TestCase):
         mock_client.embeddings.create.assert_not_called()
         self.assertEqual(result, build_embedding(0.9))
 
+    @patch("rag.retrieval.embeddings.EmbeddingCache")
     @patch("rag.retrieval.embeddings.OpenAI")
-    def test_generate_embeddings_batch_api_call(self, mock_openai: MagicMock) -> None:
+    def test_generate_embeddings_batch_api_call(
+        self, mock_openai: MagicMock, mock_cache_class: MagicMock
+    ) -> None:
         """Test that batch API calls work correctly."""
         from rag.retrieval.embeddings import EmbeddingService
 
@@ -159,6 +178,11 @@ class EmbeddingServiceTest(TestCase):
             MagicMock(embedding=build_embedding(0.4)),
         ]
         mock_client.embeddings.create.return_value = mock_response
+
+        # Mock cache to be disabled
+        mock_cache = MagicMock()
+        mock_cache.enabled.return_value = False
+        mock_cache_class.return_value = mock_cache
 
         service = EmbeddingService()
         texts = ["text 1", "text 2"]

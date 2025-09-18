@@ -23,4 +23,8 @@ local_settings.py
 # codex
 codex.toml
 
+# mypy_cache
 .mypy_cache/
+
+# llamaindex_cache
+tmp/llamaindex_cache/
