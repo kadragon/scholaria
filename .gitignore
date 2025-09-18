@@ -21,4 +21,6 @@ local_settings.py
 .env.local
 
 # codex
-.codex.toml
+codex.toml
+
+.mypy_cache/
