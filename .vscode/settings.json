@@ -24,8 +24,8 @@
             "source.organizeImports.ruff": "explicit"
         }
     },
-    "ruff.format.args": ["--config=pyproject.toml"],
-    "ruff.lint.args": ["--config=pyproject.toml"],
+    "ruff.nativeServer": true,
+    "ruff.configuration": "./pyproject.toml",
     "files.associations": {
         "*.py": "python"
     },

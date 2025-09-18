@@ -1,11 +1,21 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.core.exceptions import ValidationError
 from django.db import models
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 class Topic(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField()
     system_prompt = models.TextField(blank=True, null=True)
+    contexts: models.ManyToManyField[Context, Topic] = models.ManyToManyField(
+        "Context", related_name="topics", blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -48,6 +58,10 @@ class Context(models.Model):
 
     class Meta:
         ordering = ["name"]
+
+    # Type hints for reverse relationships
+    if TYPE_CHECKING:
+        topics: Any  # ManyToMany reverse manager
 
 
 class ContextItem(models.Model):

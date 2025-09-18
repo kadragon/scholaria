@@ -241,3 +241,90 @@ class ContextItemModelTest(TestCase):
         items = list(ContextItem.objects.all())
         self.assertEqual(items[0], item1)
         self.assertEqual(items[1], item2)
+
+
+class TopicContextRelationshipTest(TestCase):
+    def setUp(self):
+        """Set up test topics and contexts for relationship tests."""
+        self.topic1 = Topic.objects.create(
+            name="Mathematics",
+            description="Mathematical concepts and problem solving",
+        )
+        self.topic2 = Topic.objects.create(
+            name="Physics",
+            description="Physics principles and applications",
+        )
+        self.context1 = Context.objects.create(
+            name="Math Textbook",
+            description="Comprehensive mathematics textbook",
+            context_type="PDF",
+        )
+        self.context2 = Context.objects.create(
+            name="Physics FAQ",
+            description="Frequently asked questions about physics",
+            context_type="FAQ",
+        )
+        self.context3 = Context.objects.create(
+            name="Study Notes",
+            description="General study notes for multiple subjects",
+            context_type="MARKDOWN",
+        )
+
+    def test_topic_context_many_to_many_add(self):
+        """Test adding contexts to a topic."""
+        self.topic1.contexts.add(self.context1, self.context3)
+
+        contexts = list(self.topic1.contexts.all())
+        self.assertIn(self.context1, contexts)
+        self.assertIn(self.context3, contexts)
+        self.assertEqual(len(contexts), 2)
+
+    def test_topic_context_many_to_many_remove(self):
+        """Test removing contexts from a topic."""
+        self.topic1.contexts.add(self.context1, self.context2)
+        self.topic1.contexts.remove(self.context1)
+
+        contexts = list(self.topic1.contexts.all())
+        self.assertNotIn(self.context1, contexts)
+        self.assertIn(self.context2, contexts)
+        self.assertEqual(len(contexts), 1)
+
+    def test_context_reverse_relationship(self):
+        """Test accessing topics from a context (reverse relationship)."""
+        self.context1.topics.add(self.topic1, self.topic2)
+
+        topics = list(self.context1.topics.all())
+        self.assertIn(self.topic1, topics)
+        self.assertIn(self.topic2, topics)
+        self.assertEqual(len(topics), 2)
+
+    def test_multiple_topics_same_context(self):
+        """Test that multiple topics can share the same context."""
+        self.topic1.contexts.add(self.context3)
+        self.topic2.contexts.add(self.context3)
+
+        # Check topic1 has the context
+        self.assertIn(self.context3, self.topic1.contexts.all())
+        # Check topic2 has the context
+        self.assertIn(self.context3, self.topic2.contexts.all())
+        # Check context has both topics
+        topics = list(self.context3.topics.all())
+        self.assertIn(self.topic1, topics)
+        self.assertIn(self.topic2, topics)
+        self.assertEqual(len(topics), 2)
+
+    def test_topic_clear_all_contexts(self):
+        """Test clearing all contexts from a topic."""
+        self.topic1.contexts.add(self.context1, self.context2, self.context3)
+        self.assertEqual(self.topic1.contexts.count(), 3)
+
+        self.topic1.contexts.clear()
+        self.assertEqual(self.topic1.contexts.count(), 0)
+
+    def test_context_clear_all_topics(self):
+        """Test clearing all topics from a context."""
+        self.context1.topics.add(self.topic1, self.topic2)
+        self.assertEqual(self.context1.topics.count(), 2)
+
+        self.context1.topics.clear()
+        self.assertEqual(self.context1.topics.count(), 0)
