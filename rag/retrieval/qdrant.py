@@ -133,6 +133,8 @@ class QdrantService:
             .values_list("contexts__id", flat=True)
             .distinct()
         )
+        # Filter out None values (topics without contexts)
+        context_ids = [cid for cid in context_ids if cid is not None]
 
         if not context_ids:
             return []

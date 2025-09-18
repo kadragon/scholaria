@@ -544,7 +544,12 @@ class RAGServiceTest(TestCase):
 
     def test_query_success(self) -> None:
         """Test successful RAG query processing."""
+        from django.conf import settings
+
         from rag.retrieval.rag import RAGService
+
+        if not settings.OPENAI_API_KEY:
+            self.skipTest("OpenAI API key not configured for tests")
 
         service = RAGService()
         query = "What are neural networks?"
@@ -716,7 +721,12 @@ class RAGServiceTest(TestCase):
 
     def test_query_with_limit_parameter(self) -> None:
         """Test RAG query with custom limit parameter."""
+        from django.conf import settings
+
         from rag.retrieval.rag import RAGService
+
+        if not settings.OPENAI_API_KEY:
+            self.skipTest("OpenAI API key not configured for tests")
 
         service = RAGService()
         query = "What are neural networks?"
@@ -729,7 +739,12 @@ class RAGServiceTest(TestCase):
 
     def test_query_with_rerank_top_k_parameter(self) -> None:
         """Test RAG query with custom rerank_top_k parameter."""
+        from django.conf import settings
+
         from rag.retrieval.rag import RAGService
+
+        if not settings.OPENAI_API_KEY:
+            self.skipTest("OpenAI API key not configured for tests")
 
         service = RAGService()
         query = "What are neural networks?"
