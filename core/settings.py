@@ -81,7 +81,7 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
         "NAME": os.getenv("DB_NAME", "scholaria"),
         "USER": os.getenv("DB_USER", "postgres"),
         "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
@@ -154,6 +154,26 @@ MINIO_SECURE = os.getenv("MINIO_SECURE", "False").lower() == "true"
 
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_EMBEDDING_DIM = int(os.getenv("OPENAI_EMBEDDING_DIM", "3072"))
+OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
+OPENAI_CHAT_MODEL = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
+OPENAI_CHAT_TEMPERATURE = float(os.getenv("OPENAI_CHAT_TEMPERATURE", "0.3"))
+OPENAI_CHAT_MAX_TOKENS = int(os.getenv("OPENAI_CHAT_MAX_TOKENS", "1000"))
+
+# LlamaIndex caching configuration
+LLAMAINDEX_CACHE_ENABLED = (
+    os.getenv("LLAMAINDEX_CACHE_ENABLED", "false").lower() == "true"
+)
+LLAMAINDEX_CACHE_DIR = Path(
+    os.getenv("LLAMAINDEX_CACHE_DIR", str(BASE_DIR / "storage" / "llamaindex_cache"))
+)
+LLAMAINDEX_CACHE_NAMESPACE = os.getenv(
+    "LLAMAINDEX_CACHE_NAMESPACE", "scholaria-default"
+)
+
+# RAG Configuration
+RAG_SEARCH_LIMIT = int(os.getenv("RAG_SEARCH_LIMIT", "10"))
+RAG_RERANK_TOP_K = int(os.getenv("RAG_RERANK_TOP_K", "5"))
 
 # Unstructured API Configuration
 UNSTRUCTURED_API_URL = os.getenv("UNSTRUCTURED_API_URL", "http://localhost:8000")

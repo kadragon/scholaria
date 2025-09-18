@@ -115,3 +115,23 @@ module = [
     "minio.*",
 ]
 ignore_missing_imports = true
+
+# Pytest configuration
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "core.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+testpaths = ["rag/tests"]
+addopts = [
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+    "--reuse-db",
+]
+env = [
+    "DB_ENGINE=django.db.backends.sqlite3",
+    "DB_NAME=:memory:",
+    "QDRANT_COLLECTION_NAME=context_items",
+    "OPENAI_EMBEDDING_DIM=4",
+]
