@@ -206,14 +206,21 @@ class MarkdownIngestionTaskTest(TestCase):
         )
 
         # Verify ContextItems were created
-        context_items = ContextItem.objects.filter(context=self.context)
+        context_items = ContextItem.objects.filter(context=self.context).order_by("id")
         self.assertEqual(context_items.count(), 2)
 
-        # Check items
+        # Check first item
         item1 = context_items.first()
         assert item1 is not None  # For mypy
         self.assertEqual(item1.title, "Test Markdown Document - Chunk 1")
         self.assertEqual(item1.content, "# Test\n\nThis is")
+        self.assertEqual(item1.file_path, "/path/to/test.md")
+
+        # Check second item
+        item2 = context_items.last()
+        assert item2 is not None  # For mypy
+        self.assertEqual(item2.title, "Test Markdown Document - Chunk 2")
+        self.assertEqual(item2.content, "This is markdown content.")
 
         # Verify return value
         self.assertEqual(result, 2)

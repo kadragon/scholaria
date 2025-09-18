@@ -31,11 +31,14 @@ def process_document(context_id: int, file_path: str, title: str) -> str:
     """
     context = Context.objects.get(id=context_id)
 
-    if context.context_type == "PDF":
-        task = ingest_pdf_document.delay(context_id, file_path, title)
-        return task.id
-    elif context.context_type == "MARKDOWN":
-        task = ingest_markdown_document.delay(context_id, file_path, title)
+    TASK_MAP = {
+        "PDF": ingest_pdf_document,
+        "MARKDOWN": ingest_markdown_document,
+    }
+    task_to_run = TASK_MAP.get(context.context_type)
+
+    if task_to_run:
+        task = task_to_run.delay(context_id, file_path, title)
         return task.id
     else:
         raise ValueError(f"Unsupported context type: {context.context_type}")
@@ -71,8 +74,8 @@ def ingest_pdf_document(context_id: int, file_path: str, title: str) -> int:
     chunks = chunker.chunk_text(content)
 
     # Create ContextItem for each chunk
-    for i, chunk in enumerate(chunks, 1):
-        ContextItem.objects.create(
+    items_to_create = [
+        ContextItem(
             title=f"{title} - Chunk {i}",
             content=chunk,
             context=context,
@@ -83,6 +86,9 @@ def ingest_pdf_document(context_id: int, file_path: str, title: str) -> int:
                 "chunk_size": len(chunk),
             },
         )
+        for i, chunk in enumerate(chunks, 1)
+    ]
+    ContextItem.objects.bulk_create(items_to_create)
 
     return len(chunks)
 
@@ -117,8 +123,8 @@ def ingest_markdown_document(context_id: int, file_path: str, title: str) -> int
     chunks = chunker.chunk_text(content)
 
     # Create ContextItem for each chunk
-    for i, chunk in enumerate(chunks, 1):
-        ContextItem.objects.create(
+    items_to_create = [
+        ContextItem(
             title=f"{title} - Chunk {i}",
             content=chunk,
             context=context,
@@ -129,5 +135,8 @@ def ingest_markdown_document(context_id: int, file_path: str, title: str) -> int
                 "chunk_size": len(chunk),
             },
         )
+        for i, chunk in enumerate(chunks, 1)
+    ]
+    ContextItem.objects.bulk_create(items_to_create)
 
     return len(chunks)

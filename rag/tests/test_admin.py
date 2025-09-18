@@ -5,7 +5,7 @@ from django.test import Client, TestCase
 from rag.models import Context, ContextItem, Topic
 
 
-class TopicAdminTest(TestCase):
+class AdminTestBase(TestCase):
     def setUp(self):
         self.user = User.objects.create_superuser(
             username="admin", email="admin@test.com", password="testpass"
@@ -13,6 +13,8 @@ class TopicAdminTest(TestCase):
         self.client = Client()
         self.client.login(username="admin", password="testpass")
 
+
+class TopicAdminTest(AdminTestBase):
     def test_topic_admin_is_registered(self):
         """Test that Topic model is registered in admin."""
         self.assertIn(Topic, admin.site._registry)
@@ -45,14 +47,7 @@ class TopicAdminTest(TestCase):
         self.assertEqual(topic_admin.fieldsets, expected_fieldsets)
 
 
-class ContextAdminTest(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_superuser(
-            username="admin", email="admin@test.com", password="testpass"
-        )
-        self.client = Client()
-        self.client.login(username="admin", password="testpass")
-
+class ContextAdminTest(AdminTestBase):
     def test_context_admin_is_registered(self):
         """Test that Context model is registered in admin."""
         self.assertIn(Context, admin.site._registry)
@@ -76,14 +71,7 @@ class ContextAdminTest(TestCase):
         self.assertEqual(list(context_admin.search_fields), expected_fields)
 
 
-class ContextItemAdminTest(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_superuser(
-            username="admin", email="admin@test.com", password="testpass"
-        )
-        self.client = Client()
-        self.client.login(username="admin", password="testpass")
-
+class ContextItemAdminTest(AdminTestBase):
     def test_contextitem_admin_is_registered(self):
         """Test that ContextItem model is registered in admin."""
         self.assertIn(ContextItem, admin.site._registry)

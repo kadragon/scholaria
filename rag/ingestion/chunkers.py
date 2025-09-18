@@ -66,11 +66,7 @@ class TextChunker:
 
             chunks.append(chunk_text)
 
-            # Move start position with overlap
-            start += len(chunk_text) - self.overlap
-
-            # Ensure we don't go backwards
-            if start <= len("".join(chunks[:-1])) - self.overlap:
-                start = len("".join(chunks[:-1])) - self.overlap + 1
+            # Move start position with overlap, ensuring we always advance.
+            start = max(start + len(chunk_text) - self.overlap, start + 1)
 
         return chunks
