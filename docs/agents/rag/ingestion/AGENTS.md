@@ -2,7 +2,7 @@
 
 ## Intent
 
-Document ingestion pipeline for processing PDF and Markdown files into chunked ContextItems using Celery background tasks.
+Document ingestion pipeline for processing PDF, Markdown, and FAQ files into chunked ContextItems using Celery background tasks.
 
 ## Constraints
 
@@ -18,14 +18,15 @@ Document ingestion pipeline for processing PDF and Markdown files into chunked C
 
 - **PDFParser**: Uses Unstructured API for PDF text extraction
 - **MarkdownParser**: Direct file reading with UTF-8 encoding
+- **FAQParser**: Direct file reading for Q&A format documents
 - **TextChunker**: Intelligent text splitting with configurable chunk size and overlap
 - **Celery Tasks**: Background processing with proper error handling
 
 ### Task Flow
 
 ```
-process_document → ingest_pdf_document | ingest_markdown_document
-                → PDFParser | MarkdownParser
+process_document → ingest_pdf_document | ingest_markdown_document | ingest_faq_document
+                → PDFParser | MarkdownParser | FAQParser
                 → TextChunker
                 → ContextItem creation (one per chunk)
 ```
@@ -34,10 +35,12 @@ process_document → ingest_pdf_document | ingest_markdown_document
 
 - `PDFParser`: Extract text from PDF files using Unstructured
 - `MarkdownParser`: Read and return Markdown file content
+- `FAQParser`: Read and return FAQ file content (Q&A format)
 - `TextChunker`: Split text into overlapping chunks with smart boundaries
 - `process_document`: Main task dispatcher based on context type
 - `ingest_pdf_document`: PDF-specific ingestion pipeline
 - `ingest_markdown_document`: Markdown-specific ingestion pipeline
+- `ingest_faq_document`: FAQ-specific ingestion pipeline
 
 ## Changelog
 
@@ -53,6 +56,17 @@ process_document → ingest_pdf_document | ingest_markdown_document
 - ✅ All 61 tests passing (including 18 new ingestion tests)
 - ✅ Full mypy type checking compliance
 - ✅ Proper error handling for missing files and unsupported types
+
+### 2025-09-19: FAQ Processing Implementation
+
+- ✅ Created comprehensive TDD test suite for FAQ parser (5 tests)
+- ✅ Implemented FAQParser for Q&A document format support
+- ✅ Created comprehensive TDD test suite for FAQ ingestion tasks (4 tests)
+- ✅ Implemented ingest_faq_document Celery task
+- ✅ Updated process_document dispatcher to support FAQ context type
+- ✅ All 134 tests passing (added 9 new FAQ tests)
+- ✅ Full mypy type checking compliance maintained
+- ✅ FAQ documents now fully supported in ingestion pipeline
 
 ### Implementation Details
 

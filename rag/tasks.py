@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from celery import shared_task
 
 from .ingestion.chunkers import TextChunker
-from .ingestion.parsers import MarkdownParser, PDFParser
+from .ingestion.parsers import FAQParser, MarkdownParser, PDFParser
 from .models import Context, ContextItem
 
 if TYPE_CHECKING:
@@ -34,6 +34,7 @@ def process_document(context_id: int, file_path: str, title: str) -> str:
     TASK_MAP = {
         "PDF": ingest_pdf_document,
         "MARKDOWN": ingest_markdown_document,
+        "FAQ": ingest_faq_document,
     }
     task_to_run = TASK_MAP.get(context.context_type)
 
@@ -84,6 +85,56 @@ def ingest_pdf_document(context_id: int, file_path: str, title: str) -> int:
                 "chunk_index": i,
                 "total_chunks": len(chunks),
                 "chunk_size": len(chunk),
+            },
+        )
+        for i, chunk in enumerate(chunks, 1)
+    ]
+    ContextItem.objects.bulk_create(items_to_create)
+
+    return len(chunks)
+
+
+@shared_task  # type: ignore[misc]
+def ingest_faq_document(context_id: int, file_path: str, title: str) -> int:
+    """
+    Ingest an FAQ document into the system.
+
+    Args:
+        context_id: ID of the Context to associate with
+        file_path: Path to the FAQ file
+        title: Title for the document
+
+    Returns:
+        Number of chunks created
+
+    Raises:
+        Context.DoesNotExist: If context doesn't exist
+    """
+    context = Context.objects.get(id=context_id)
+
+    # Parse the FAQ
+    parser = FAQParser()
+    content = parser.parse_file(file_path)
+
+    if not content:
+        return 0
+
+    # Chunk the content
+    chunker = TextChunker(chunk_size=1000, overlap=200)
+    chunks = chunker.chunk_text(content)
+
+    # Create ContextItem for each chunk
+    items_to_create = [
+        ContextItem(
+            title=f"{title} - FAQ Chunk {i}",
+            content=chunk,
+            context=context,
+            file_path=file_path,
+            metadata={
+                "chunk_index": i,
+                "total_chunks": len(chunks),
+                "chunk_size": len(chunk),
+                "content_type": "faq",
             },
         )
         for i, chunk in enumerate(chunks, 1)

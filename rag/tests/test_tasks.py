@@ -3,7 +3,12 @@ from unittest.mock import Mock, patch
 from django.test import TestCase
 
 from rag.models import Context, ContextItem
-from rag.tasks import ingest_markdown_document, ingest_pdf_document, process_document
+from rag.tasks import (
+    ingest_faq_document,
+    ingest_markdown_document,
+    ingest_pdf_document,
+    process_document,
+)
 
 
 class DocumentProcessingTaskTest(TestCase):
@@ -56,13 +61,36 @@ class DocumentProcessingTaskTest(TestCase):
         # Verify result is the task ID
         self.assertEqual(result, "task-456")
 
+    @patch("rag.tasks.ingest_faq_document.delay")
+    def test_process_document_faq_delegates_to_faq_task(self, mock_faq_task):
+        """Test that FAQ documents are delegated to FAQ ingestion task."""
+        mock_faq_task.return_value = Mock(id="task-789")
+
+        # Update context to FAQ type
+        self.context.context_type = "FAQ"
+        self.context.save()
+
+        result = process_document(
+            context_id=self.context.id,
+            file_path="/path/to/faq.txt",
+            title="Test FAQ",
+        )
+
+        # Verify FAQ task was called
+        mock_faq_task.assert_called_once_with(
+            self.context.id, "/path/to/faq.txt", "Test FAQ"
+        )
+
+        # Verify result is the task ID
+        self.assertEqual(result, "task-789")
+
     def test_process_document_unsupported_type_raises_error(self):
         """Test that unsupported document types raise ValueError."""
         # Create context with unsupported type
         unsupported_context = Context.objects.create(
             name="Unsupported Context",
             description="Test context with unsupported type",
-            context_type="FAQ",  # Not yet supported
+            context_type="UNSUPPORTED",  # Truly unsupported type
         )
 
         with self.assertRaises(ValueError) as cm:
@@ -224,3 +252,101 @@ class MarkdownIngestionTaskTest(TestCase):
 
         # Verify return value
         self.assertEqual(result, 2)
+
+
+class FAQIngestionTaskTest(TestCase):
+    def setUp(self):
+        self.context = Context.objects.create(
+            name="Test FAQ Context",
+            description="Test context for FAQ ingestion",
+            context_type="FAQ",
+        )
+
+    @patch("rag.tasks.TextChunker")
+    @patch("rag.tasks.FAQParser")
+    def test_ingest_faq_document_success(self, mock_parser_class, mock_chunker_class):
+        """Test successful FAQ document ingestion."""
+        # Mock the parser
+        mock_parser = Mock()
+        mock_parser.parse_file.return_value = (
+            "Q: What is Django?\nA: Django is a web framework."
+        )
+        mock_parser_class.return_value = mock_parser
+
+        # Mock the chunker
+        mock_chunker = Mock()
+        mock_chunker.chunk_text.return_value = [
+            "Q: What is Django?\nA: Django is",
+            "Django is a web framework.",
+        ]
+        mock_chunker_class.return_value = mock_chunker
+
+        # Run the task
+        result = ingest_faq_document(
+            context_id=self.context.id,
+            file_path="/path/to/faq.txt",
+            title="Test FAQ Document",
+        )
+
+        # Verify parser was called
+        mock_parser.parse_file.assert_called_once_with("/path/to/faq.txt")
+
+        # Verify chunker was called
+        mock_chunker.chunk_text.assert_called_once_with(
+            "Q: What is Django?\nA: Django is a web framework."
+        )
+
+        # Verify ContextItems were created
+        context_items = ContextItem.objects.filter(context=self.context).order_by("id")
+        self.assertEqual(context_items.count(), 2)
+
+        # Check first item
+        item1 = context_items.first()
+        assert item1 is not None  # For mypy
+        self.assertEqual(item1.title, "Test FAQ Document - FAQ Chunk 1")
+        self.assertEqual(item1.content, "Q: What is Django?\nA: Django is")
+        self.assertEqual(item1.file_path, "/path/to/faq.txt")
+        if item1.metadata:
+            self.assertEqual(item1.metadata.get("content_type"), "faq")
+
+        # Check second item
+        item2 = context_items.last()
+        assert item2 is not None  # For mypy
+        self.assertEqual(item2.title, "Test FAQ Document - FAQ Chunk 2")
+        self.assertEqual(item2.content, "Django is a web framework.")
+        if item2.metadata:
+            self.assertEqual(item2.metadata.get("content_type"), "faq")
+
+        # Verify return value
+        self.assertEqual(result, 2)
+
+    @patch("rag.tasks.FAQParser")
+    def test_ingest_faq_document_empty_content(self, mock_parser_class):
+        """Test FAQ ingestion with empty content returns 0."""
+        # Mock the parser to return empty content
+        mock_parser = Mock()
+        mock_parser.parse_file.return_value = ""
+        mock_parser_class.return_value = mock_parser
+
+        # Run the task
+        result = ingest_faq_document(
+            context_id=self.context.id,
+            file_path="/path/to/empty_faq.txt",
+            title="Empty FAQ Document",
+        )
+
+        # Verify no ContextItems were created
+        context_items = ContextItem.objects.filter(context=self.context)
+        self.assertEqual(context_items.count(), 0)
+
+        # Verify return value
+        self.assertEqual(result, 0)
+
+    def test_ingest_faq_document_nonexistent_context(self):
+        """Test FAQ ingestion with nonexistent context raises error."""
+        with self.assertRaises(Context.DoesNotExist):
+            ingest_faq_document(
+                context_id=99999,  # Non-existent context ID
+                file_path="/path/to/faq.txt",
+                title="Test FAQ Document",
+            )

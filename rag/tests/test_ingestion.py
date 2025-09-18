@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 from django.test import TestCase
 
 from rag.ingestion.chunkers import TextChunker
-from rag.ingestion.parsers import MarkdownParser, PDFParser
+from rag.ingestion.parsers import FAQParser, MarkdownParser, PDFParser
 from rag.models import Context
 
 
@@ -114,6 +114,102 @@ print("Hello, World!")
         """Test parsing nonexistent Markdown file raises FileNotFoundError."""
         with self.assertRaises(FileNotFoundError):
             self.parser.parse_file("/nonexistent/file.md")
+
+
+class FAQParserTest(TestCase):
+    def setUp(self):
+        self.parser = FAQParser()
+
+    def test_parse_faq_file_success(self):
+        """Test successful FAQ parsing returns formatted content."""
+        faq_content = """Q: What is the capital of France?
+A: The capital of France is Paris.
+
+Q: How do I reset my password?
+A: To reset your password, go to the login page and click "Forgot Password". Follow the instructions in the email you receive.
+
+Q: What are the office hours?
+A: Our office hours are Monday through Friday, 9 AM to 5 PM EST.
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+            f.write(faq_content)
+            f.flush()
+
+            result = self.parser.parse_file(f.name)
+
+            # Verify content is preserved and formatted
+            self.assertIn("What is the capital of France?", result)
+            self.assertIn("The capital of France is Paris.", result)
+            self.assertIn("How do I reset my password?", result)
+            self.assertIn("What are the office hours?", result)
+
+            # Clean up
+            Path(f.name).unlink()
+
+    def test_parse_faq_file_with_structured_format(self):
+        """Test FAQ parsing with structured Q: A: format."""
+        faq_content = """Q: What is Python?
+A: Python is a high-level programming language known for its simplicity and readability.
+
+Q: What is Django?
+A: Django is a web framework for Python that follows the model-view-template architectural pattern.
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+            f.write(faq_content)
+            f.flush()
+
+            result = self.parser.parse_file(f.name)
+
+            # Should contain structured Q&A pairs
+            self.assertIn("Q:", result)
+            self.assertIn("A:", result)
+            self.assertIn("Python", result)
+            self.assertIn("Django", result)
+
+            # Clean up
+            Path(f.name).unlink()
+
+    def test_parse_faq_file_empty(self):
+        """Test parsing empty FAQ file returns empty string."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+            f.write("")
+            f.flush()
+
+            result = self.parser.parse_file(f.name)
+            self.assertEqual(result, "")
+
+            # Clean up
+            Path(f.name).unlink()
+
+    def test_parse_faq_file_nonexistent(self):
+        """Test parsing nonexistent FAQ file raises FileNotFoundError."""
+        with self.assertRaises(FileNotFoundError):
+            self.parser.parse_file("/nonexistent/faq.txt")
+
+    def test_parse_faq_with_different_separators(self):
+        """Test FAQ parsing handles different question-answer separators."""
+        faq_content = """Question: What is machine learning?
+Answer: Machine learning is a subset of artificial intelligence that focuses on algorithms that can learn from data.
+
+Q. How does AI work?
+A. AI works by processing large amounts of data to identify patterns and make predictions.
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+            f.write(faq_content)
+            f.flush()
+
+            result = self.parser.parse_file(f.name)
+
+            # Should handle both formats
+            self.assertIn("machine learning", result)
+            self.assertIn("artificial intelligence", result)
+            self.assertIn("How does AI work?", result)
+
+            # Clean up
+            Path(f.name).unlink()
 
 
 class TextChunkerTest(TestCase):
