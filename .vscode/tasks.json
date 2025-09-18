@@ -1,0 +1,103 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Django: Run Tests",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "python", "manage.py", "test", "--settings=core.test_settings"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Django: Run RAG Tests",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "python", "manage.py", "test", "rag", "--settings=core.test_settings"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Code Quality: Run All Checks",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "ruff", "check", ".", "&&", "uv", "run", "mypy", ".", "&&", "uv", "run", "python", "manage.py", "test", "--settings=core.test_settings"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Django: Make Migrations",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "python", "manage.py", "makemigrations"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Django: Migrate",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "python", "manage.py", "migrate"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Ruff: Format",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "ruff", "format", "."],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Ruff: Fix",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "ruff", "check", ".", "--fix"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ms-python.django",
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-test-explorer"
+    ]
+}

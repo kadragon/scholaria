@@ -1,0 +1,47 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Django: Run Server",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": ["runserver"],
+            "django": true,
+            "autoReload": {
+                "enable": true
+            },
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "core.settings"
+            },
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Django: Test All",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": ["test", "--settings=core.test_settings"],
+            "django": true,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Django: Test RAG App",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": ["test", "rag", "--settings=core.test_settings"],
+            "django": true,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Django: Test Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": ["test", "${relativeFileDirname}.${fileBasenameNoExtension}", "--settings=core.test_settings"],
+            "django": true,
+            "console": "integratedTerminal"
+        }
+    ]
+}
