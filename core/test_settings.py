@@ -32,6 +32,11 @@ OPENAI_EMBEDDING_DIM = 4  # Use smaller dimension for faster tests
 # Disable OpenAI API for unit tests (set to None to skip integration tests)
 OPENAI_API_KEY = None
 
+# Enable local caching for LlamaIndex-backed utilities during tests
+LLAMAINDEX_CACHE_ENABLED = True
+LLAMAINDEX_CACHE_DIR = BASE_DIR / "tmp" / "llamaindex_cache"
+LLAMAINDEX_CACHE_NAMESPACE = "scholaria-test"
+
 # Test-specific logging to reduce noise
 LOGGING = {
     "version": 1,

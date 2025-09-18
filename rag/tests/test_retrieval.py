@@ -3,12 +3,22 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
+from django.conf import settings
 from django.test import TestCase
 
 from rag.models import Context, ContextItem, Topic
+from rag.retrieval.qdrant import QdrantService
 
 if TYPE_CHECKING:
     pass
+
+
+def build_embedding(fill: float = 0.1, *, dimension: int | None = None) -> list[float]:
+    """Return a repeat-filled embedding vector matching the configured dimension."""
+    if dimension is not None:
+        return [fill] * dimension
+    target_dim = getattr(settings, "OPENAI_EMBEDDING_DIM", 1536)
+    return [fill] * target_dim
 
 
 class EmbeddingServiceTest(TestCase):
@@ -53,8 +63,9 @@ class EmbeddingServiceTest(TestCase):
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
 
+        expected_embedding = build_embedding(0.1)
         mock_response = MagicMock()
-        mock_response.data = [MagicMock(embedding=[0.1, 0.2, 0.3, 0.4])]
+        mock_response.data = [MagicMock(embedding=expected_embedding)]
         mock_client.embeddings.create.return_value = mock_response
 
         service = EmbeddingService()
@@ -62,10 +73,10 @@ class EmbeddingServiceTest(TestCase):
 
         # Verify the API was called correctly
         mock_client.embeddings.create.assert_called_once_with(
-            model="text-embedding-3-large", input="test text"
+            model=settings.OPENAI_EMBEDDING_MODEL, input="test text"
         )
 
-        self.assertEqual(result, [0.1, 0.2, 0.3, 0.4])
+        self.assertEqual(result, expected_embedding)
 
     @patch("rag.retrieval.embeddings.OpenAI")
     def test_generate_embedding_api_error(self, mock_openai: MagicMock) -> None:
@@ -106,6 +117,33 @@ class EmbeddingServiceTest(TestCase):
         with self.assertRaises(ValueError):
             service.generate_embeddings_batch([])
 
+    @patch("rag.retrieval.embeddings.EmbeddingCache")
+    @patch("rag.retrieval.embeddings.OpenAI")
+    def test_generate_embedding_cache_hit(
+        self,
+        mock_openai: MagicMock,
+        mock_cache_class: MagicMock,
+    ) -> None:
+        """Ensure cached embeddings are returned without new API calls."""
+        from rag.retrieval.embeddings import EmbeddingService
+
+        mock_client = MagicMock()
+        mock_openai.return_value = mock_client
+
+        mock_cache = MagicMock()
+        mock_cache.enabled.return_value = True
+        mock_cache.get.return_value = build_embedding(0.9)
+        mock_cache_class.return_value = mock_cache
+
+        service = EmbeddingService()
+        result = service.generate_embedding("cached text")
+
+        mock_cache.get.assert_called_once_with(
+            "cached text", settings.OPENAI_EMBEDDING_MODEL
+        )
+        mock_client.embeddings.create.assert_not_called()
+        self.assertEqual(result, build_embedding(0.9))
+
     @patch("rag.retrieval.embeddings.OpenAI")
     def test_generate_embeddings_batch_api_call(self, mock_openai: MagicMock) -> None:
         """Test that batch API calls work correctly."""
@@ -117,8 +155,8 @@ class EmbeddingServiceTest(TestCase):
 
         mock_response = MagicMock()
         mock_response.data = [
-            MagicMock(embedding=[0.1, 0.2, 0.3, 0.4]),
-            MagicMock(embedding=[0.4, 0.5, 0.6, 0.7]),
+            MagicMock(embedding=build_embedding(0.1)),
+            MagicMock(embedding=build_embedding(0.4)),
         ]
         mock_client.embeddings.create.return_value = mock_response
 
@@ -128,12 +166,12 @@ class EmbeddingServiceTest(TestCase):
 
         # Verify the API was called correctly
         mock_client.embeddings.create.assert_called_once_with(
-            model="text-embedding-3-large", input=texts
+            model=settings.OPENAI_EMBEDDING_MODEL, input=texts
         )
 
         self.assertEqual(len(results), 2)
-        self.assertEqual(results[0], [0.1, 0.2, 0.3, 0.4])
-        self.assertEqual(results[1], [0.4, 0.5, 0.6, 0.7])
+        self.assertEqual(results[0], build_embedding(0.1))
+        self.assertEqual(results[1], build_embedding(0.4))
 
 
 class QdrantServiceTest(TestCase):
@@ -156,12 +194,17 @@ class QdrantServiceTest(TestCase):
             title="Test Item", content="Test content for search", context=self.context
         )
 
+        self.qdrant_service = QdrantService()
+        try:
+            self.qdrant_service.reset_collection()
+        except Exception:
+            # Fallback if reset is not supported (e.g., Qdrant unavailable)
+            self.qdrant_service.create_collection()
+
     def test_store_embedding_success(self) -> None:
         """Test successful embedding storage."""
-        from rag.retrieval.qdrant import QdrantService
-
-        service = QdrantService()
-        embedding = [0.1, 0.2, 0.3, 0.4]
+        service = self.qdrant_service
+        embedding = build_embedding()
 
         result = service.store_embedding(
             context_item_id=self.context_item.id,
@@ -173,10 +216,8 @@ class QdrantServiceTest(TestCase):
 
     def test_store_embedding_invalid_context_item(self) -> None:
         """Test embedding storage with invalid context item ID."""
-        from rag.retrieval.qdrant import QdrantService
-
         service = QdrantService()
-        embedding = [0.1, 0.2, 0.3, 0.4]
+        embedding = build_embedding()
 
         with self.assertRaises(ValueError):
             service.store_embedding(
@@ -187,9 +228,7 @@ class QdrantServiceTest(TestCase):
 
     def test_store_embedding_empty_embedding(self) -> None:
         """Test embedding storage with empty embedding."""
-        from rag.retrieval.qdrant import QdrantService
-
-        service = QdrantService()
+        service = self.qdrant_service
 
         with self.assertRaises(ValueError):
             service.store_embedding(
@@ -201,8 +240,6 @@ class QdrantServiceTest(TestCase):
     @patch("rag.retrieval.qdrant.QdrantClient")
     def test_store_embedding_api_call(self, mock_qdrant_client: MagicMock) -> None:
         """Test that Qdrant API is called correctly for storage."""
-        from rag.retrieval.qdrant import QdrantService
-
         # Mock the Qdrant client
         mock_client = MagicMock()
         mock_qdrant_client.return_value = mock_client
@@ -212,7 +249,7 @@ class QdrantServiceTest(TestCase):
         mock_client.upsert.return_value = mock_response
 
         service = QdrantService()
-        embedding = [0.1, 0.2, 0.3, 0.4]
+        embedding = build_embedding()
         metadata = {"title": "Test Item"}
 
         result = service.store_embedding(
@@ -223,7 +260,7 @@ class QdrantServiceTest(TestCase):
         mock_client.upsert.assert_called_once()
         call_args = mock_client.upsert.call_args[1]
 
-        self.assertEqual(call_args["collection_name"], "context_items")
+        self.assertEqual(call_args["collection_name"], settings.QDRANT_COLLECTION_NAME)
         self.assertEqual(len(call_args["points"]), 1)
 
         point = call_args["points"][0]
@@ -236,10 +273,8 @@ class QdrantServiceTest(TestCase):
 
     def test_search_similar_success(self) -> None:
         """Test successful similarity search."""
-        from rag.retrieval.qdrant import QdrantService
-
-        service = QdrantService()
-        query_embedding = [0.1, 0.2, 0.3, 0.4]
+        service = self.qdrant_service
+        query_embedding = build_embedding()
 
         results = service.search_similar(
             query_embedding=query_embedding, topic_ids=[self.topic.id], limit=5
@@ -250,8 +285,6 @@ class QdrantServiceTest(TestCase):
 
     def test_search_similar_empty_embedding(self) -> None:
         """Test similarity search with empty embedding."""
-        from rag.retrieval.qdrant import QdrantService
-
         service = QdrantService()
 
         with self.assertRaises(ValueError):
@@ -261,10 +294,8 @@ class QdrantServiceTest(TestCase):
 
     def test_search_similar_empty_topic_ids(self) -> None:
         """Test similarity search with empty topic IDs."""
-        from rag.retrieval.qdrant import QdrantService
-
         service = QdrantService()
-        query_embedding = [0.1, 0.2, 0.3, 0.4]
+        query_embedding = build_embedding()
 
         with self.assertRaises(ValueError):
             service.search_similar(
@@ -274,8 +305,6 @@ class QdrantServiceTest(TestCase):
     @patch("rag.retrieval.qdrant.QdrantClient")
     def test_search_similar_api_call(self, mock_qdrant_client: MagicMock) -> None:
         """Test that Qdrant search API is called correctly."""
-        from rag.retrieval.qdrant import QdrantService
-
         # Mock the Qdrant client
         mock_client = MagicMock()
         mock_qdrant_client.return_value = mock_client
@@ -293,7 +322,7 @@ class QdrantServiceTest(TestCase):
         mock_client.search.return_value = [mock_scored_point]
 
         service = QdrantService()
-        query_embedding = [0.1, 0.2, 0.3, 0.4]
+        query_embedding = build_embedding()
         topic_ids = [self.topic.id]
 
         results = service.search_similar(
@@ -304,7 +333,7 @@ class QdrantServiceTest(TestCase):
         mock_client.search.assert_called_once()
         call_args = mock_client.search.call_args[1]
 
-        self.assertEqual(call_args["collection_name"], "context_items")
+        self.assertEqual(call_args["collection_name"], settings.QDRANT_COLLECTION_NAME)
         self.assertEqual(call_args["query_vector"], query_embedding)
         self.assertEqual(call_args["limit"], 5)
         self.assertIn("query_filter", call_args)
@@ -319,18 +348,14 @@ class QdrantServiceTest(TestCase):
 
     def test_create_collection_success(self) -> None:
         """Test successful collection creation."""
-        from rag.retrieval.qdrant import QdrantService
 
-        service = QdrantService()
-        result = service.create_collection()
+        result = self.qdrant_service.create_collection()
 
         self.assertTrue(result)
 
     @patch("rag.retrieval.qdrant.QdrantClient")
     def test_create_collection_api_call(self, mock_qdrant_client: MagicMock) -> None:
         """Test that collection creation API is called correctly."""
-        from rag.retrieval.qdrant import QdrantService
-
         # Mock the Qdrant client
         mock_client = MagicMock()
         mock_qdrant_client.return_value = mock_client
@@ -342,7 +367,7 @@ class QdrantServiceTest(TestCase):
         mock_client.create_collection.assert_called_once()
         call_args = mock_client.create_collection.call_args[1]
 
-        self.assertEqual(call_args["collection_name"], "context_items")
+        self.assertEqual(call_args["collection_name"], settings.QDRANT_COLLECTION_NAME)
         self.assertIn("vectors_config", call_args)
 
         self.assertTrue(result)
@@ -608,7 +633,7 @@ class RAGServiceTest(TestCase):
         # Mock the embedding service
         mock_embedding_instance = MagicMock()
         mock_embedding.return_value = mock_embedding_instance
-        mock_embedding_instance.generate_embedding.return_value = [0.1, 0.2, 0.3, 0.4]
+        mock_embedding_instance.generate_embedding.return_value = build_embedding()
 
         # Mock the Qdrant service
         mock_qdrant_instance = MagicMock()
@@ -664,7 +689,7 @@ class RAGServiceTest(TestCase):
 
         # Verify Qdrant search was called
         mock_qdrant_instance.search_similar.assert_called_once_with(
-            query_embedding=[0.1, 0.2, 0.3, 0.4], topic_ids=topic_ids, limit=10
+            query_embedding=build_embedding(), topic_ids=topic_ids, limit=10
         )
 
         # Verify reranking was called

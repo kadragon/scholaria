@@ -20,7 +20,7 @@ class RAGService:
         self.embedding_service = EmbeddingService()
         self.qdrant_service = QdrantService()
         self.reranking_service = RerankingService()
-        self.openai_client = OpenAI()
+        self.chat_client = OpenAI(api_key=getattr(settings, "OPENAI_API_KEY", None))
 
     def query(
         self,
@@ -146,7 +146,7 @@ Question: {query}
 
 Please provide a comprehensive answer based on the context above. If the context doesn't contain enough information to fully answer the question, acknowledge this in your response. Include relevant details from the sources where appropriate."""
 
-        response = self.openai_client.chat.completions.create(
+        response = self.chat_client.chat.completions.create(
             model=getattr(settings, "OPENAI_CHAT_MODEL", "gpt-4o-mini"),
             messages=[
                 {

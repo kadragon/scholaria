@@ -50,6 +50,16 @@ class QdrantService:
                 return True
             raise
 
+    def reset_collection(self) -> bool:
+        """Recreate the collection with the configured vector size."""
+        self.client.recreate_collection(
+            collection_name=self.collection_name,
+            vectors_config=VectorParams(
+                size=self.vector_size, distance=Distance.COSINE
+            ),
+        )
+        return True
+
     def store_embedding(
         self,
         context_item_id: int,

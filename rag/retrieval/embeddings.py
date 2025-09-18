@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from openai import OpenAI
 
+from .cache import EmbeddingCache
+
 if TYPE_CHECKING:
     pass
 
@@ -13,10 +15,11 @@ class EmbeddingService:
     """Service for generating embeddings using OpenAI API."""
 
     def __init__(self) -> None:
-        self.client = OpenAI()
+        self.client = OpenAI(api_key=getattr(settings, "OPENAI_API_KEY", None))
         self.model = getattr(
             settings, "OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"
         )
+        self.cache = EmbeddingCache()
 
     def generate_embedding(self, text: str | None) -> list[float]:
         """
@@ -34,9 +37,18 @@ class EmbeddingService:
         if text is None or not text.strip():
             raise ValueError("Text cannot be None or empty")
 
-        response = self.client.embeddings.create(model=self.model, input=text)
+        if self.cache.enabled():
+            cached = self.cache.get(text, self.model)
+            if cached is not None:
+                return cached
 
-        return response.data[0].embedding
+        response = self.client.embeddings.create(model=self.model, input=text)
+        embedding = response.data[0].embedding
+
+        if self.cache.enabled():
+            self.cache.set(text, self.model, embedding)
+
+        return embedding
 
     def generate_embeddings_batch(self, texts: list[str]) -> list[list[float]]:
         """
@@ -54,6 +66,37 @@ class EmbeddingService:
         if not texts:
             raise ValueError("Texts list cannot be empty")
 
-        response = self.client.embeddings.create(model=self.model, input=texts)
+        cached_results: list[list[float] | None] = []
+        texts_to_fetch: list[str] = []
 
-        return [item.embedding for item in response.data]
+        if self.cache.enabled():
+            for text in texts:
+                cached_results.append(self.cache.get(text, self.model))
+                if cached_results[-1] is None:
+                    texts_to_fetch.append(text)
+        else:
+            cached_results = [None for _ in texts]
+            texts_to_fetch = texts
+
+        fetched_embeddings: list[list[float]] = []
+        if texts_to_fetch:
+            response = self.client.embeddings.create(
+                model=self.model, input=texts_to_fetch
+            )
+            fetched_embeddings = [item.embedding for item in response.data]
+
+        # Merge cached and fetched results while persisting new entries
+        result: list[list[float]] = []
+        fetch_index = 0
+        for idx, cached in enumerate(cached_results):
+            if cached is not None:
+                result.append(cached)
+                continue
+
+            embedding = fetched_embeddings[fetch_index]
+            fetch_index += 1
+            if self.cache.enabled():
+                self.cache.set(texts[idx], self.model, embedding)
+            result.append(embedding)
+
+        return result

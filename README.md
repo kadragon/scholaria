@@ -95,6 +95,12 @@ See [TODO.md](docs/TODO.md) for detailed progress tracking.
 - **Parsing**: Unstructured API
 - **AI**: OpenAI GPT + BGE Reranker
 
+## Cost-Aware Caching
+
+- **Embedding cache**: `LLAMAINDEX_CACHE_ENABLED=true` persists OpenAI embeddings via LlamaIndex in `storage/llamaindex_cache/embedding_cache.json`. Override the directory with `LLAMAINDEX_CACHE_DIR` if you need a different location.
+- **Namespacing**: keep test runs isolated with `LLAMAINDEX_CACHE_NAMESPACE`; the default is `scholaria-default`.
+- **Integration tests**: export a real `OPENAI_API_KEY` when you want full end-to-end calls; leave it blank to skip the expensive RAG integration cases that rely on external APIs. Before running, execute `./scripts/qdrant-reset.sh` so the Qdrant collection matches `OPENAI_EMBEDDING_DIM` (3072 for production keys).
+
 ## >� Testing Strategy
 
 Following strict TDD principles:

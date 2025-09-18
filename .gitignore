@@ -19,3 +19,6 @@ local_settings.py
 # Environment variables
 .env
 .env.local
+
+# codex
+.codex.toml

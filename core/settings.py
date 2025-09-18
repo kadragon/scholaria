@@ -160,6 +160,17 @@ OPENAI_CHAT_MODEL = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
 OPENAI_CHAT_TEMPERATURE = float(os.getenv("OPENAI_CHAT_TEMPERATURE", "0.3"))
 OPENAI_CHAT_MAX_TOKENS = int(os.getenv("OPENAI_CHAT_MAX_TOKENS", "1000"))
 
+# LlamaIndex caching configuration
+LLAMAINDEX_CACHE_ENABLED = (
+    os.getenv("LLAMAINDEX_CACHE_ENABLED", "false").lower() == "true"
+)
+LLAMAINDEX_CACHE_DIR = Path(
+    os.getenv("LLAMAINDEX_CACHE_DIR", str(BASE_DIR / "storage" / "llamaindex_cache"))
+)
+LLAMAINDEX_CACHE_NAMESPACE = os.getenv(
+    "LLAMAINDEX_CACHE_NAMESPACE", "scholaria-default"
+)
+
 # RAG Configuration
 RAG_SEARCH_LIMIT = int(os.getenv("RAG_SEARCH_LIMIT", "10"))
 RAG_RERANK_TOP_K = int(os.getenv("RAG_RERANK_TOP_K", "5"))
