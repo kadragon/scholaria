@@ -10,7 +10,7 @@ from django.conf import settings
 try:
     from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
 except Exception:  # pragma: no cover - optional dependency guard
-    SimpleKVStore = None  # type: ignore[misc]
+    SimpleKVStore = None  # type: ignore[assignment]
 
 
 class EmbeddingCache:
