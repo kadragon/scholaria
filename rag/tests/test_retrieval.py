@@ -62,7 +62,7 @@ class EmbeddingServiceTest(TestCase):
 
         # Verify the API was called correctly
         mock_client.embeddings.create.assert_called_once_with(
-            model="text-embedding-3-small", input="test text"
+            model="text-embedding-3-large", input="test text"
         )
 
         self.assertEqual(result, [0.1, 0.2, 0.3, 0.4])
@@ -128,7 +128,7 @@ class EmbeddingServiceTest(TestCase):
 
         # Verify the API was called correctly
         mock_client.embeddings.create.assert_called_once_with(
-            model="text-embedding-3-small", input=texts
+            model="text-embedding-3-large", input=texts
         )
 
         self.assertEqual(len(results), 2)
