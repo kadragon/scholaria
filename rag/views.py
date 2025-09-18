@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from rest_framework import generics, serializers, status
@@ -22,7 +23,10 @@ if TYPE_CHECKING:
     from rest_framework.request import Request
 
 
-class TopicSerializer(ModelSerializer):
+logger = logging.getLogger(__name__)
+
+
+class TopicSerializer(ModelSerializer[Topic]):
     """Serializer for Topic model."""
 
     class Meta:
@@ -37,7 +41,7 @@ class TopicSerializer(ModelSerializer):
         ]
 
 
-class TopicListView(generics.ListAPIView):
+class TopicListView(generics.ListAPIView[Topic]):
     """API endpoint for retrieving all topics."""
 
     serializer_class = TopicSerializer
@@ -48,7 +52,7 @@ class TopicListView(generics.ListAPIView):
         return Topic.objects.all()
 
 
-class TopicDetailView(generics.RetrieveAPIView):
+class TopicDetailView(generics.RetrieveAPIView[Topic]):
     """API endpoint for retrieving a single topic by ID."""
 
     serializer_class = TopicSerializer
@@ -58,7 +62,7 @@ class TopicDetailView(generics.RetrieveAPIView):
         return Topic.objects.all()
 
 
-class QuestionSerializer(Serializer):
+class QuestionSerializer(Serializer[dict[str, str | int]]):
     """Serializer for question input."""
 
     topic_id = IntegerField(min_value=1)
@@ -66,8 +70,6 @@ class QuestionSerializer(Serializer):
 
     def validate_question(self, value: str) -> str:
         """Validate that question is not empty and within reasonable limits."""
-        if not isinstance(value, str):
-            raise serializers.ValidationError("Question must be a string.")
         if not value.strip():
             raise serializers.ValidationError("Question cannot be empty.")
         if len(value.strip()) < 3:
@@ -80,7 +82,7 @@ class QuestionSerializer(Serializer):
             )
         return value.strip()
 
-    def validate_topic_id(self, value: int) -> int:
+    def validate_topic_id(self, value: int | None) -> int:
         """Validate that topic exists and is positive."""
         if value is None:
             raise serializers.ValidationError("Topic ID is required.")
@@ -114,14 +116,6 @@ class AskQuestionView(APIView):
         topic_id = serializer.validated_data["topic_id"]
         question = serializer.validated_data["question"]
 
-        try:
-            Topic.objects.get(id=topic_id)
-        except Topic.DoesNotExist:
-            return Response(
-                {"detail": "Topic not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
         # Use RAG pipeline to generate answer
         try:
             rag_service = RAGService()
@@ -152,22 +146,16 @@ class AskQuestionView(APIView):
 
         except ValueError as e:
             # Handle validation errors from RAG service
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.warning(f"RAG validation error: {str(e)}")
+            logger.warning("RAG validation error: %s", str(e))
 
             return Response(
-                {"error": str(e)},
+                {"error": "Invalid request parameters."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         except ConnectionError as e:
             # Handle external service connection errors
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.error(f"RAG connection error: {str(e)}")
+            logger.error("RAG connection error: %s", str(e))
 
             return Response(
                 {
@@ -179,10 +167,7 @@ class AskQuestionView(APIView):
 
         except Exception as e:
             # Log the error for debugging
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.error(f"RAG pipeline error: {str(e)}", exc_info=True)
+            logger.error("RAG pipeline error: %s", str(e), exc_info=True)
 
             # Return user-friendly error message
             return Response(
