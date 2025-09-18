@@ -54,7 +54,7 @@ class EmbeddingServiceTest(TestCase):
         mock_openai.return_value = mock_client
 
         mock_response = MagicMock()
-        mock_response.data = [MagicMock(embedding=[0.1, 0.2, 0.3])]
+        mock_response.data = [MagicMock(embedding=[0.1, 0.2, 0.3, 0.4])]
         mock_client.embeddings.create.return_value = mock_response
 
         service = EmbeddingService()
@@ -65,7 +65,7 @@ class EmbeddingServiceTest(TestCase):
             model="text-embedding-3-small", input="test text"
         )
 
-        self.assertEqual(result, [0.1, 0.2, 0.3])
+        self.assertEqual(result, [0.1, 0.2, 0.3, 0.4])
 
     @patch("rag.retrieval.embeddings.OpenAI")
     def test_generate_embedding_api_error(self, mock_openai: MagicMock) -> None:
@@ -117,8 +117,8 @@ class EmbeddingServiceTest(TestCase):
 
         mock_response = MagicMock()
         mock_response.data = [
-            MagicMock(embedding=[0.1, 0.2, 0.3]),
-            MagicMock(embedding=[0.4, 0.5, 0.6]),
+            MagicMock(embedding=[0.1, 0.2, 0.3, 0.4]),
+            MagicMock(embedding=[0.4, 0.5, 0.6, 0.7]),
         ]
         mock_client.embeddings.create.return_value = mock_response
 
@@ -132,8 +132,8 @@ class EmbeddingServiceTest(TestCase):
         )
 
         self.assertEqual(len(results), 2)
-        self.assertEqual(results[0], [0.1, 0.2, 0.3])
-        self.assertEqual(results[1], [0.4, 0.5, 0.6])
+        self.assertEqual(results[0], [0.1, 0.2, 0.3, 0.4])
+        self.assertEqual(results[1], [0.4, 0.5, 0.6, 0.7])
 
 
 class QdrantServiceTest(TestCase):
@@ -161,7 +161,7 @@ class QdrantServiceTest(TestCase):
         from rag.retrieval.qdrant import QdrantService
 
         service = QdrantService()
-        embedding = [0.1, 0.2, 0.3]
+        embedding = [0.1, 0.2, 0.3, 0.4]
 
         result = service.store_embedding(
             context_item_id=self.context_item.id,
@@ -176,7 +176,7 @@ class QdrantServiceTest(TestCase):
         from rag.retrieval.qdrant import QdrantService
 
         service = QdrantService()
-        embedding = [0.1, 0.2, 0.3]
+        embedding = [0.1, 0.2, 0.3, 0.4]
 
         with self.assertRaises(ValueError):
             service.store_embedding(
@@ -212,7 +212,7 @@ class QdrantServiceTest(TestCase):
         mock_client.upsert.return_value = mock_response
 
         service = QdrantService()
-        embedding = [0.1, 0.2, 0.3]
+        embedding = [0.1, 0.2, 0.3, 0.4]
         metadata = {"title": "Test Item"}
 
         result = service.store_embedding(
@@ -239,7 +239,7 @@ class QdrantServiceTest(TestCase):
         from rag.retrieval.qdrant import QdrantService
 
         service = QdrantService()
-        query_embedding = [0.1, 0.2, 0.3]
+        query_embedding = [0.1, 0.2, 0.3, 0.4]
 
         results = service.search_similar(
             query_embedding=query_embedding, topic_ids=[self.topic.id], limit=5
@@ -264,7 +264,7 @@ class QdrantServiceTest(TestCase):
         from rag.retrieval.qdrant import QdrantService
 
         service = QdrantService()
-        query_embedding = [0.1, 0.2, 0.3]
+        query_embedding = [0.1, 0.2, 0.3, 0.4]
 
         with self.assertRaises(ValueError):
             service.search_similar(
@@ -293,7 +293,7 @@ class QdrantServiceTest(TestCase):
         mock_client.search.return_value = [mock_scored_point]
 
         service = QdrantService()
-        query_embedding = [0.1, 0.2, 0.3]
+        query_embedding = [0.1, 0.2, 0.3, 0.4]
         topic_ids = [self.topic.id]
 
         results = service.search_similar(
@@ -603,7 +603,7 @@ class RAGServiceTest(TestCase):
         # Mock the embedding service
         mock_embedding_instance = MagicMock()
         mock_embedding.return_value = mock_embedding_instance
-        mock_embedding_instance.generate_embedding.return_value = [0.1, 0.2, 0.3]
+        mock_embedding_instance.generate_embedding.return_value = [0.1, 0.2, 0.3, 0.4]
 
         # Mock the Qdrant service
         mock_qdrant_instance = MagicMock()
@@ -659,7 +659,7 @@ class RAGServiceTest(TestCase):
 
         # Verify Qdrant search was called
         mock_qdrant_instance.search_similar.assert_called_once_with(
-            query_embedding=[0.1, 0.2, 0.3], topic_ids=topic_ids, limit=10
+            query_embedding=[0.1, 0.2, 0.3, 0.4], topic_ids=topic_ids, limit=10
         )
 
         # Verify reranking was called

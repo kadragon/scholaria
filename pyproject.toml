@@ -133,5 +133,5 @@ env = [
     "DB_ENGINE=django.db.backends.sqlite3",
     "DB_NAME=:memory:",
     "QDRANT_COLLECTION_NAME=context_items",
-    "OPENAI_EMBEDDING_DIM=3",
+    "OPENAI_EMBEDDING_DIM=4",
 ]
