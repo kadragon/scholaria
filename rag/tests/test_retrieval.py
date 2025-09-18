@@ -79,8 +79,9 @@ class EmbeddingServiceTest(TestCase):
 
         service = EmbeddingService()
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as cm:
             service.generate_embedding("test text")
+        self.assertEqual(str(cm.exception), "API Error")
 
     def test_generate_embeddings_batch(self) -> None:
         """Test batch embedding generation."""
@@ -511,8 +512,9 @@ class RerankingServiceTest(TestCase):
         service = RerankingService()
         search_results = [{"context_item_id": 1, "content": "test"}]
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as cm:
             service.rerank_results("test query", search_results)
+        self.assertEqual(str(cm.exception), "Model error")
 
 
 class RAGServiceTest(TestCase):
@@ -705,8 +707,9 @@ class RAGServiceTest(TestCase):
 
         service = RAGService()
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as cm:
             service.query("test query", [self.topic.id])
+        self.assertEqual(str(cm.exception), "Embedding error")
 
     def test_query_with_limit_parameter(self) -> None:
         """Test RAG query with custom limit parameter."""

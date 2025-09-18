@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from openai import OpenAI
 
 if TYPE_CHECKING:
@@ -13,7 +14,9 @@ class EmbeddingService:
 
     def __init__(self) -> None:
         self.client = OpenAI()
-        self.model = "text-embedding-3-small"
+        self.model = getattr(
+            settings, "OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"
+        )
 
     def generate_embedding(self, text: str | None) -> list[float]:
         """

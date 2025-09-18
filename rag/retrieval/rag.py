@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from django.conf import settings
 from openai import OpenAI
 
 from .embeddings import EmbeddingService
@@ -25,8 +26,8 @@ class RAGService:
         self,
         query: str | None,
         topic_ids: list[int],
-        limit: int = 10,
-        rerank_top_k: int = 5,
+        limit: int | None = None,
+        rerank_top_k: int | None = None,
     ) -> dict[str, Any]:
         """
         Execute a complete RAG query pipeline.
@@ -48,6 +49,16 @@ class RAGService:
 
         if not topic_ids:
             raise ValueError("Topic IDs cannot be empty")
+
+        # Use settings for default values if not provided
+        limit = (
+            limit if limit is not None else getattr(settings, "RAG_SEARCH_LIMIT", 10)
+        )
+        rerank_top_k = (
+            rerank_top_k
+            if rerank_top_k is not None
+            else getattr(settings, "RAG_RERANK_TOP_K", 5)
+        )
 
         # Step 1: Generate embedding for the query
         query_embedding = self.embedding_service.generate_embedding(query)
@@ -136,7 +147,7 @@ Question: {query}
 Please provide a comprehensive answer based on the context above. If the context doesn't contain enough information to fully answer the question, acknowledge this in your response. Include relevant details from the sources where appropriate."""
 
         response = self.openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=getattr(settings, "OPENAI_CHAT_MODEL", "gpt-4o-mini"),
             messages=[
                 {
                     "role": "system",
@@ -144,8 +155,8 @@ Please provide a comprehensive answer based on the context above. If the context
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.3,
-            max_tokens=1000,
+            temperature=getattr(settings, "OPENAI_CHAT_TEMPERATURE", 0.3),
+            max_tokens=getattr(settings, "OPENAI_CHAT_MAX_TOKENS", 1000),
         )
 
         return (

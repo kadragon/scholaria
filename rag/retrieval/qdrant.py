@@ -6,7 +6,7 @@ from django.conf import settings
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
-from rag.models import ContextItem
+from rag.models import ContextItem, Topic
 
 if TYPE_CHECKING:
     pass
@@ -21,8 +21,12 @@ class QdrantService:
             host=getattr(settings, "QDRANT_HOST", "localhost"),
             port=getattr(settings, "QDRANT_PORT", 6333),
         )
-        self.collection_name = "context_items"
-        self.vector_size = 1536  # OpenAI text-embedding-3-small dimension
+        self.collection_name = getattr(
+            settings, "QDRANT_COLLECTION_NAME", "context_items"
+        )
+        self.vector_size = getattr(
+            settings, "OPENAI_EMBEDDING_DIM", 1536
+        )  # OpenAI text-embedding-3-small dimension
 
     def create_collection(self) -> bool:
         """
@@ -64,7 +68,9 @@ class QdrantService:
 
         # Verify context item exists
         try:
-            context_item = ContextItem.objects.get(id=context_item_id)
+            context_item = ContextItem.objects.select_related("context").get(
+                id=context_item_id
+            )
         except ContextItem.DoesNotExist:
             raise ValueError(
                 f"ContextItem with ID {context_item_id} does not exist"
@@ -115,13 +121,20 @@ class QdrantService:
             raise ValueError("Topic IDs cannot be empty")
 
         # Build filter for topics
-        # For now, we'll implement a simple filter
-        # In a real implementation, we'd need to join with Topic-Context relationships
+        context_ids = list(
+            Topic.objects.filter(id__in=topic_ids)
+            .values_list("contexts__id", flat=True)
+            .distinct()
+        )
+
+        if not context_ids:
+            return []
+
         query_filter = {
             "must": [
                 {
                     "key": "context_id",
-                    "match": {"any": topic_ids},  # Simplified - will need refinement
+                    "match": {"any": context_ids},
                 }
             ]
         }
