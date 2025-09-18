@@ -149,6 +149,9 @@ class QdrantServiceTest(TestCase):
             description="Test context description",
             context_type="PDF",
         )
+        # Establish the Topic-Context relationship
+        self.topic.contexts.add(self.context)
+
         self.context_item = ContextItem.objects.create(
             title="Test Item", content="Test content for search", context=self.context
         )

@@ -31,17 +31,24 @@ class QdrantService:
     def create_collection(self) -> bool:
         """
         Create the collection for storing context item embeddings.
+        If collection already exists, returns True without error.
 
         Returns:
-            True if successful
+            True if successful or already exists
         """
-        self.client.create_collection(
-            collection_name=self.collection_name,
-            vectors_config=VectorParams(
-                size=self.vector_size, distance=Distance.COSINE
-            ),
-        )
-        return True
+        try:
+            self.client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=VectorParams(
+                    size=self.vector_size, distance=Distance.COSINE
+                ),
+            )
+            return True
+        except Exception as e:
+            # Check if the error is about collection already existing
+            if "already exists" in str(e):
+                return True
+            raise
 
     def store_embedding(
         self,
