@@ -9,8 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-# uv lock file (optional - you may want to commit this)
-uv.lock
+# uv lock file - committed for reproducible builds
 
 # Django
 db.sqlite3
