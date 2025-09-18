@@ -1,0 +1,69 @@
+# RAG Ingestion Pipeline - Agent Knowledge Base
+
+## Intent
+
+Document ingestion pipeline for processing PDF and Markdown files into chunked ContextItems using Celery background tasks.
+
+## Constraints
+
+- **TDD Required**: All ingestion development follows Red → Green → Refactor cycle
+- **Celery Tasks**: Use `@shared_task` decorator for task definition
+- **Chunking Strategy**: Smart chunking with overlap at sentence/word boundaries
+- **Error Handling**: Graceful handling of missing files and parsing errors
+- **Type Safety**: Full mypy compliance with proper task typing
+
+## Context
+
+### Ingestion Architecture
+
+- **PDFParser**: Uses Unstructured API for PDF text extraction
+- **MarkdownParser**: Direct file reading with UTF-8 encoding
+- **TextChunker**: Intelligent text splitting with configurable chunk size and overlap
+- **Celery Tasks**: Background processing with proper error handling
+
+### Task Flow
+
+```
+process_document → ingest_pdf_document | ingest_markdown_document
+                → PDFParser | MarkdownParser
+                → TextChunker
+                → ContextItem creation (one per chunk)
+```
+
+### Key Classes
+
+- `PDFParser`: Extract text from PDF files using Unstructured
+- `MarkdownParser`: Read and return Markdown file content
+- `TextChunker`: Split text into overlapping chunks with smart boundaries
+- `process_document`: Main task dispatcher based on context type
+- `ingest_pdf_document`: PDF-specific ingestion pipeline
+- `ingest_markdown_document`: Markdown-specific ingestion pipeline
+
+## Changelog
+
+### 2025-09-18: Document Ingestion Pipeline Implementation
+
+- ✅ Created comprehensive TDD test suite for parsers (11 tests)
+- ✅ Implemented PDFParser with Unstructured API integration
+- ✅ Implemented MarkdownParser with file reading capabilities
+- ✅ Created TextChunker with smart boundary detection and overlap
+- ✅ Created comprehensive TDD test suite for Celery tasks (7 tests)
+- ✅ Implemented process_document dispatcher task
+- ✅ Implemented ingest_pdf_document and ingest_markdown_document tasks
+- ✅ All 61 tests passing (including 18 new ingestion tests)
+- ✅ Full mypy type checking compliance
+- ✅ Proper error handling for missing files and unsupported types
+
+### Implementation Details
+
+- **Chunk Metadata**: Each ContextItem includes chunk_index, total_chunks, and chunk_size
+- **File Path Storage**: Original file paths stored for reference
+- **Smart Chunking**: Prefers sentence boundaries, falls back to word boundaries
+- **Configurable Chunking**: Default 1000 characters with 200 character overlap
+- **Task Delegation**: Automatic routing based on Context.context_type
+
+### Next Steps
+
+- RAG query pipeline with Qdrant vector search
+- Embedding generation and storage
+- Question-answer endpoint implementation
