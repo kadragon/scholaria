@@ -591,7 +591,7 @@ class BulkOperationsAdminTest(AdminTestBase):
 
         # Test the bulk action form submission
         selected_contexts = [self.contexts[0].id, self.contexts[1].id]
-        new_context_type = "URL"
+        new_context_type = "MARKDOWN"
 
         # First, trigger the action to get the form
         data = {

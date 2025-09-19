@@ -135,9 +135,9 @@
 
 ### End-to-End Tests
 
-- [ ] Write test for complete ingestion flow (upload → parse → embed → store)
-- [ ] Write test for complete Q&A flow (select topic → ask question → get answer)
-- [ ] Write test for admin workflow (create topic → upload docs → map contexts)
+- [x] Write test for complete ingestion flow (upload → parse → embed → store)
+- [x] Write test for complete Q&A flow (select topic → ask question → get answer)
+- [x] Write test for admin workflow (create topic → upload docs → map contexts)
 - [ ] Create golden test dataset for quality validation
 - [ ] Implement performance benchmarks (< 3 second response time)
 
