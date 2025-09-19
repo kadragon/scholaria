@@ -515,10 +515,67 @@ class BulkOperationsAdminTest(AdminTestBase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-        # This test will need the implementation first
-        # For now, just test that the page loads and topics are selectable
+        # Verify topics are displayed
         for topic in self.topics:
             self.assertContains(response, topic.name)
+
+        # Test the bulk action form submission
+        selected_topics = [self.topics[0].id, self.topics[1].id]
+        context_to_assign = self.contexts[0]
+
+        # First, trigger the action to get the form
+        data = {
+            "action": "assign_context_to_topics",
+            "_selected_action": [str(tid) for tid in selected_topics],
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Assign Context to Topics")
+
+        # Now submit the actual assignment
+        data = {
+            "action": "assign_context_to_topics",
+            "_selected_action": [str(tid) for tid in selected_topics],
+            "context_id": str(context_to_assign.id),
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify the context was assigned to the topics
+        for topic_id in selected_topics:
+            topic = Topic.objects.get(id=topic_id)
+            self.assertIn(context_to_assign, topic.contexts.all())
+
+    def test_bulk_update_system_prompt_action(self):
+        """Test custom bulk action to update system prompt for topics."""
+        url = "/admin/rag/topic/"
+
+        # Test the bulk action form submission
+        selected_topics = [self.topics[0].id, self.topics[1].id]
+        new_system_prompt = "Updated system prompt for testing"
+
+        # First, trigger the action to get the form
+        data = {
+            "action": "bulk_update_system_prompt",
+            "_selected_action": selected_topics,
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Update System Prompt")
+
+        # Now submit the actual update
+        data = {
+            "action": "bulk_update_system_prompt",
+            "_selected_action": selected_topics,
+            "system_prompt": new_system_prompt,
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify the system prompts were updated
+        for topic_id in selected_topics:
+            topic = Topic.objects.get(id=topic_id)
+            self.assertEqual(topic.system_prompt, new_system_prompt)
 
     def test_bulk_context_type_update_action(self):
         """Test custom bulk action to update context types."""
@@ -532,6 +589,33 @@ class BulkOperationsAdminTest(AdminTestBase):
         for context in self.contexts:
             self.assertContains(response, context.name)
 
+        # Test the bulk action form submission
+        selected_contexts = [self.contexts[0].id, self.contexts[1].id]
+        new_context_type = "URL"
+
+        # First, trigger the action to get the form
+        data = {
+            "action": "bulk_update_context_type",
+            "_selected_action": selected_contexts,
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Update Context Type")
+
+        # Now submit the actual update
+        data = {
+            "action": "bulk_update_context_type",
+            "_selected_action": selected_contexts,
+            "context_type": new_context_type,
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify the context types were updated
+        for context_id in selected_contexts:
+            context = Context.objects.get(id=context_id)
+            self.assertEqual(context.context_type, new_context_type)
+
     def test_bulk_regenerate_embeddings_action(self):
         """Test custom bulk action to regenerate embeddings for context items."""
         url = "/admin/rag/contextitem/"
@@ -543,3 +627,55 @@ class BulkOperationsAdminTest(AdminTestBase):
         # Verify context items are displayed
         for item in self.context_items[:5]:  # Check first 5
             self.assertContains(response, item.title)
+
+        # Test the bulk action form submission
+        selected_items = [self.context_items[0].id, self.context_items[1].id]
+
+        # First, trigger the action to get the form
+        data = {
+            "action": "bulk_regenerate_embeddings",
+            "_selected_action": selected_items,
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Regenerate Embeddings")
+
+        # Now submit the confirmation
+        data = {
+            "action": "bulk_regenerate_embeddings",
+            "_selected_action": selected_items,
+            "confirm": "yes",
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+    def test_bulk_move_to_context_action(self):
+        """Test custom bulk action to move context items to another context."""
+        url = "/admin/rag/contextitem/"
+
+        # Test the bulk action form submission
+        selected_items = [self.context_items[0].id, self.context_items[1].id]
+        target_context = self.contexts[2]
+
+        # First, trigger the action to get the form
+        data = {
+            "action": "bulk_move_to_context",
+            "_selected_action": [str(item_id) for item_id in selected_items],
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Move Context Items")
+
+        # Now submit the actual move
+        data = {
+            "action": "bulk_move_to_context",
+            "_selected_action": [str(item_id) for item_id in selected_items],
+            "context_id": str(target_context.id),
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify the items were moved to the target context
+        for item_id in selected_items:
+            item = ContextItem.objects.get(id=item_id)
+            self.assertEqual(item.context, target_context)

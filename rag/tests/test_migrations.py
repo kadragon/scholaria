@@ -5,6 +5,8 @@ These tests ensure database migrations can be safely applied and rolled back
 without losing data integrity or causing schema conflicts.
 """
 
+from typing import Any, cast
+
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -233,7 +235,11 @@ class MigrationSchemaTest(TransactionTestCase):
         context_item.refresh_from_db()
 
         # Verify JSON data is preserved correctly
-        self.assertEqual(context_item.metadata["file_size"], 1024)  # type: ignore[index]
-        self.assertEqual(context_item.metadata["pages"], 10)  # type: ignore[index]
-        self.assertIn("education", context_item.metadata["tags"])  # type: ignore[index]
-        self.assertEqual(context_item.metadata["nested"]["author"], "Test Author")  # type: ignore[index]
+        self.assertIsNotNone(context_item.metadata)
+        metadata = cast(dict[str, Any], context_item.metadata)
+        self.assertEqual(metadata["file_size"], 1024)
+        self.assertEqual(metadata["pages"], 10)
+        tags = cast(list, metadata["tags"])
+        self.assertIn("education", tags)
+        nested = cast(dict[str, Any], metadata["nested"])
+        self.assertEqual(nested["author"], "Test Author")

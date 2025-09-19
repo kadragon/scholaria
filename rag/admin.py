@@ -42,10 +42,8 @@ class TopicAdmin(admin.ModelAdmin):
             if context_id:
                 try:
                     context = Context.objects.get(id=int(context_id))
-                    count = 0
-                    for topic in queryset:
-                        topic.contexts.add(context)
-                        count += 1
+                    count = queryset.count()
+                    context.topics.add(*queryset)
 
                     messages.success(
                         request,
