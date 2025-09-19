@@ -138,15 +138,15 @@
 - [x] Write test for complete ingestion flow (upload → parse → embed → store)
 - [x] Write test for complete Q&A flow (select topic → ask question → get answer)
 - [x] Write test for admin workflow (create topic → upload docs → map contexts)
-- [ ] Create golden test dataset for quality validation
-- [ ] Implement performance benchmarks (< 3 second response time)
+- [x] Create golden test dataset for quality validation
+- [x] Implement performance benchmarks (< 3 second response time)
 
 ### System Integration
 
 - [x] Test all services working together via Docker Compose
 - [x] Test data consistency across PostgreSQL and Qdrant
 - [x] Test MinIO file integrity and access
-- [ ] Test Celery task processing and error handling
+- [x] Test Celery task processing and error handling
 
 ## Quality & Performance
 
