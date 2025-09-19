@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from celery import shared_task
@@ -164,8 +165,11 @@ def ingest_pdf_document(self: Any, context_id: int, file_path: str, title: str) 
                             "total_chunks": len(chunks),
                             "chunk_size": len(chunk),
                             "task_id": self.request.id,
-                            "ingestion_timestamp": self.request.called_directly
-                            or self.request.eta,
+                            "ingestion_timestamp": datetime.now(UTC).isoformat()
+                            if self.request.called_directly
+                            else self.request.eta.isoformat()
+                            if self.request.eta
+                            else None,
                         },
                     )
                     for i, chunk in enumerate(chunks, 1)
@@ -262,8 +266,11 @@ def ingest_faq_document(self: Any, context_id: int, file_path: str, title: str) 
                             "chunk_size": len(chunk),
                             "content_type": "faq",
                             "task_id": self.request.id,
-                            "ingestion_timestamp": self.request.called_directly
-                            or self.request.eta,
+                            "ingestion_timestamp": datetime.now(UTC).isoformat()
+                            if self.request.called_directly
+                            else self.request.eta.isoformat()
+                            if self.request.eta
+                            else None,
                         },
                     )
                     for i, chunk in enumerate(chunks, 1)
@@ -362,8 +369,11 @@ def ingest_markdown_document(
                             "chunk_size": len(chunk),
                             "content_type": "markdown",
                             "task_id": self.request.id,
-                            "ingestion_timestamp": self.request.called_directly
-                            or self.request.eta,
+                            "ingestion_timestamp": datetime.now(UTC).isoformat()
+                            if self.request.called_directly
+                            else self.request.eta.isoformat()
+                            if self.request.eta
+                            else None,
                         },
                     )
                     for i, chunk in enumerate(chunks, 1)
