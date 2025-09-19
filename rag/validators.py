@@ -38,8 +38,8 @@ class FileValidator:
         self.MAX_FILE_SIZE: int = settings.FILE_VALIDATION_MAX_SIZE
         # mypy: ignore because Django settings can't be typed properly
         self.SUPPORTED_TYPES: dict[str, FileTypeConfig] = (
-            settings.FILE_VALIDATION_SUPPORTED_TYPES
-        )  # type: ignore
+            settings.FILE_VALIDATION_SUPPORTED_TYPES  # type: ignore[assignment]
+        )
         self.EXECUTABLE_EXTENSIONS: list[str] = (
             settings.FILE_VALIDATION_EXECUTABLE_EXTENSIONS
         )

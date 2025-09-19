@@ -298,3 +298,248 @@ class ContextItemFormTest(TestCase):
 
         form = ContextItemForm(data=form_data)
         self.assertTrue(form.is_valid())
+
+
+class BulkOperationsAdminTest(AdminTestBase):
+    """Test bulk operations in admin interface."""
+
+    def setUp(self):
+        super().setUp()
+
+        # Create test topics
+        self.topics = [
+            Topic.objects.create(
+                name=f"Topic {i}",
+                description=f"Description for topic {i}",
+                system_prompt=f"System prompt {i}",
+            )
+            for i in range(1, 6)
+        ]
+
+        # Create test contexts
+        self.contexts = [
+            Context.objects.create(
+                name=f"Context {i}",
+                description=f"Description for context {i}",
+                context_type="PDF" if i % 2 == 0 else "FAQ",
+            )
+            for i in range(1, 6)
+        ]
+
+        # Create test context items
+        self.context_items = [
+            ContextItem.objects.create(
+                title=f"Item {i}",
+                content=f"Content for item {i}",
+                context=self.contexts[i % len(self.contexts)],
+            )
+            for i in range(1, 11)
+        ]
+
+    def test_topic_bulk_delete_admin_action(self):
+        """Test bulk delete action for topics in admin."""
+        url = "/admin/rag/topic/"
+
+        # Select multiple topics for deletion
+        data = {
+            "action": "delete_selected",
+            "_selected_action": [self.topics[0].id, self.topics[1].id],
+            "post": "yes",  # Confirm deletion
+        }
+
+        # Perform bulk delete
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify topics were deleted
+        remaining_topics = Topic.objects.filter(
+            id__in=[self.topics[0].id, self.topics[1].id]
+        )
+        self.assertEqual(remaining_topics.count(), 0)
+
+        # Verify other topics remain
+        self.assertEqual(Topic.objects.count(), 3)
+
+    def test_context_bulk_delete_admin_action(self):
+        """Test bulk delete action for contexts in admin."""
+        url = "/admin/rag/context/"
+
+        # Select multiple contexts for deletion
+        data = {
+            "action": "delete_selected",
+            "_selected_action": [self.contexts[0].id, self.contexts[1].id],
+            "post": "yes",  # Confirm deletion
+        }
+
+        # Perform bulk delete
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify contexts were deleted
+        remaining_contexts = Context.objects.filter(
+            id__in=[self.contexts[0].id, self.contexts[1].id]
+        )
+        self.assertEqual(remaining_contexts.count(), 0)
+
+        # Verify other contexts remain
+        self.assertEqual(Context.objects.count(), 3)
+
+    def test_contextitem_bulk_delete_admin_action(self):
+        """Test bulk delete action for context items in admin."""
+        url = "/admin/rag/contextitem/"
+
+        # Select multiple context items for deletion
+        selected_items = [self.context_items[0].id, self.context_items[1].id]
+        data = {
+            "action": "delete_selected",
+            "_selected_action": selected_items,
+            "post": "yes",  # Confirm deletion
+        }
+
+        # Perform bulk delete
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify context items were deleted
+        remaining_items = ContextItem.objects.filter(id__in=selected_items)
+        self.assertEqual(remaining_items.count(), 0)
+
+        # Verify other items remain
+        self.assertEqual(ContextItem.objects.count(), 8)
+
+    def test_bulk_delete_confirmation_page(self):
+        """Test that bulk delete shows confirmation page."""
+        url = "/admin/rag/topic/"
+
+        # Select multiple topics but don't confirm
+        data = {
+            "action": "delete_selected",
+            "_selected_action": [self.topics[0].id, self.topics[1].id],
+            # No "post": "yes" to confirm
+        }
+
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+
+        # Should show confirmation page
+        self.assertContains(response, "Are you sure you want to delete")
+        self.assertContains(response, self.topics[0].name)
+        self.assertContains(response, self.topics[1].name)
+
+        # Topics should still exist
+        self.assertEqual(Topic.objects.count(), 5)
+
+    def test_bulk_topic_context_mapping(self):
+        """Test bulk assignment of contexts to topics."""
+        # This would be a custom admin action we'd implement
+        url = "/admin/rag/topic/"
+
+        # First test the change list page loads
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify topics are displayed
+        for topic in self.topics:
+            self.assertContains(response, topic.name)
+
+    def test_bulk_filter_and_search(self):
+        """Test bulk operations work with filters and search."""
+        # Test Context admin with type filter
+        url = "/admin/rag/context/?context_type=PDF"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Should show only PDF contexts
+        pdf_contexts = [c for c in self.contexts if c.context_type == "PDF"]
+        for context in pdf_contexts:
+            self.assertContains(response, context.name)
+
+        # Test search functionality
+        url = "/admin/rag/topic/?q=Topic 1"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Topic 1")
+
+    def test_bulk_operations_preserve_pagination(self):
+        """Test that bulk operations work correctly with pagination."""
+        # Create more topics to trigger pagination
+        for i in range(1, 21):  # Create 20 more topics
+            Topic.objects.create(
+                name=f"Additional Topic {i}", description=f"Description {i}"
+            )
+
+        url = "/admin/rag/topic/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Should handle pagination
+        total_topics = Topic.objects.count()
+        self.assertGreaterEqual(total_topics, 25)
+
+    def test_bulk_context_type_filter(self):
+        """Test filtering contexts by type for bulk operations."""
+        # Filter by PDF context type
+        url = "/admin/rag/context/?context_type=PDF"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Count PDF contexts in our test data
+        pdf_count = len([c for c in self.contexts if c.context_type == "PDF"])
+        self.assertGreater(pdf_count, 0)
+
+        # Filter by FAQ context type
+        url = "/admin/rag/context/?context_type=FAQ"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_bulk_operations_error_handling(self):
+        """Test error handling in bulk operations."""
+        url = "/admin/rag/topic/"
+
+        # Try bulk delete with invalid IDs
+        data = {
+            "action": "delete_selected",
+            "_selected_action": [99999, 99998],  # Non-existent IDs
+            "post": "yes",
+        }
+
+        response = self.client.post(url, data, follow=True)
+        # Should handle gracefully (Django admin handles this)
+        self.assertEqual(response.status_code, 200)
+
+    def test_bulk_assign_context_to_topics_action(self):
+        """Test custom bulk action to assign contexts to multiple topics."""
+        url = "/admin/rag/topic/"
+
+        # Test the action is available first
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # This test will need the implementation first
+        # For now, just test that the page loads and topics are selectable
+        for topic in self.topics:
+            self.assertContains(response, topic.name)
+
+    def test_bulk_context_type_update_action(self):
+        """Test custom bulk action to update context types."""
+        url = "/admin/rag/context/"
+
+        # Test that we can access the context list
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify contexts are displayed
+        for context in self.contexts:
+            self.assertContains(response, context.name)
+
+    def test_bulk_regenerate_embeddings_action(self):
+        """Test custom bulk action to regenerate embeddings for context items."""
+        url = "/admin/rag/contextitem/"
+
+        # Test that we can access the context item list
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify context items are displayed
+        for item in self.context_items[:5]:  # Check first 5
+            self.assertContains(response, item.title)

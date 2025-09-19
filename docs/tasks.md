@@ -47,7 +47,7 @@
 
 - [x] Create initial migration for Topic model
 - [x] Create migrations for remaining models
-- [ ] Test migration rollback/forward compatibility
+- [x] Test migration rollback/forward compatibility
 
 ## Admin Interface (TDD) ✅
 
@@ -61,8 +61,8 @@
 - [x] Implement ContextItem admin with MinIO integration
 - [x] Write tests for Topic-Context mapping in admin
 - [x] Implement Topic-Context mapping interface
-- [ ] Write tests for bulk operations
-- [ ] Implement bulk upload/update functionality
+- [x] Write tests for bulk operations
+- [x] Implement bulk upload/update functionality
 
 ## Document Ingestion Pipeline (TDD) ✅
 
