@@ -657,6 +657,15 @@ wheels = [
 ]
 
 [[package]]
+name = "django-migration-testcase"
+version = "0.0.15"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a3/0d/c4d60a2ba2de8dc3df828fa2e2fbe881d23f9c60c4cec055e12c78b7aa3e/django-migration-testcase-0.0.15.tar.gz", hash = "sha256:6287f729b3b61639aa6344cfa0107b5bacee576f6977e73d1092e8e98ae06428", size = 5819, upload-time = "2019-08-22T08:37:03.87Z" }
+
+[[package]]
 name = "django-stubs"
 version = "5.2.5"
 source = { registry = "https://pypi.org/simple" }
@@ -3133,6 +3142,11 @@ dependencies = [
     { name = "unstructured", extra = ["all-docs"] },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "django-migration-testcase" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "celery", specifier = ">=5.3.0" },
@@ -3159,6 +3173,9 @@ requires-dist = [
     { name = "types-requests", specifier = ">=2.31.0" },
     { name = "unstructured", extras = ["all-docs"], specifier = ">=0.10.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "django-migration-testcase", specifier = ">=0.0.15" }]
 
 [[package]]
 name = "scikit-learn"

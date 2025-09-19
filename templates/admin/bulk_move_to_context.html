@@ -1,0 +1,35 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls static admin_modify %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<form method="post">
+    {% csrf_token %}
+
+    <p>You have selected {{ queryset.count }} context item(s) to move:</p>
+
+    <ul>
+        {% for item in queryset %}
+            <li>{{ item.title }} (currently in {{ item.context.name }})</li>
+        {% endfor %}
+    </ul>
+
+    <div class="form-row">
+        <label for="context_select">Select Destination Context:</label>
+        <select name="context_id" id="context_select" required>
+            <option value="">Choose a context...</option>
+            {% for context in contexts %}
+                <option value="{{ context.id }}">{{ context.name }} ({{ context.context_type }})</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="submit-row">
+        <input type="submit" value="Move Items" class="default" />
+        <a href="../" class="cancel-link">Cancel</a>
+    </div>
+</form>
+{% endblock %}

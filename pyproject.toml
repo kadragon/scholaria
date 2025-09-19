@@ -135,3 +135,8 @@ env = [
     "QDRANT_COLLECTION_NAME=context_items",
     "OPENAI_EMBEDDING_DIM=4",
 ]
+
+[dependency-groups]
+dev = [
+    "django-migration-testcase>=0.0.15",
+]
