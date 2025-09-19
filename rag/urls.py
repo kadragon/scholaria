@@ -9,8 +9,4 @@ urlpatterns = [
     path("topics/", views.TopicListView.as_view(), name="topics"),
     path("topics/<int:pk>/", views.TopicDetailView.as_view(), name="topic-detail"),
     path("ask/", views.AskQuestionView.as_view(), name="ask-question"),
-    # Web UI endpoints
-    path("", views.TopicSelectionView.as_view(), name="topic-selection"),
-    path("qa/", views.QAInterfaceRedirectView.as_view(), name="qa-interface-redirect"),
-    path("qa/<int:topic_id>/", views.QAInterfaceView.as_view(), name="qa-interface"),
 ]

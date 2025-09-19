@@ -7,6 +7,7 @@ work together correctly in the Docker Compose environment.
 
 import os
 import time
+from io import BytesIO
 
 import pytest
 import redis
@@ -16,6 +17,7 @@ from django.test import TestCase
 from minio import Minio
 from minio.error import S3Error
 from qdrant_client import QdrantClient
+from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.models import Distance, VectorParams
 
 from rag.ingestion.parsers import PDFParser
@@ -155,15 +157,15 @@ class DockerComposeIntegrationTest(TestCase):
             # Cleanup
             try:
                 self.qdrant_client.delete_collection(test_collection)
-            except Exception:
-                pass  # Collection might not exist
+            except (UnexpectedResponse, AttributeError):
+                pass  # Collection might not exist or service unavailable
 
     def test_minio_connectivity(self) -> None:
         """Test MinIO service connectivity and bucket operations."""
         try:
             # Check if MinIO is available
             self.minio_client.list_buckets()
-        except Exception:
+        except (S3Error, OSError, ConnectionError):
             self.skipTest("MinIO service is not available")
 
         test_bucket = "test-integration-bucket"
@@ -176,8 +178,6 @@ class DockerComposeIntegrationTest(TestCase):
                 self.minio_client.make_bucket(test_bucket)
 
             # Upload test object
-            from io import BytesIO
-
             self.minio_client.put_object(
                 test_bucket,
                 test_object,
@@ -245,7 +245,7 @@ class DockerComposeIntegrationTest(TestCase):
             # Create collection if it doesn't exist
             try:
                 qdrant_service.create_collection()
-            except Exception:
+            except (UnexpectedResponse, ValueError):
                 pass  # Collection might already exist
 
             # Test MinIO integration (if available)
@@ -257,8 +257,6 @@ class DockerComposeIntegrationTest(TestCase):
                 test_filename = "integration_test.txt"
 
                 # Upload to MinIO
-                from io import BytesIO
-
                 file_buffer = BytesIO(test_file_content)
                 file_path = storage.upload_file(test_filename, file_buffer)
                 self.assertTrue(file_path)
@@ -270,10 +268,10 @@ class DockerComposeIntegrationTest(TestCase):
                 # Cleanup MinIO
                 try:
                     storage.delete_file(file_path)
-                except Exception:
+                except (S3Error, OSError):
                     pass
 
-            except Exception:
+            except (S3Error, OSError, ConnectionError, AttributeError):
                 # MinIO not available, skip MinIO tests
                 file_path = None
 
@@ -296,7 +294,7 @@ class DockerComposeIntegrationTest(TestCase):
             if file_path:
                 try:
                     storage.delete_file(file_path)
-                except Exception:
+                except (S3Error, OSError, AttributeError):
                     pass
 
     def test_unstructured_api_connectivity(self) -> None:
@@ -378,8 +376,6 @@ class DockerComposePerformanceTest(TestCase):
 
     def test_service_response_times(self) -> None:
         """Test that all services respond within acceptable time limits."""
-        import time
-
         # Test Redis response time
         start_time = time.time()
         redis_client = redis.Redis(
@@ -413,6 +409,6 @@ class DockerComposePerformanceTest(TestCase):
             minio_client.list_buckets()
             minio_time = time.time() - start_time
             self.assertLess(minio_time, 2.0, "MinIO should respond within 2 seconds")
-        except Exception:
+        except (S3Error, OSError, ConnectionError, AttributeError):
             # MinIO not available, skip performance test
             pass

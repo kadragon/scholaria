@@ -148,12 +148,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const question = questionInput.value.trim();
         if (!question) {
-            showError('Please enter a question.');
+            showInputError('Please enter a question.');
             return;
         }
 
         if (question.length < 3) {
-            showError('Question must be at least 3 characters long.');
+            showInputError('Question must be at least 3 characters long.');
             return;
         }
 
@@ -179,18 +179,24 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 showAnswer(data);
             } else {
-                showError(data.error || 'An error occurred while processing your question.');
+                showApiError(data.error || 'An error occurred while processing your question.');
             }
         } catch (error) {
-            showError('Network error. Please check your connection and try again.');
+            showApiError('Network error. Please check your connection and try again.');
         } finally {
             hideLoading();
         }
     });
 
-    function showError(message) {
+    function showInputError(message) {
         questionError.textContent = message;
         questionError.style.display = 'block';
+    }
+
+    function showApiError(message) {
+        const errorContent = document.getElementById('errorContent');
+        errorContent.textContent = message;
+        errorDiv.style.display = 'block';
     }
 
     function hideAll() {

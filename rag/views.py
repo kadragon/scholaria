@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import TemplateView
@@ -215,12 +214,5 @@ class QAInterfaceView(TemplateView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Add topic to the template context."""
         context = super().get_context_data(**kwargs)
-        topic_id = kwargs.get("topic_id")
-
-        if topic_id:
-            try:
-                context["topic"] = get_object_or_404(Topic, id=topic_id)
-            except Http404:
-                raise
-
+        context["topic"] = get_object_or_404(Topic, id=kwargs["topic_id"])
         return context
