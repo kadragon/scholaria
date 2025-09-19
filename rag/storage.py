@@ -17,6 +17,9 @@ logger = logging.getLogger(__name__)
 class MinIOStorage:
     """MinIO storage service for file operations."""
 
+    # Class-level tracking of bucket existence to avoid repeated API calls
+    _bucket_verified: dict[str, bool] = {}
+
     def __init__(self) -> None:
         """Initialize MinIO client with configuration from Django settings."""
         self.client = Minio(
@@ -111,7 +114,7 @@ class MinIOStorage:
             logger.info(f"Successfully deleted {object_name} from {self.bucket_name}")
             return True
         except S3Error as e:
-            if "NoSuchKey" in str(e):
+            if e.code == "NoSuchKey":
                 logger.warning(f"File {object_name} not found for deletion")
                 return False
             logger.error(f"Failed to delete {object_name}: {e}")
@@ -198,15 +201,26 @@ class MinIOStorage:
     def ensure_bucket_exists(self) -> None:
         """Ensure the configured bucket exists, create if it doesn't.
 
+        Uses class-level caching to avoid repeated API calls.
+
         Raises:
             S3Error: If bucket creation fails
         """
+        # Use endpoint + bucket_name as key to handle multiple MinIO configurations
+        cache_key = f"{settings.MINIO_ENDPOINT}:{self.bucket_name}"
+
+        if cache_key in self._bucket_verified:
+            return
+
         try:
             if not self.client.bucket_exists(self.bucket_name):
                 self.client.make_bucket(self.bucket_name)
                 logger.info(f"Created bucket {self.bucket_name}")
             else:
                 logger.debug(f"Bucket {self.bucket_name} already exists")
+
+            # Mark as verified
+            self._bucket_verified[cache_key] = True
 
         except S3Error as e:
             logger.error(f"Failed to ensure bucket exists: {e}")

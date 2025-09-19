@@ -10,6 +10,8 @@ from rag.validators import FileValidator
 
 class MinIOStorageTest(TestCase):
     def setUp(self):
+        # Clear class-level cache before each test
+        MinIOStorage._bucket_verified.clear()
         self.storage = MinIOStorage()
         self.test_bucket = "test-bucket"
         self.test_file_content = b"Test file content for MinIO upload"

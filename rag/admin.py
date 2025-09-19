@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 
+from .ingestion.parsers import MarkdownParser, PDFParser
 from .models import Context, ContextItem, Topic
 from .storage import MinIOStorage
 from .validators import FileValidator
@@ -89,6 +92,48 @@ class ContextItemAdmin(admin.ModelAdmin):
         """Display whether the item has an uploaded file."""
         return bool(obj.uploaded_file)
 
+    def _extract_content_from_file(
+        self, uploaded_file: UploadedFile, file_type: str
+    ) -> str:
+        """Extract content from uploaded file based on file type.
+
+        Args:
+            uploaded_file: The Django UploadedFile instance
+            file_type: The detected file type (pdf, markdown, text)
+
+        Returns:
+            Extracted content as string
+        """
+        try:
+            # Create a temporary file to save the uploaded content
+            with tempfile.NamedTemporaryFile(
+                delete=False, suffix=f".{file_type}"
+            ) as temp_file:
+                # Write the uploaded file content to temporary file
+                uploaded_file.seek(0)
+                for chunk in uploaded_file.chunks():
+                    temp_file.write(chunk)
+                temp_file.flush()
+
+                # Extract content based on file type
+                if file_type == "pdf":
+                    pdf_parser = PDFParser()
+                    return pdf_parser.parse_file(temp_file.name)
+                elif file_type in ["markdown", "text"]:
+                    md_parser = MarkdownParser()
+                    return md_parser.parse_file(temp_file.name)
+                else:
+                    return f"Unsupported file type: {file_type}"
+
+        except Exception as e:
+            return f"Error extracting content: {str(e)}"
+        finally:
+            # Clean up temporary file
+            try:
+                Path(temp_file.name).unlink(missing_ok=True)
+            except:  # noqa: E722
+                pass  # Ignore cleanup errors
+
     def save_model(
         self, request: HttpRequest, obj: ContextItem, form: Any, change: bool
     ) -> None:
@@ -103,8 +148,18 @@ class ContextItemAdmin(admin.ModelAdmin):
 
             # If no content provided and file uploaded, extract content
             if not obj.content and obj.uploaded_file:
-                # For now, just set a placeholder - this could be enhanced with
-                # automatic content extraction based on file type
-                obj.content = f"Content from uploaded file: {obj.uploaded_file.name}"
+                # Get the file type from form validation
+                validator = FileValidator()
+                validation_result = validator.validate_file(obj.uploaded_file)
+
+                if validation_result.is_valid and validation_result.file_type:
+                    extracted_content = self._extract_content_from_file(
+                        obj.uploaded_file, validation_result.file_type
+                    )
+                    obj.content = extracted_content
+                else:
+                    obj.content = (
+                        f"Content from uploaded file: {obj.uploaded_file.name}"
+                    )
 
         super().save_model(request, obj, form, change)

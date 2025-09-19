@@ -152,6 +152,52 @@ MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
 MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "scholaria-docs")
 MINIO_SECURE = os.getenv("MINIO_SECURE", "False").lower() == "true"
 
+# File Validation Configuration
+FILE_VALIDATION_MAX_SIZE = int(
+    os.getenv("FILE_VALIDATION_MAX_SIZE", str(10 * 1024 * 1024))
+)  # 10MB default
+
+FILE_VALIDATION_SUPPORTED_TYPES = {
+    "pdf": {
+        "extensions": [".pdf"],
+        "content_types": ["application/pdf"],
+        "magic_bytes": [b"%PDF-"],
+    },
+    "markdown": {
+        "extensions": [".md", ".markdown"],
+        "content_types": ["text/markdown", "text/x-markdown"],
+        "magic_bytes": [],  # No specific magic bytes for markdown
+    },
+    "text": {
+        "extensions": [".txt"],
+        "content_types": ["text/plain"],
+        "magic_bytes": [],  # No specific magic bytes for plain text
+    },
+}
+
+FILE_VALIDATION_EXECUTABLE_EXTENSIONS = [
+    # Windows executables
+    "exe",
+    "bat",
+    "cmd",
+    "com",
+    "pif",
+    "scr",
+    "vbs",
+    "msi",
+    "ps1",
+    # Scripting languages
+    "js",
+    "jar",
+    "py",
+    "rb",
+    "pl",
+    "sh",
+    # Libraries and objects
+    "dll",
+    "so",
+]
+
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_EMBEDDING_DIM = int(os.getenv("OPENAI_EMBEDDING_DIM", "3072"))

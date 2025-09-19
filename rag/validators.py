@@ -5,6 +5,8 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypedDict
 
+from django.conf import settings
+
 if TYPE_CHECKING:
     from django.core.files.uploadedfile import UploadedFile
 
@@ -31,27 +33,16 @@ class ValidationResult:
 class FileValidator:
     """File validation service for security and safety checks."""
 
-    # Maximum file size: 10MB
-    MAX_FILE_SIZE = 10 * 1024 * 1024
-
-    # Supported file types and their magic bytes
-    SUPPORTED_TYPES: dict[str, FileTypeConfig] = {
-        "pdf": {
-            "extensions": [".pdf"],
-            "content_types": ["application/pdf"],
-            "magic_bytes": [b"%PDF-"],
-        },
-        "markdown": {
-            "extensions": [".md", ".markdown"],
-            "content_types": ["text/markdown", "text/x-markdown"],
-            "magic_bytes": [],  # No specific magic bytes for markdown
-        },
-        "text": {
-            "extensions": [".txt"],
-            "content_types": ["text/plain"],
-            "magic_bytes": [],  # No specific magic bytes for plain text
-        },
-    }
+    def __init__(self) -> None:
+        """Initialize validator with settings from Django configuration."""
+        self.MAX_FILE_SIZE: int = settings.FILE_VALIDATION_MAX_SIZE
+        # mypy: ignore because Django settings can't be typed properly
+        self.SUPPORTED_TYPES: dict[str, FileTypeConfig] = (
+            settings.FILE_VALIDATION_SUPPORTED_TYPES
+        )  # type: ignore
+        self.EXECUTABLE_EXTENSIONS: list[str] = (
+            settings.FILE_VALIDATION_EXECUTABLE_EXTENSIONS
+        )
 
     # Windows reserved filenames
     WINDOWS_RESERVED = {
@@ -129,13 +120,11 @@ class FileValidator:
         content_type_errors = self._validate_content_type(uploaded_file, file_type)
         errors.extend(content_type_errors)
 
-        # Validate file content
-        content_errors = self._validate_file_content(uploaded_file, file_type)
-        errors.extend(content_errors)
-
-        # Security scan
-        security_errors = self._security_scan(uploaded_file)
-        errors.extend(security_errors)
+        # Combined content validation and security scan
+        content_security_errors = self._validate_content_and_security(
+            uploaded_file, file_type
+        )
+        errors.extend(content_security_errors)
 
         is_valid = len(errors) == 0
         return ValidationResult(is_valid=is_valid, file_type=file_type, errors=errors)
@@ -196,23 +185,12 @@ class FileValidator:
         # Check for double extensions (potential disguised executables)
         parts = filename.lower().split(".")
         if len(parts) > 2:
-            executable_exts = [
-                "exe",
-                "bat",
-                "cmd",
-                "com",
-                "pif",
-                "scr",
-                "vbs",
-                "js",
-                "jar",
-            ]
             # Check if the final extension is executable
-            if parts[-1] in executable_exts:
+            if parts[-1] in self.EXECUTABLE_EXTENSIONS:
                 errors.append("Invalid filename: executable file type not allowed")
             # Also check if any middle part is an executable extension
             for part in parts[1:-1]:  # Skip first (name) and last (final extension)
-                if part in executable_exts:
+                if part in self.EXECUTABLE_EXTENSIONS:
                     errors.append("Invalid filename: potential disguised executable")
                     break
 
@@ -264,62 +242,86 @@ class FileValidator:
 
         return errors
 
-    def _validate_file_content(
+    def _validate_content_and_security(
         self, uploaded_file: UploadedFile, file_type: str
     ) -> list[str]:
-        """Validate file content based on magic bytes and content analysis."""
+        """Combined content validation and security scan with streaming approach."""
         errors: list[str] = []
-
-        # Read first few bytes for magic byte validation
         uploaded_file.seek(0)
-        header = uploaded_file.read(1024)  # Read first 1KB
-        uploaded_file.seek(0)  # Reset position
 
-        # Validate magic bytes for PDF files
-        if file_type == "pdf":
-            config = self.SUPPORTED_TYPES["pdf"]
-            magic_bytes_list = config["magic_bytes"]
-            if not any(header.startswith(magic) for magic in magic_bytes_list):
-                errors.append("Invalid PDF file: missing PDF header")
+        # Read file in chunks to avoid loading entire file into memory
+        chunk_size = 8192  # 8KB chunks
+        first_chunk = True
+        accumulated_text = ""
+        eicar_buffer = b""
 
-        # Check for potentially dangerous content in text files
-        if file_type in ["markdown", "text"]:
-            try:
-                content_str = header.decode("utf-8", errors="ignore")
-                # Check for script tags or other dangerous patterns
-                dangerous_patterns = [
-                    r"<script[^>]*>",
-                    r"javascript:",
-                    r"vbscript:",
-                    r"onclick\s*=",
-                    r"onerror\s*=",
-                    r"onload\s*=",
-                ]
+        try:
+            while True:
+                chunk = uploaded_file.read(chunk_size)
+                if not chunk:
+                    break
 
-                for pattern in dangerous_patterns:
-                    if re.search(pattern, content_str, re.IGNORECASE):
-                        errors.append("Potentially dangerous content detected in file")
+                # Validate magic bytes on first chunk
+                if first_chunk and file_type == "pdf":
+                    config = self.SUPPORTED_TYPES["pdf"]
+                    magic_bytes_list = config["magic_bytes"]
+                    if not any(chunk.startswith(magic) for magic in magic_bytes_list):
+                        errors.append("Invalid PDF file: missing PDF header")
+                    first_chunk = False
+
+                # Security scan: Check for EICAR signature across chunk boundaries
+                eicar_buffer += chunk
+                if len(eicar_buffer) > len(self.EICAR_SIGNATURE) * 2:
+                    # Keep only the last part that might contain partial signature
+                    eicar_buffer = eicar_buffer[-(len(self.EICAR_SIGNATURE) * 2) :]
+
+                if self.EICAR_SIGNATURE in eicar_buffer:
+                    errors.append("Security scan failed: test virus signature detected")
+                    break  # No need to continue if malicious content found
+
+                # Content validation for text files
+                if file_type in ["markdown", "text"]:
+                    try:
+                        chunk_str = chunk.decode("utf-8", errors="ignore")
+                        accumulated_text += chunk_str
+
+                        # Keep accumulated text reasonable size for pattern matching
+                        if len(accumulated_text) > 8192:
+                            # Check patterns on current text
+                            if self._check_dangerous_patterns(accumulated_text):
+                                errors.append(
+                                    "Potentially dangerous content detected in file"
+                                )
+                                break
+                            # Keep only the last part for cross-chunk pattern detection
+                            accumulated_text = accumulated_text[-1024:]
+
+                    except UnicodeDecodeError:
+                        errors.append("File contains invalid text encoding")
                         break
 
-            except UnicodeDecodeError:
-                errors.append("File contains invalid text encoding")
+        finally:
+            uploaded_file.seek(0)  # Reset position
+
+        # Final check for any remaining text content
+        if file_type in ["markdown", "text"] and accumulated_text and not errors:
+            if self._check_dangerous_patterns(accumulated_text):
+                errors.append("Potentially dangerous content detected in file")
 
         return errors
 
-    def _security_scan(self, uploaded_file: UploadedFile) -> list[str]:
-        """Perform basic security scanning."""
-        errors = []
+    def _check_dangerous_patterns(self, text: str) -> bool:
+        """Check for dangerous patterns in text content."""
+        dangerous_patterns = [
+            r"<script[^>]*>",
+            r"javascript:",
+            r"vbscript:",
+            r"onclick\s*=",
+            r"onerror\s*=",
+            r"onload\s*=",
+        ]
 
-        # Read file content for scanning
-        uploaded_file.seek(0)
-        content = uploaded_file.read()
-        uploaded_file.seek(0)  # Reset position
-
-        # Check for EICAR test virus signature
-        if self.EICAR_SIGNATURE in content:
-            errors.append("Security scan failed: test virus signature detected")
-
-        # Additional security checks could be added here
-        # such as integration with real antivirus scanners
-
-        return errors
+        for pattern in dangerous_patterns:
+            if re.search(pattern, text, re.IGNORECASE):
+                return True
+        return False
