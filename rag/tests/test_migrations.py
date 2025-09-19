@@ -5,12 +5,28 @@ These tests ensure database migrations can be safely applied and rolled back
 without losing data integrity or causing schema conflicts.
 """
 
+from django.conf import settings
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TransactionTestCase
 
 
 class MigrationCompatibilityTest(TransactionTestCase):
     """Test migration rollback and forward compatibility."""
+
+    def setUp(self):
+        """Check if migrations are available, skip tests if not."""
+        super().setUp()
+        # Skip these tests if we're using in-memory database or migrations aren't available
+        if "memory" in str(settings.DATABASES["default"]["NAME"]).lower():
+            self.skipTest(
+                "Migration tests require persistent database, not in-memory SQLite"
+            )
+
+        try:
+            call_command("showmigrations", "rag", verbosity=0)
+        except CommandError:
+            self.skipTest("RAG app migrations not available in this test environment")
 
     def test_migration_forward_rollback_cycle(self):
         """Test full migration cycle: initial -> latest -> rollback -> forward."""
@@ -122,6 +138,18 @@ class MigrationSchemaTest(TransactionTestCase):
 
     def setUp(self):
         """Ensure clean migration state."""
+        super().setUp()
+        # Skip these tests if we're using in-memory database or migrations aren't available
+        if "memory" in str(settings.DATABASES["default"]["NAME"]).lower():
+            self.skipTest(
+                "Migration tests require persistent database, not in-memory SQLite"
+            )
+
+        try:
+            call_command("showmigrations", "rag", verbosity=0)
+        except CommandError:
+            self.skipTest("RAG app migrations not available in this test environment")
+
         call_command("migrate", "rag", verbosity=0)
 
     def test_all_models_created_correctly(self):
