@@ -307,6 +307,68 @@ class APIErrorHandlingTest(TestCase):
         self.assertIn("question", response.data)  # type: ignore[attr-defined]
 
 
+class TopicSelectionWebInterfaceTest(TestCase):
+    """Test the web-based topic selection interface."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.topic1 = Topic.objects.create(
+            name="Mathematics",
+            description="Math concepts and formulas",
+            system_prompt="You are a math tutor.",
+        )
+        self.topic2 = Topic.objects.create(
+            name="Science",
+            description="Scientific principles and experiments",
+            system_prompt="You are a science teacher.",
+        )
+
+    def test_topic_selection_page_renders(self):
+        """Test that the topic selection page renders successfully."""
+        url = reverse("rag_web:topic-selection")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Select a Topic")
+        self.assertContains(response, "Mathematics")
+        self.assertContains(response, "Science")
+        self.assertContains(response, "Math concepts and formulas")
+        self.assertContains(response, "Scientific principles and experiments")
+
+    def test_topic_selection_page_when_no_topics(self):
+        """Test topic selection page when no topics exist."""
+        Topic.objects.all().delete()
+        url = reverse("rag_web:topic-selection")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No topics available")
+
+    def test_qa_page_renders_with_valid_topic(self):
+        """Test that the Q&A page renders with a valid topic ID."""
+        url = reverse("rag_web:qa-interface", kwargs={"topic_id": self.topic1.id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Mathematics")
+        self.assertContains(response, "Ask a Question")
+        self.assertContains(response, "Math concepts and formulas")
+
+    def test_qa_page_404_with_invalid_topic(self):
+        """Test that Q&A page returns 404 for invalid topic ID."""
+        url = reverse("rag_web:qa-interface", kwargs={"topic_id": 999})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_qa_page_redirects_to_selection_when_no_topic_id(self):
+        """Test that accessing Q&A without topic ID redirects to topic selection."""
+        url = reverse("rag_web:qa-interface-redirect")
+        response = self.client.get(url)
+
+        self.assertRedirects(response, reverse("rag_web:topic-selection"))
+
+
 class QuestionAnswerAPITest(TestCase):
     def setUp(self):
         """Set up test data."""

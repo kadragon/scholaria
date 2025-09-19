@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}{{ topic.name }} Q&A - Scholaria RAG{% endblock %}
+
+{% block header %}{{ topic.name }} - Ask a Question{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="topic-info">
+        <h2>{{ topic.name }}</h2>
+        <p class="topic-description">{{ topic.description }}</p>
+        <a href="{% url 'rag_web:topic-selection' %}" class="btn" style="margin-bottom: 1.5rem;">← Back to Topics</a>
+    </div>
+
+    <div class="qa-form">
+        <form id="questionForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="question">Your Question:</label>
+                <textarea
+                    id="question"
+                    name="question"
+                    placeholder="Type your question here..."
+                    required
+                ></textarea>
+                <div id="questionError" class="error" style="display: none;"></div>
+            </div>
+            <button type="submit" class="btn btn-block" id="submitBtn">
+                Ask Question
+            </button>
+        </form>
+    </div>
+
+    <div id="loadingDiv" class="loading" style="display: none;">
+        <p>Processing your question...</p>
+    </div>
+
+    <div id="answerDiv" class="answer-section" style="display: none;">
+        <h3>Answer:</h3>
+        <div id="answerContent" class="answer-content"></div>
+
+        <div id="citationsDiv" class="citations-section">
+            <h4>Sources:</h4>
+            <div id="citationsContent" class="citations-content"></div>
+        </div>
+    </div>
+
+    <div id="errorDiv" class="error-section" style="display: none;">
+        <h3>Error:</h3>
+        <div id="errorContent" class="error-content"></div>
+    </div>
+</div>
+
+<style>
+.topic-info {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.topic-description {
+    color: #7f8c8d;
+    font-style: italic;
+    margin-bottom: 1rem;
+}
+
+.answer-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.answer-content {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.citations-section {
+    margin-top: 1.5rem;
+}
+
+.citations-content {
+    margin-top: 1rem;
+}
+
+.citation-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.citation-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.citation-content {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.citation-meta {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 0.5rem;
+}
+
+.error-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.error-content {
+    background: #fee;
+    color: #c33;
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid #fcc;
+}
+
+#submitBtn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('questionForm');
+    const questionInput = document.getElementById('question');
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingDiv = document.getElementById('loadingDiv');
+    const answerDiv = document.getElementById('answerDiv');
+    const errorDiv = document.getElementById('errorDiv');
+    const questionError = document.getElementById('questionError');
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const question = questionInput.value.trim();
+        if (!question) {
+            showInputError('Please enter a question.');
+            return;
+        }
+
+        if (question.length < 3) {
+            showInputError('Question must be at least 3 characters long.');
+            return;
+        }
+
+        // Clear previous results
+        hideAll();
+        showLoading();
+
+        try {
+            const response = await fetch('{% url "rag:ask-question" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    topic_id: {{ topic.id }},
+                    question: question
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showAnswer(data);
+            } else {
+                showApiError(data.error || 'An error occurred while processing your question.');
+            }
+        } catch (error) {
+            showApiError('Network error. Please check your connection and try again.');
+        } finally {
+            hideLoading();
+        }
+    });
+
+    function showInputError(message) {
+        questionError.textContent = message;
+        questionError.style.display = 'block';
+    }
+
+    function showApiError(message) {
+        const errorContent = document.getElementById('errorContent');
+        errorContent.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+
+    function hideAll() {
+        questionError.style.display = 'none';
+        answerDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+    }
+
+    function showLoading() {
+        loadingDiv.style.display = 'block';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Processing...';
+    }
+
+    function hideLoading() {
+        loadingDiv.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Ask Question';
+    }
+
+    function showAnswer(data) {
+        document.getElementById('answerContent').textContent = data.answer;
+
+        const citationsContent = document.getElementById('citationsContent');
+        citationsContent.innerHTML = '';
+
+        if (data.citations && data.citations.length > 0) {
+            data.citations.forEach(citation => {
+                const citationDiv = document.createElement('div');
+                citationDiv.className = 'citation-item';
+                citationDiv.innerHTML = `
+                    <div class="citation-title">${citation.title}</div>
+                    <div class="citation-content">${citation.content}</div>
+                    <div class="citation-meta">
+                        Type: ${citation.context_type} | Score: ${citation.score.toFixed(3)}
+                    </div>
+                `;
+                citationsContent.appendChild(citationDiv);
+            });
+        } else {
+            citationsContent.innerHTML = '<p>No sources found.</p>';
+        }
+
+        answerDiv.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

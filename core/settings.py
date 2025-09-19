@@ -79,6 +79,13 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Redis Configuration
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+try:
+    REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+except ValueError:
+    REDIS_PORT = 6379
+
 DATABASES = {
     "default": {
         "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
@@ -87,6 +94,14 @@ DATABASES = {
         "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
         "HOST": os.getenv("DB_HOST", "localhost"),
         "PORT": os.getenv("DB_PORT", "5432"),
+    }
+}
+
+# Cache Configuration
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
     }
 }
 
@@ -142,7 +157,10 @@ CELERY_TIMEZONE = TIME_ZONE
 
 # Qdrant Configuration
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
-QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
+try:
+    QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
+except ValueError:
+    QDRANT_PORT = 6333
 QDRANT_COLLECTION_NAME = os.getenv("QDRANT_COLLECTION_NAME", "scholaria_documents")
 
 # MinIO Configuration
@@ -153,9 +171,12 @@ MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "scholaria-docs")
 MINIO_SECURE = os.getenv("MINIO_SECURE", "False").lower() == "true"
 
 # File Validation Configuration
-FILE_VALIDATION_MAX_SIZE = int(
-    os.getenv("FILE_VALIDATION_MAX_SIZE", str(10 * 1024 * 1024))
-)  # 10MB default
+try:
+    FILE_VALIDATION_MAX_SIZE = int(
+        os.getenv("FILE_VALIDATION_MAX_SIZE", str(10 * 1024 * 1024))
+    )
+except ValueError:
+    FILE_VALIDATION_MAX_SIZE = 10 * 1024 * 1024  # 10MB default
 
 FILE_VALIDATION_SUPPORTED_TYPES = {
     "pdf": {
@@ -200,11 +221,20 @@ FILE_VALIDATION_EXECUTABLE_EXTENSIONS = [
 
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_EMBEDDING_DIM = int(os.getenv("OPENAI_EMBEDDING_DIM", "3072"))
+try:
+    OPENAI_EMBEDDING_DIM = int(os.getenv("OPENAI_EMBEDDING_DIM", "3072"))
+except ValueError:
+    OPENAI_EMBEDDING_DIM = 3072
 OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
 OPENAI_CHAT_MODEL = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
-OPENAI_CHAT_TEMPERATURE = float(os.getenv("OPENAI_CHAT_TEMPERATURE", "0.3"))
-OPENAI_CHAT_MAX_TOKENS = int(os.getenv("OPENAI_CHAT_MAX_TOKENS", "1000"))
+try:
+    OPENAI_CHAT_TEMPERATURE = float(os.getenv("OPENAI_CHAT_TEMPERATURE", "0.3"))
+except ValueError:
+    OPENAI_CHAT_TEMPERATURE = 0.3
+try:
+    OPENAI_CHAT_MAX_TOKENS = int(os.getenv("OPENAI_CHAT_MAX_TOKENS", "1000"))
+except ValueError:
+    OPENAI_CHAT_MAX_TOKENS = 1000
 
 # LlamaIndex caching configuration
 LLAMAINDEX_CACHE_ENABLED = (
@@ -218,8 +248,14 @@ LLAMAINDEX_CACHE_NAMESPACE = os.getenv(
 )
 
 # RAG Configuration
-RAG_SEARCH_LIMIT = int(os.getenv("RAG_SEARCH_LIMIT", "10"))
-RAG_RERANK_TOP_K = int(os.getenv("RAG_RERANK_TOP_K", "5"))
+try:
+    RAG_SEARCH_LIMIT = int(os.getenv("RAG_SEARCH_LIMIT", "10"))
+except ValueError:
+    RAG_SEARCH_LIMIT = 10
+try:
+    RAG_RERANK_TOP_K = int(os.getenv("RAG_RERANK_TOP_K", "5"))
+except ValueError:
+    RAG_RERANK_TOP_K = 5
 
 # Unstructured API Configuration
 UNSTRUCTURED_API_URL = os.getenv("UNSTRUCTURED_API_URL", "http://localhost:8000")

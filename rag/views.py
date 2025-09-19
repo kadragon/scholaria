@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
+from django.views.generic import TemplateView
 from rest_framework import generics, serializers, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -20,6 +23,7 @@ from .retrieval.rag import RAGService
 
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
+    from django.http import HttpRequest, HttpResponse
     from rest_framework.request import Request
 
 
@@ -177,3 +181,38 @@ class AskQuestionView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+# Template-based views for web interface
+
+
+class TopicSelectionView(TemplateView):
+    """View for displaying topic selection page."""
+
+    template_name = "rag/topic_selection.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Add topics to the template context."""
+        context = super().get_context_data(**kwargs)
+        context["topics"] = Topic.objects.all()
+        return context
+
+
+class QAInterfaceRedirectView(TemplateView):
+    """Redirect view for Q&A interface without topic ID."""
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Redirect to topic selection page."""
+        return redirect(reverse("rag_web:topic-selection"))
+
+
+class QAInterfaceView(TemplateView):
+    """View for displaying Q&A interface with selected topic."""
+
+    template_name = "rag/qa_interface.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Add topic to the template context."""
+        context = super().get_context_data(**kwargs)
+        context["topic"] = get_object_or_404(Topic, id=kwargs["topic_id"])
+        return context
