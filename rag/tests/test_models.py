@@ -188,14 +188,20 @@ class ContextItemModelTest(TestCase):
             )
             context_item.full_clean()
 
-    def test_context_item_content_required(self):
-        """Test that context item content is required."""
-        with self.assertRaises(ValidationError):
+    def test_context_item_content_or_file_required(self):
+        """Test that context item requires either content or uploaded file."""
+        with self.assertRaises(ValidationError) as cm:
             context_item = ContextItem(
                 title="Test Title",
                 context=self.context,
             )
             context_item.full_clean()
+
+        self.assertIn("content", cm.exception.message_dict)
+        self.assertEqual(
+            cm.exception.message_dict["content"][0],
+            "Either content or uploaded file is required.",
+        )
 
     def test_context_item_context_required(self):
         """Test that context item context is required."""

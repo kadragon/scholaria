@@ -137,8 +137,54 @@ class ModelNameTest(TestCase):
 - Graceful handling of external service failures
 - User-friendly error messages
 
+### 2025-09-19: MinIO File Storage Integration
+
+- ✅ Created comprehensive TDD test suite for MinIO file operations (12 tests)
+- ✅ Implemented MinIOStorage service with full CRUD operations
+- ✅ Added file upload/download, existence checking, deletion, and URL generation
+- ✅ Integrated MinIO with Django admin interface for ContextItem uploads
+- ✅ Added uploaded_file field to ContextItem model with proper validation
+- ✅ Updated admin interface with file upload capabilities and MinIO integration
+- ✅ All 17 new tests passing with existing 146 tests (163 total)
+
+### File Storage Features
+
+- **MinIO Integration**: Complete S3-compatible object storage integration
+- **File Upload**: Secure file upload with automatic MinIO storage
+- **File Management**: Download, delete, list, and generate presigned URLs
+- **Admin Interface**: Enhanced Django admin with file upload capabilities
+
+### 2025-09-19: File Validation and Security System
+
+- ✅ Created comprehensive TDD test suite for file validation (12 tests)
+- ✅ Implemented FileValidator service with security-focused validation
+- ✅ Added support for PDF, Markdown, and Text file validation
+- ✅ Implemented magic byte validation for file type verification
+- ✅ Added filename sanitization and security checks
+- ✅ Integrated validation with Django admin forms
+- ✅ Added protection against malicious files and path traversal attacks
+
+### File Security Features
+
+- **File Type Validation**: Magic byte verification for PDF files
+- **Size Limits**: 10MB maximum file size enforcement
+- **Filename Security**: Path traversal and malicious filename detection
+- **Content Scanning**: Basic virus signature detection (EICAR test)
+- **Content Safety**: Script injection detection in text files
+- **Filename Sanitization**: Automatic cleanup of unsafe characters
+- **Double Extension Detection**: Protection against disguised executables
+
+### File Validation Rules
+
+- **Supported Types**: PDF (.pdf), Markdown (.md, .markdown), Plain Text (.txt)
+- **Security Checks**: Path traversal, null bytes, Windows reserved names
+- **Content Validation**: Magic bytes for PDFs, encoding validation for text
+- **Size Limits**: Maximum 10MB per file
+- **Filename Rules**: Alphanumeric, hyphens, underscores, and dots only
+
 ### Next Steps
 
 - Frontend user interface for topic selection and queries
 - End-to-end integration testing with real data flow
 - Performance optimization and monitoring
+- Bulk file upload functionality in admin interface
