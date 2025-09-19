@@ -11,6 +11,7 @@ TDD test suite for RAG models ensuring comprehensive coverage and Django best pr
 - **ValidationError Testing**: Use `full_clean()` for model validation tests
 - **ForeignKey Testing**: Create required related objects in `setUp()` method
 - **Import Organization**: Follow ruff import sorting (django, external, local)
+- **Parallel Execution**: Pytest runs with xdist (`-n=auto`); keep tests parallel-safe
 
 ## Context
 

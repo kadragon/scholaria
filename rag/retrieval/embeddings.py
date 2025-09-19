@@ -6,6 +6,7 @@ from django.conf import settings
 from openai import OpenAI
 
 from .cache import EmbeddingCache
+from .monitoring import OpenAIUsageMonitor
 
 if TYPE_CHECKING:
     pass
@@ -20,6 +21,7 @@ class EmbeddingService:
             settings, "OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"
         )
         self.cache = EmbeddingCache()
+        self.monitor = OpenAIUsageMonitor()
 
     def generate_embedding(self, text: str | None) -> list[float]:
         """
@@ -42,8 +44,19 @@ class EmbeddingService:
             if cached is not None:
                 return cached
 
+        # Track request timing for rate limiting
+        self.monitor.track_request_timestamp("embeddings")
+
         response = self.client.embeddings.create(model=self.model, input=text)
         embedding = response.data[0].embedding
+
+        # Track usage metrics
+        if hasattr(response, "usage") and response.usage:
+            self.monitor.track_embedding_usage(response.usage.total_tokens, self.model)
+        else:
+            # Estimate tokens if usage not available (approximate 4 chars per token)
+            estimated_tokens = len(text) // 4
+            self.monitor.track_embedding_usage(estimated_tokens, self.model)
 
         if self.cache.enabled():
             self.cache.set(text, self.model, embedding)
@@ -80,10 +93,23 @@ class EmbeddingService:
 
         fetched_embeddings: list[list[float]] = []
         if texts_to_fetch:
+            # Track request timing for rate limiting
+            self.monitor.track_request_timestamp("embeddings")
+
             response = self.client.embeddings.create(
                 model=self.model, input=texts_to_fetch
             )
             fetched_embeddings = [item.embedding for item in response.data]
+
+            # Track usage metrics
+            if hasattr(response, "usage") and response.usage:
+                self.monitor.track_embedding_usage(
+                    response.usage.total_tokens, self.model
+                )
+            else:
+                # Estimate tokens if usage not available
+                estimated_tokens = sum(len(text) // 4 for text in texts_to_fetch)
+                self.monitor.track_embedding_usage(estimated_tokens, self.model)
 
         # Merge cached and fetched results while persisting new entries
         result: list[list[float]] = []

@@ -265,3 +265,118 @@ class TextChunkerTest(TestCase):
         original_words = set(text.split())
         combined_words = set(combined.split())
         self.assertTrue(original_words.issubset(combined_words))
+
+    def test_optimized_markdown_chunking(self) -> None:
+        """Test optimized chunking for Markdown documents respects structure."""
+        from rag.ingestion.chunkers import MarkdownChunker
+
+        chunker = MarkdownChunker(chunk_size=200, overlap=50)
+
+        # Markdown with headers and sections
+        markdown_text = """# Introduction
+
+This is the introduction section with some content.
+
+## Getting Started
+
+Here are the steps to get started:
+
+1. First step
+2. Second step
+3. Third step
+
+### Installation
+
+To install the software:
+
+```bash
+pip install package
+```
+
+## Advanced Topics
+
+This section covers advanced topics like configuration and troubleshooting."""
+
+        chunks = chunker.chunk_text(markdown_text)
+
+        # Should create multiple chunks
+        self.assertGreater(len(chunks), 1)
+
+        # Each chunk should be within size limits
+        for chunk in chunks:
+            self.assertLessEqual(len(chunk), chunker.chunk_size)
+
+        # Headers should be preserved at chunk boundaries when possible
+        # At least one chunk should contain a complete section
+        section_preserved = any("# Introduction" in chunk for chunk in chunks)
+        self.assertTrue(section_preserved)
+
+    def test_optimized_faq_chunking(self) -> None:
+        """Test optimized chunking for FAQ documents keeps Q&A pairs together."""
+        from rag.ingestion.chunkers import FAQChunker
+
+        chunker = FAQChunker(chunk_size=300, overlap=50)
+
+        # FAQ content with Q&A pairs
+        faq_text = """Q: What is machine learning?
+A: Machine learning is a method of data analysis that automates analytical model building. It is a branch of artificial intelligence based on the idea that systems can learn from data.
+
+Q: How does deep learning work?
+A: Deep learning uses artificial neural networks with multiple layers to model and understand complex patterns in data. Each layer learns to transform its input data into a slightly more abstract representation.
+
+Q: What is the difference between supervised and unsupervised learning?
+A: Supervised learning uses labeled training data to learn a mapping from inputs to outputs, while unsupervised learning finds patterns in data without labeled examples."""
+
+        chunks = chunker.chunk_text(faq_text)
+
+        # Should create chunks that preserve Q&A pairs
+        self.assertGreater(len(chunks), 0)
+
+        # Each chunk should ideally contain complete Q&A pairs
+        for chunk in chunks:
+            self.assertLessEqual(len(chunk), chunker.chunk_size)
+            # If chunk contains Q:, it should also contain A:
+            if "Q:" in chunk:
+                self.assertIn("A:", chunk, "Q&A pairs should be kept together")
+
+    def test_optimized_pdf_chunking(self) -> None:
+        """Test optimized chunking for PDF documents handles varied formatting."""
+        from rag.ingestion.chunkers import PDFChunker
+
+        chunker = PDFChunker(chunk_size=400, overlap=80)
+
+        # PDF-like content with mixed formatting
+        pdf_text = """Executive Summary
+This document provides an overview of the key findings.
+
+Introduction
+The research was conducted over a 12-month period to analyze market trends and consumer behavior patterns.
+
+Key Findings:
+• Finding 1: Market growth increased by 15%
+• Finding 2: Consumer engagement improved
+• Finding 3: Digital adoption accelerated
+
+Table 1: Performance Metrics
+Revenue: $1.2M
+Growth: 15%
+Users: 50K
+
+Conclusion
+Based on the analysis, we recommend implementing the proposed strategy to capitalize on identified opportunities."""
+
+        chunks = chunker.chunk_text(pdf_text)
+
+        # Should create multiple chunks
+        self.assertGreater(len(chunks), 1)
+
+        # Each chunk should be within size limits
+        for chunk in chunks:
+            self.assertLessEqual(len(chunk), chunker.chunk_size)
+
+        # Headers and structure should be preserved where possible
+        # Check that section headers are preserved
+        headers_preserved = any(
+            "Executive Summary" in chunk or "Introduction" in chunk for chunk in chunks
+        )
+        self.assertTrue(headers_preserved)

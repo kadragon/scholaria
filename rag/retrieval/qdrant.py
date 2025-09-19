@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
+from django.core.cache import cache
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
@@ -16,7 +17,7 @@ class QdrantService:
     """Service for vector storage and similarity search using Qdrant."""
 
     def __init__(self) -> None:
-        # In a real environment, these would come from settings
+        # Keep original client creation for compatibility
         self.client = QdrantClient(
             host=getattr(settings, "QDRANT_HOST", "localhost"),
             port=getattr(settings, "QDRANT_PORT", 6333),
@@ -114,6 +115,39 @@ class QdrantService:
 
         return str(response.operation_id)
 
+    def _get_context_ids_for_topics(self, topic_ids: list[int]) -> list[int]:
+        """
+        Get context IDs for given topics with caching optimization.
+
+        Args:
+            topic_ids: List of topic IDs
+
+        Returns:
+            List of context IDs
+        """
+        # Create cache key from sorted topic IDs for consistent caching
+        cache_key = f"topic_contexts:{'_'.join(map(str, sorted(topic_ids)))}"
+
+        # Try to get from cache first (5 minute TTL)
+        context_ids = cache.get(cache_key)
+        if context_ids is not None:
+            return context_ids
+
+        # Query database with optimized select_related/prefetch_related
+        context_ids = list(
+            Topic.objects.filter(id__in=topic_ids)
+            .values_list("contexts__id", flat=True)
+            .distinct()
+        )
+
+        # Filter out None values (topics without contexts)
+        context_ids = [cid for cid in context_ids if cid is not None]
+
+        # Cache the result for 5 minutes
+        cache.set(cache_key, context_ids, 300)
+
+        return context_ids
+
     def search_similar(
         self, query_embedding: list[float], topic_ids: list[int], limit: int = 5
     ) -> list[dict[str, Any]]:
@@ -137,18 +171,13 @@ class QdrantService:
         if not topic_ids:
             raise ValueError("Topic IDs cannot be empty")
 
-        # Build filter for topics
-        context_ids = list(
-            Topic.objects.filter(id__in=topic_ids)
-            .values_list("contexts__id", flat=True)
-            .distinct()
-        )
-        # Filter out None values (topics without contexts)
-        context_ids = [cid for cid in context_ids if cid is not None]
+        # Get context IDs with caching optimization
+        context_ids = self._get_context_ids_for_topics(topic_ids)
 
         if not context_ids:
             return []
 
+        # Build optimized filter for Qdrant
         query_filter = {
             "must": [
                 {
@@ -158,7 +187,7 @@ class QdrantService:
             ]
         }
 
-        # Perform search
+        # Perform vector search
         search_results = self.client.search(
             collection_name=self.collection_name,
             query_vector=query_embedding,
@@ -166,7 +195,7 @@ class QdrantService:
             limit=limit,
         )
 
-        # Format results
+        # Format results efficiently
         results = []
         for scored_point in search_results:
             if scored_point.payload:

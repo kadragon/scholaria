@@ -95,9 +95,71 @@ Each service has comprehensive test coverage:
 - **Model Loading**: BGE reranker loaded once per service instance
 - **Context Optimization**: Efficient text preparation for LLM
 
+### 2025-09-19: OpenAI API Usage Monitoring Implementation
+
+- ✅ Created comprehensive TDD test suite for API usage monitoring (5 tests)
+- ✅ Implemented OpenAIUsageMonitor with real-time tracking capabilities
+- ✅ Integrated monitoring into EmbeddingService and RAGService
+- ✅ Added usage tracking for embeddings and chat completions
+- ✅ Implemented cost calculation with current OpenAI pricing
+- ✅ Created optimization recommendation engine
+- ✅ Added rate limiting detection and prevention
+- ✅ Created Django management command for usage reporting
+- ✅ All monitoring tests passing with comprehensive coverage
+
+### OpenAI Usage Monitoring Features
+
+**Real-time Tracking:**
+- Embeddings API: Token usage, model distribution, call frequency
+- Chat Completions API: Prompt/completion tokens, model usage, response costs
+- Request timestamps for rate limiting detection
+
+**Cost Analysis:**
+- Real-time cost calculation based on current OpenAI pricing
+- Cost breakdown by API type (embeddings vs chat completions)
+- Model-specific cost attribution and optimization
+
+**Optimization Engine:**
+- Automatic recommendations based on usage patterns
+- Caching strategy suggestions for high-volume usage
+- Token optimization recommendations for prompt efficiency
+- Batch processing suggestions for embedding generation
+
+**Rate Limiting Protection:**
+- Real-time monitoring of request frequency
+- Proactive warnings before hitting rate limits
+- Historical request pattern analysis
+
+### Management Command Usage
+
+```bash
+# Generate text report
+python manage.py openai_usage_report
+
+# Generate JSON report
+python manage.py openai_usage_report --format json
+
+# Generate report and reset metrics
+python manage.py openai_usage_report --reset
+```
+
+### Performance Benefits
+
+- **Cost Visibility**: Real-time cost tracking prevents unexpected API bills
+- **Optimization Guidance**: Automated recommendations reduce API usage
+- **Rate Limit Prevention**: Proactive monitoring prevents service disruptions
+- **Usage Insights**: Detailed metrics enable informed optimization decisions
+
+### Implementation Details
+
+- **Cache-based Storage**: Uses Django cache for metrics persistence (1-hour TTL)
+- **Non-blocking Integration**: Monitoring adds minimal overhead to API calls
+- **Fallback Handling**: Token estimation when usage data unavailable
+- **Multi-model Support**: Tracks usage across different OpenAI models
+
 ### Next Steps
 
-- API endpoints for Q&A functionality
-- Frontend integration for user queries
-- Performance monitoring and optimization
-- Citation extraction and reference system
+- Monitor real-world usage patterns and optimize recommendations
+- Add alerting for cost thresholds and rate limit approaches
+- Implement historical usage trending and analytics
+- Consider integration with external monitoring systems
