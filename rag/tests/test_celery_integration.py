@@ -81,7 +81,9 @@ class CeleryTaskProcessingTest(TestCase):
                 )
                 mock_parser_class.return_value = mock_parser
 
-                with patch("rag.tasks.TextChunker") as mock_chunker_class:
+                with patch(
+                    "rag.ingestion.chunkers.MarkdownChunker"
+                ) as mock_chunker_class:
                     mock_chunker = Mock()
                     mock_chunker.chunk_text.return_value = [
                         "# Test Document",
@@ -175,7 +177,7 @@ class CeleryErrorHandlingTest(TestCase):
         self.assertIn("Parsing failed", str(cm.exception))
 
     @patch("rag.tasks.PDFParser")
-    @patch("rag.tasks.TextChunker")
+    @patch("rag.ingestion.chunkers.PDFChunker")
     def test_chunking_error_handling(
         self, mock_chunker_class: Mock, mock_parser_class: Mock
     ) -> None:
@@ -201,7 +203,7 @@ class CeleryErrorHandlingTest(TestCase):
 
     @patch("rag.tasks.ContextItem.objects.bulk_create")
     @patch("rag.tasks.PDFParser")
-    @patch("rag.tasks.TextChunker")
+    @patch("rag.ingestion.chunkers.PDFChunker")
     def test_database_write_error_handling(
         self, mock_chunker_class: Mock, mock_parser_class: Mock, mock_bulk_create: Mock
     ) -> None:
@@ -334,7 +336,7 @@ class CeleryTaskMonitoringTest(TestCase):
         )
 
     @patch("rag.tasks.MarkdownParser")
-    @patch("rag.tasks.TextChunker")
+    @patch("rag.ingestion.chunkers.MarkdownChunker")
     def test_task_execution_monitoring(
         self, mock_chunker_class: Mock, mock_parser_class: Mock
     ) -> None:
@@ -373,7 +375,9 @@ class CeleryTaskMonitoringTest(TestCase):
                 mock_parser.parse_file.return_value = "# Test\nContent"
                 mock_parser_class.return_value = mock_parser
 
-                with patch("rag.tasks.TextChunker") as mock_chunker_class:
+                with patch(
+                    "rag.ingestion.chunkers.MarkdownChunker"
+                ) as mock_chunker_class:
                     mock_chunker = Mock()
                     mock_chunker.chunk_text.return_value = ["chunk1"]
                     mock_chunker_class.return_value = mock_chunker
@@ -409,7 +413,7 @@ class CeleryTaskPerformanceTest(TestCase):
         )
 
     @patch("rag.tasks.PDFParser")
-    @patch("rag.tasks.TextChunker")
+    @patch("rag.ingestion.chunkers.PDFChunker")
     def test_bulk_operations_performance(
         self, mock_chunker_class: Mock, mock_parser_class: Mock
     ) -> None:
@@ -450,7 +454,7 @@ class CeleryTaskPerformanceTest(TestCase):
         mock_parser.parse_file.return_value = large_content
         mock_parser_class.return_value = mock_parser
 
-        with patch("rag.tasks.TextChunker") as mock_chunker_class:
+        with patch("rag.ingestion.chunkers.PDFChunker") as mock_chunker_class:
             mock_chunker = Mock()
             # Return many small chunks
             mock_chunker.chunk_text.return_value = [
