@@ -83,12 +83,12 @@
 - [x] Write tests for Celery task orchestration
 - [x] Implement Celery ingestion tasks
 
-### File Storage Integration
+### File Storage Integration ✅
 
-- [ ] Write tests for MinIO file upload/download
-- [ ] Implement MinIO integration
-- [ ] Write tests for file validation and security
-- [ ] Implement file validation logic
+- [x] Write tests for MinIO file upload/download
+- [x] Implement MinIO integration
+- [x] Write tests for file validation and security
+- [x] Implement file validation logic
 
 ## RAG Query Pipeline (TDD) ✅
 

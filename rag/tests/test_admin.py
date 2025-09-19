@@ -1,7 +1,12 @@
+from typing import cast
+
 from django.contrib import admin
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile, UploadedFile
 from django.test import Client, TestCase
+from django.utils.datastructures import MultiValueDict
 
+from rag.admin import ContextItemForm
 from rag.models import Context, ContextItem, Topic
 
 
@@ -109,7 +114,13 @@ class ContextItemAdminTest(AdminTestBase):
     def test_contextitem_admin_list_display(self):
         """Test ContextItem admin list display configuration."""
         contextitem_admin = admin.site._registry[ContextItem]
-        expected_fields = ["title", "context", "file_path", "created_at"]
+        expected_fields = [
+            "title",
+            "context",
+            "file_path",
+            "has_uploaded_file",
+            "created_at",
+        ]
         self.assertEqual(list(contextitem_admin.list_display), expected_fields)
 
     def test_contextitem_admin_list_filter(self):
@@ -127,7 +138,7 @@ class ContextItemAdminTest(AdminTestBase):
     def test_contextitem_admin_readonly_fields(self):
         """Test ContextItem admin readonly fields configuration."""
         contextitem_admin = admin.site._registry[ContextItem]
-        expected_fields = ["created_at", "updated_at"]
+        expected_fields = ["created_at", "updated_at", "file_path"]
         self.assertEqual(list(contextitem_admin.readonly_fields), expected_fields)
 
 
@@ -186,3 +197,104 @@ class TopicContextMappingAdminTest(AdminTestBase):
         # Should show both contexts as options
         self.assertContains(response, self.context1.name)
         self.assertContains(response, self.context2.name)
+
+
+class ContextItemFormTest(TestCase):
+    def setUp(self):
+        self.context = Context.objects.create(
+            name="Test Context",
+            description="Test context for form validation",
+            context_type="PDF",
+        )
+
+    def test_valid_pdf_file_upload(self):
+        """Test that valid PDF files are accepted."""
+        pdf_content = b"%PDF-1.4\nTest PDF content"
+        uploaded_file = SimpleUploadedFile(
+            name="test.pdf", content=pdf_content, content_type="application/pdf"
+        )
+
+        form_data = {
+            "title": "Test Document",
+            "content": "Test content",
+            "context": self.context.id,
+        }
+
+        files = MultiValueDict({"uploaded_file": [cast(UploadedFile, uploaded_file)]})
+        form = ContextItemForm(data=form_data, files=files)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_invalid_file_type_rejected(self):
+        """Test that invalid file types are rejected."""
+        exe_content = b"MZ\x90\x00"  # PE header for executable
+        uploaded_file = SimpleUploadedFile(
+            name="malware.exe",
+            content=exe_content,
+            content_type="application/octet-stream",
+        )
+
+        form_data = {
+            "title": "Test Document",
+            "content": "Test content",
+            "context": self.context.id,
+        }
+
+        files = MultiValueDict({"uploaded_file": [cast(UploadedFile, uploaded_file)]})
+        form = ContextItemForm(data=form_data, files=files)
+        self.assertFalse(form.is_valid())
+        self.assertIn("uploaded_file", form.errors)
+        self.assertIn("File validation failed", str(form.errors["uploaded_file"]))
+
+    def test_large_file_rejected(self):
+        """Test that large files are rejected."""
+        # Create a file larger than max size (10MB)
+        large_content = b"x" * (11 * 1024 * 1024)  # 11MB
+        uploaded_file = SimpleUploadedFile(
+            name="large.pdf", content=large_content, content_type="application/pdf"
+        )
+
+        form_data = {
+            "title": "Test Document",
+            "content": "Test content",
+            "context": self.context.id,
+        }
+
+        files = MultiValueDict({"uploaded_file": [cast(UploadedFile, uploaded_file)]})
+        form = ContextItemForm(data=form_data, files=files)
+        self.assertFalse(form.is_valid())
+        self.assertIn("uploaded_file", form.errors)
+        self.assertIn("File size exceeds maximum", str(form.errors["uploaded_file"]))
+
+    def test_filename_sanitization(self):
+        """Test that filenames are sanitized."""
+        pdf_content = b"%PDF-1.4\nTest PDF content"
+        uploaded_file = SimpleUploadedFile(
+            name="My Document!@#$.pdf",
+            content=pdf_content,
+            content_type="application/pdf",
+        )
+
+        form_data = {
+            "title": "Test Document",
+            "content": "Test content",
+            "context": self.context.id,
+        }
+
+        files = MultiValueDict({"uploaded_file": [cast(UploadedFile, uploaded_file)]})
+        form = ContextItemForm(data=form_data, files=files)
+        self.assertTrue(form.is_valid())
+
+        # Check that filename was sanitized
+        cleaned_file = form.cleaned_data["uploaded_file"]
+        self.assertEqual(cleaned_file.name, "my_document_.pdf")
+
+    def test_form_without_file_valid(self):
+        """Test that form is valid without uploaded file if content is provided."""
+        form_data = {
+            "title": "Test Document",
+            "content": "Test content without file",
+            "context": self.context.id,
+        }
+
+        form = ContextItemForm(data=form_data)
+        self.assertTrue(form.is_valid())

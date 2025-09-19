@@ -66,9 +66,10 @@ class Context(models.Model):
 
 class ContextItem(models.Model):
     title = models.CharField(max_length=300)
-    content = models.TextField()
+    content = models.TextField(blank=True)
     context = models.ForeignKey(Context, on_delete=models.CASCADE, related_name="items")
     file_path = models.CharField(max_length=500, blank=True, null=True)
+    uploaded_file = models.FileField(upload_to="uploads/", blank=True, null=True)
     metadata = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -76,8 +77,10 @@ class ContextItem(models.Model):
     def clean(self) -> None:
         if not self.title:
             raise ValidationError({"title": "This field is required."})
-        if not self.content:
-            raise ValidationError({"content": "This field is required."})
+        if not self.content and not self.uploaded_file:
+            raise ValidationError(
+                {"content": "Either content or uploaded file is required."}
+            )
         if not self.context_id:
             raise ValidationError({"context": "This field is required."})
 
