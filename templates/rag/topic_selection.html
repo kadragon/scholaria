@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Select a Topic - Scholaria RAG{% endblock %}
+
+{% block header %}Select a Topic{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Choose a topic to get started</h2>
+
+    {% if topics %}
+        <div class="topic-list">
+            {% for topic in topics %}
+                <div class="topic-card">
+                    <h3>{{ topic.name }}</h3>
+                    <p>{{ topic.description }}</p>
+                    <a href="{% url 'rag_web:qa-interface' topic_id=topic.id %}" class="btn btn-block">
+                        Ask Questions about {{ topic.name }}
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-topics">
+            <p>No topics available at this time. Please contact your administrator to set up topics.</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.topic-list {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.topic-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.topic-card:hover {
+    border-color: #3498db;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+}
+
+.topic-card h3 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.topic-card p {
+    color: #7f8c8d;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.no-topics {
+    text-align: center;
+    padding: 2rem;
+    color: #7f8c8d;
+}
+
+.no-topics p {
+    font-size: 18px;
+}
+</style>
+{% endblock %}

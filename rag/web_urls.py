@@ -2,13 +2,9 @@ from django.urls import path
 
 from . import views
 
-app_name = "rag"
+app_name = "rag_web"
 
 urlpatterns = [
-    # API endpoints
-    path("topics/", views.TopicListView.as_view(), name="topics"),
-    path("topics/<int:pk>/", views.TopicDetailView.as_view(), name="topic-detail"),
-    path("ask/", views.AskQuestionView.as_view(), name="ask-question"),
     # Web UI endpoints
     path("", views.TopicSelectionView.as_view(), name="topic-selection"),
     path("qa/", views.QAInterfaceRedirectView.as_view(), name="qa-interface-redirect"),

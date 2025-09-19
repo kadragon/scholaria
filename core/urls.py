@@ -21,4 +21,5 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("rag.urls")),
+    path("", include("rag.web_urls")),  # Include rag web URLs at root
 ]
