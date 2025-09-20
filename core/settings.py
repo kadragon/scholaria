@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -81,11 +82,10 @@ WSGI_APPLICATION = "core.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Redis Configuration
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-try:
-    REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
-except ValueError:
-    REDIS_PORT = 6379
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+redis_url_parsed = urlparse(REDIS_URL)
+REDIS_HOST = redis_url_parsed.hostname or "localhost"
+REDIS_PORT = redis_url_parsed.port or 6379
 
 DATABASES = {
     "default": {
@@ -149,8 +149,8 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Celery Configuration
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"

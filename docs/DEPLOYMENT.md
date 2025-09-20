@@ -76,24 +76,26 @@ open http://localhost:8000/api/docs/
 
 ## Production Setup
 
-### Docker Compose Configuration
+Review infrastructure prerequisites, configure secrets, and plan monitoring before promoting Scholaria to production.
+
+## Docker Compose
 
 The included `docker-compose.yml` provides a complete production setup:
 
-**Services:**
+### Services
 - **PostgreSQL 16**: Primary database
 - **Redis 7**: Cache and Celery broker
 - **Qdrant**: Vector database for embeddings
 - **MinIO**: S3-compatible object storage
 - **Unstructured API**: Document processing service
 
-**Volumes:**
+### Volumes
 - `postgres_data`: Database persistence
 - `redis_data`: Cache persistence
 - `qdrant_data`: Vector database storage
 - `minio_data`: File storage
 
-### Production Considerations
+## Production Considerations
 
 1. **Reverse Proxy**: Use **Nginx** or **Apache** as a reverse proxy
 2. **SSL/TLS**: Configure HTTPS with Let's Encrypt or commercial certificates
@@ -140,7 +142,7 @@ The included `docker-compose.yml` provides a complete production setup:
 | `LLAMAINDEX_CACHE_DIR` | Cache directory | `storage/llamaindex_cache` |
 | `RAG_SEARCH_LIMIT` | Search result limit | `10` |
 | `RAG_RERANK_TOP_K` | Reranking top-k | `5` |
-| `UNSTRUCTURED_API_URL` | Document processing URL | `http://localhost:8000` |
+| `UNSTRUCTURED_API_URL` | Document processing URL | `http://localhost:8000` (Docker) |
 | `FILE_VALIDATION_MAX_SIZE` | Max file size (bytes) | `10485760` |
 
 ### Example .env File

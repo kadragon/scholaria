@@ -4,7 +4,9 @@ This guide provides comprehensive instructions for administrators to manage the 
 
 ## Getting Started
 
-### Login
+Prepare your admin account and familiarize yourself with the interface before making changes.
+
+## Login
 
 1. **Access the Admin Interface**:
    - Navigate to `https://your-domain.com/admin/` (or `http://localhost:8000/admin/` for development)
@@ -19,7 +21,7 @@ This guide provides comprehensive instructions for administrators to manage the 
    - After successful login, you'll see the main admin dashboard
    - The interface shows three main sections: **Topics**, **Contexts**, and **Context Items**
 
-### Admin Interface Overview
+## Admin Interface Overview
 
 The Scholaria admin interface is organized into three main areas:
 
@@ -28,7 +30,7 @@ The Scholaria admin interface is organized into three main areas:
   - **Contexts**: Document containers (PDF, Markdown, FAQ)
   - **Context Items**: Individual content pieces with file attachments
 
-### Navigation
+## Navigation
 
 - **Home**: Click "Scholaria Administration" to return to the main dashboard
 - **View Site**: Click to see the public Q&A interface
@@ -135,7 +137,7 @@ Context Items are individual pieces of content within contexts. They can contain
 
 ### Creating Context Items
 
-#### Method 1: Manual Content Entry
+### Method 1: Manual Content Entry
 
 1. **Navigate to Context Items**:
    - Click **Context Items** from the admin dashboard
@@ -157,7 +159,17 @@ Context Items are individual pieces of content within contexts. They can contain
    }
    ```
 
-#### Method 2: File Upload
+### Context Item Features
+
+- **Title**: Searchable title for easy identification
+- **Content**: Full text content (auto-populated from uploads)
+- **File Path**: MinIO storage path (automatically set)
+- **Metadata**: Flexible JSON field for additional information
+- **Timestamps**: Creation and modification dates
+
+## File Upload
+
+Use file uploads (Method 2) to ingest large documents or reference material while maintaining security controls.
 
 1. **Choose File Upload**:
    - In the **File Upload** section, click **Choose File**
@@ -179,18 +191,10 @@ Context Items are individual pieces of content within contexts. They can contain
 
 The system implements comprehensive file validation:
 
-- **File Type Validation**: Magic byte verification for security
+- **File Type Validation**: Secure validation of file types, including magic byte verification for binary formats like PDF
 - **Size Limits**: Maximum 10MB per file
 - **Malicious Content Detection**: Automatic scanning for threats
 - **Filename Sanitization**: Removes unsafe characters and paths
-
-### Context Item Features
-
-- **Title**: Searchable title for easy identification
-- **Content**: Full text content (auto-populated from uploads)
-- **File Path**: MinIO storage path (automatically set)
-- **Metadata**: Flexible JSON field for additional information
-- **Timestamps**: Creation and modification dates
 
 ## Bulk Operations
 
