@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "drf_spectacular",
     "rag",
 ]
 
@@ -280,4 +281,25 @@ REST_FRAMEWORK = {
         "user": "1000/hour",
         "rag_questions": "30/min",  # Special rate limit for RAG questions
     },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# drf-spectacular OpenAPI Configuration
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Scholaria RAG API",
+    "DESCRIPTION": "School Integrated Retrieval-Augmented Generation System - API for managing topics, contexts, and question-answering functionality.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "TAGS": [
+        {
+            "name": "Topics",
+            "description": "Operations related to academic topics and their management",
+        },
+        {
+            "name": "RAG",
+            "description": "Retrieval-Augmented Generation endpoints for question answering",
+        },
+    ],
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SORT_OPERATIONS": False,
 }

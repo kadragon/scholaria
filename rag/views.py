@@ -6,12 +6,15 @@ from typing import TYPE_CHECKING, Any
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import TemplateView
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, serializers, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import (
     CharField,
+    FloatField,
     IntegerField,
+    ListField,
     ModelSerializer,
     Serializer,
 )
@@ -45,6 +48,39 @@ class TopicSerializer(ModelSerializer[Topic]):
         ]
 
 
+class CitationSerializer(Serializer[dict[str, str | float | int]]):
+    """Serializer for citation information in responses."""
+
+    title = CharField()
+    content = CharField()
+    score = FloatField()
+    context_type = CharField()
+    context_item_id = IntegerField()
+
+
+class AnswerResponseSerializer(Serializer[dict[str, str | int | list[dict[str, Any]]]]):
+    """Serializer for RAG answer responses."""
+
+    answer = CharField()
+    citations = ListField(child=CitationSerializer())
+    topic_id = IntegerField()
+
+
+class ErrorResponseSerializer(Serializer[dict[str, str]]):
+    """Serializer for error responses."""
+
+    error = CharField()
+    detail = CharField(required=False)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Topics"],
+        summary="List all topics",
+        description="Retrieve a list of all available academic topics for RAG queries.",
+        responses={200: TopicSerializer(many=True)},
+    )
+)
 class TopicListView(generics.ListAPIView[Topic]):
     """API endpoint for retrieving all topics."""
 
@@ -56,6 +92,17 @@ class TopicListView(generics.ListAPIView[Topic]):
         return Topic.objects.all()
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Topics"],
+        summary="Get topic details",
+        description="Retrieve detailed information about a specific academic topic by ID.",
+        responses={
+            200: TopicSerializer,
+            404: ErrorResponseSerializer,
+        },
+    )
+)
 class TopicDetailView(generics.RetrieveAPIView[Topic]):
     """API endpoint for retrieving a single topic by ID."""
 
@@ -105,6 +152,21 @@ class RAGQuestionThrottle(UserRateThrottle):
     scope = "rag_questions"
 
 
+@extend_schema(
+    tags=["RAG"],
+    summary="Ask a question",
+    description=(
+        "Submit a question for a specific topic and receive an AI-generated answer "
+        "with citations from relevant documents. Rate limited to 30 questions per minute."
+    ),
+    request=QuestionSerializer,
+    responses={
+        200: AnswerResponseSerializer,
+        400: ErrorResponseSerializer,
+        503: ErrorResponseSerializer,
+        500: ErrorResponseSerializer,
+    },
+)
 class AskQuestionView(APIView):
     """API endpoint for asking questions and getting RAG-based answers."""
 
