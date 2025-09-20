@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from django.test import TestCase
@@ -51,9 +52,9 @@ class DeploymentGuideTest(TestCase):
         ]
 
         for section in required_sections:
-            self.assertIn(
-                section,
+            self.assertRegex(
                 content,
+                rf"(?m)^\s*{re.escape(section)}\s*$",
                 f"Deployment guide missing required section: {section}",
             )
 
