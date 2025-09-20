@@ -11,6 +11,7 @@ School-integrated RAG (Retrieval-Augmented Generation) system for question-answe
 - **Test Organization**: Use `/tests/` directories, not single `tests.py` files
 - **Docker Development**: All services containerized for consistent environments
 - **PostgreSQL Required**: JSONField and full-text search capabilities needed
+- **Pytest Parallelism**: Default pytest run uses xdist with `-n=auto`; ensure tests are parallel-safe
 
 ## Context
 

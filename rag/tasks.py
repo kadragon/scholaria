@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from celery import shared_task
 from django.db import transaction
 
-from .ingestion.chunkers import TextChunker
+from .ingestion.chunkers import FAQChunker, MarkdownChunker, PDFChunker
 from .ingestion.parsers import FAQParser, MarkdownParser, PDFParser
 from .models import Context, ContextItem
 
@@ -138,11 +138,13 @@ def ingest_pdf_document(self: Any, context_id: int, file_path: str, title: str) 
             logger.warning(f"Empty content from PDF: {file_path}")
             return 0
 
-        # Chunk the content with error handling
+        # Chunk the content with optimized PDF chunker
         try:
-            chunker = TextChunker(chunk_size=1000, overlap=200)
+            chunker = PDFChunker(chunk_size=1000, overlap=150)
             chunks = chunker.chunk_text(content)
-            logger.info(f"Content chunked into {len(chunks)} pieces")
+            logger.info(
+                f"PDF content chunked into {len(chunks)} pieces using PDFChunker"
+            )
         except Exception as e:
             logger.error(f"Chunking failed for {file_path}: {e}")
             raise ValueError(f"Text chunking failed: {e}") from e
@@ -238,11 +240,13 @@ def ingest_faq_document(self: Any, context_id: int, file_path: str, title: str) 
             logger.warning(f"Empty content from FAQ: {file_path}")
             return 0
 
-        # Chunk the content with error handling
+        # Chunk the content with optimized FAQ chunker
         try:
-            chunker = TextChunker(chunk_size=1000, overlap=200)
+            chunker = FAQChunker(chunk_size=800, overlap=100)
             chunks = chunker.chunk_text(content)
-            logger.info(f"FAQ content chunked into {len(chunks)} pieces")
+            logger.info(
+                f"FAQ content chunked into {len(chunks)} pieces using FAQChunker"
+            )
         except Exception as e:
             logger.error(f"FAQ chunking failed for {file_path}: {e}")
             raise ValueError(f"FAQ text chunking failed: {e}") from e
@@ -341,11 +345,13 @@ def ingest_markdown_document(
             logger.warning(f"Empty content from Markdown: {file_path}")
             return 0
 
-        # Chunk the content with error handling
+        # Chunk the content with optimized Markdown chunker
         try:
-            chunker = TextChunker(chunk_size=1000, overlap=200)
+            chunker = MarkdownChunker(chunk_size=1200, overlap=200)
             chunks = chunker.chunk_text(content)
-            logger.info(f"Markdown content chunked into {len(chunks)} pieces")
+            logger.info(
+                f"Markdown content chunked into {len(chunks)} pieces using MarkdownChunker"
+            )
         except Exception as e:
             logger.error(f"Markdown chunking failed for {file_path}: {e}")
             raise ValueError(f"Markdown text chunking failed: {e}") from e

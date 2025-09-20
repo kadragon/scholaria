@@ -76,8 +76,41 @@ process_document → ingest_pdf_document | ingest_markdown_document | ingest_faq
 - **Configurable Chunking**: Default 1000 characters with 200 character overlap
 - **Task Delegation**: Automatic routing based on Context.context_type
 
+### 2025-09-19: Optimized Document-Type-Specific Chunking
+
+- ✅ Created comprehensive TDD test suite for optimized chunking strategies (3 tests)
+- ✅ Implemented MarkdownChunker with structure-aware splitting (headers, sections, code blocks)
+- ✅ Implemented FAQChunker that preserves Q&A pairs integrity
+- ✅ Implemented PDFChunker with PDF-specific text normalization and formatting
+- ✅ Updated ingestion tasks to use document-specific chunkers
+- ✅ All 19 ingestion tests passing with optimized chunking integration
+
+### Optimized Chunking Features
+
+**MarkdownChunker** (chunk_size=1200, overlap=200):
+- Respects Markdown structure (headers, lists, code blocks)
+- Prioritizes section boundaries for clean breaks
+- Preserves document hierarchy and formatting
+
+**FAQChunker** (chunk_size=800, overlap=100):
+- Keeps Q&A pairs together to maintain context
+- Handles various FAQ formats and separators
+- Optimized for question-answer relationship preservation
+
+**PDFChunker** (chunk_size=1000, overlap=150):
+- Normalizes PDF text extraction artifacts
+- Handles mixed formatting and section headers
+- Optimized for varied document structure
+
+### Chunking Strategy Benefits
+
+- **Content Integrity**: Document-specific chunkers preserve logical boundaries
+- **Search Quality**: Better chunk boundaries improve retrieval relevance
+- **Context Preservation**: Structure-aware chunking maintains semantic relationships
+- **Optimized Sizes**: Different chunk sizes optimized for each document type
+
 ### Next Steps
 
-- RAG query pipeline with Qdrant vector search
-- Embedding generation and storage
-- Question-answer endpoint implementation
+- Monitor chunking effectiveness in production
+- Performance optimization and monitoring
+- Additional document type support if needed

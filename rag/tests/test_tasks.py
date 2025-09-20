@@ -112,7 +112,7 @@ class PDFIngestionTaskTest(TestCase):
         )
 
     @patch("rag.tasks.PDFParser")
-    @patch("rag.tasks.TextChunker")
+    @patch("rag.ingestion.chunkers.PDFChunker")
     def test_ingest_pdf_document_creates_context_items(
         self, mock_chunker_class, mock_parser_class
     ):
@@ -200,7 +200,7 @@ class MarkdownIngestionTaskTest(TestCase):
         )
 
     @patch("rag.tasks.MarkdownParser")
-    @patch("rag.tasks.TextChunker")
+    @patch("rag.ingestion.chunkers.MarkdownChunker")
     def test_ingest_markdown_document_creates_context_items(
         self, mock_chunker_class, mock_parser_class
     ):
@@ -262,7 +262,7 @@ class FAQIngestionTaskTest(TestCase):
             context_type="FAQ",
         )
 
-    @patch("rag.tasks.TextChunker")
+    @patch("rag.ingestion.chunkers.FAQChunker")
     @patch("rag.tasks.FAQParser")
     def test_ingest_faq_document_success(self, mock_parser_class, mock_chunker_class):
         """Test successful FAQ document ingestion."""

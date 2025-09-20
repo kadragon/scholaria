@@ -23,6 +23,7 @@ dependencies = [
     "pytest>=7.4.0",
     "pytest-django>=4.8.0",
     "pytest-celery>=0.0.0",
+    "pytest-xdist>=3.0.0",
     "factory-boy>=3.3.0",
     "ruff>=0.1.0",
     "pre-commit>=3.0.0",
@@ -124,6 +125,7 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 testpaths = ["rag/tests"]
 addopts = [
+    "-n=auto",
     "--tb=short",
     "--strict-markers",
     "--disable-warnings",

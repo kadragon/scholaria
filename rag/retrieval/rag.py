@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
+from django.core.cache import cache
 from openai import OpenAI
 
 from .embeddings import EmbeddingService
+from .monitoring import OpenAIUsageMonitor
 from .qdrant import QdrantService
 from .reranking import RerankingService
 
@@ -21,6 +25,56 @@ class RAGService:
         self.qdrant_service = QdrantService()
         self.reranking_service = RerankingService()
         self.chat_client = OpenAI(api_key=getattr(settings, "OPENAI_API_KEY", None))
+        self.monitor = OpenAIUsageMonitor()
+
+    def _get_query_cache_key(
+        self, query: str, topic_ids: list[int], limit: int, rerank_top_k: int
+    ) -> str:
+        """
+        Generate a cache key for a query combination.
+
+        Args:
+            query: User's question
+            topic_ids: List of topic IDs
+            limit: Search limit
+            rerank_top_k: Rerank top k
+
+        Returns:
+            Cache key string
+        """
+        # Create a deterministic cache key from query parameters
+        cache_data = {
+            "query": query.strip().lower(),
+            "topic_ids": sorted(topic_ids),
+            "limit": limit,
+            "rerank_top_k": rerank_top_k,
+        }
+        cache_string = json.dumps(cache_data, sort_keys=True)
+        cache_hash = hashlib.md5(cache_string.encode()).hexdigest()
+        return f"rag_query:{cache_hash}"
+
+    def _get_cached_result(self, cache_key: str) -> dict[str, Any] | None:
+        """
+        Get cached query result.
+
+        Args:
+            cache_key: Cache key for the query
+
+        Returns:
+            Cached result or None if not found
+        """
+        return cache.get(cache_key)
+
+    def _cache_result(self, cache_key: str, result: dict[str, Any]) -> None:
+        """
+        Cache query result.
+
+        Args:
+            cache_key: Cache key for the query
+            result: Query result to cache
+        """
+        # Cache for 15 minutes to balance freshness and performance
+        cache.set(cache_key, result, 900)
 
     def query(
         self,
@@ -30,7 +84,7 @@ class RAGService:
         rerank_top_k: int | None = None,
     ) -> dict[str, Any]:
         """
-        Execute a complete RAG query pipeline.
+        Execute a complete RAG query pipeline with caching.
 
         Args:
             query: User's question
@@ -60,6 +114,12 @@ class RAGService:
             else getattr(settings, "RAG_RERANK_TOP_K", 5)
         )
 
+        # Check cache first
+        cache_key = self._get_query_cache_key(query, topic_ids, limit, rerank_top_k)
+        cached_result = self._get_cached_result(cache_key)
+        if cached_result is not None:
+            return cached_result
+
         # Step 1: Generate embedding for the query
         query_embedding = self.embedding_service.generate_embedding(query)
 
@@ -70,11 +130,14 @@ class RAGService:
 
         # If no results found, return empty response
         if not search_results:
-            return {
+            result = {
                 "answer": "I couldn't find any relevant information for your question in the selected topics.",
                 "sources": [],
                 "context_items": [],
             }
+            # Cache empty results for shorter duration
+            cache.set(cache_key, result, 300)  # 5 minutes
+            return result
 
         # Step 3: Rerank results using BGE reranker
         reranked_results = self.reranking_service.rerank_results(
@@ -99,7 +162,16 @@ class RAGService:
             for result in reranked_results
         ]
 
-        return {"answer": answer, "sources": sources, "context_items": reranked_results}
+        final_result: dict[str, Any] = {
+            "answer": answer,
+            "sources": sources,
+            "context_items": reranked_results,
+        }
+
+        # Cache the result
+        self._cache_result(cache_key, final_result)
+
+        return final_result
 
     def _prepare_context(self, search_results: list[dict[str, Any]]) -> str:
         """
@@ -146,8 +218,12 @@ Question: {query}
 
 Please provide a comprehensive answer based on the context above. If the context doesn't contain enough information to fully answer the question, acknowledge this in your response. Include relevant details from the sources where appropriate."""
 
+        # Track request timing for rate limiting
+        self.monitor.track_request_timestamp("chat_completions")
+
+        model = getattr(settings, "OPENAI_CHAT_MODEL", "gpt-4o-mini")
         response = self.chat_client.chat.completions.create(
-            model=getattr(settings, "OPENAI_CHAT_MODEL", "gpt-4o-mini"),
+            model=model,
             messages=[
                 {
                     "role": "system",
@@ -158,6 +234,19 @@ Please provide a comprehensive answer based on the context above. If the context
             temperature=getattr(settings, "OPENAI_CHAT_TEMPERATURE", 0.3),
             max_tokens=getattr(settings, "OPENAI_CHAT_MAX_TOKENS", 1000),
         )
+
+        # Track usage metrics
+        if hasattr(response, "usage") and response.usage:
+            self.monitor.track_chat_completion_usage(
+                response.usage.prompt_tokens, response.usage.completion_tokens, model
+            )
+        else:
+            # Estimate tokens if usage not available
+            estimated_prompt_tokens = len(prompt) // 4
+            estimated_completion_tokens = 100  # Conservative estimate
+            self.monitor.track_chat_completion_usage(
+                estimated_prompt_tokens, estimated_completion_tokens, model
+            )
 
         return (
             response.choices[0].message.content
