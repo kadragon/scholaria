@@ -19,46 +19,60 @@ class PDFParserTest(TestCase):
         )
 
     def test_parse_pdf_file_success(self):
-        """Test successful PDF parsing returns text content."""
-        with patch("rag.ingestion.parsers.partition_pdf") as mock_partition:
-            # Mock the unstructured response
-            mock_element = Mock()
-            mock_element.text = "This is test content from PDF"
-            mock_partition.return_value = [mock_element]
+        """Test successful PDF parsing returns text content using Docling."""
+        with patch("rag.ingestion.parsers.DocumentConverter") as mock_converter_cls:
+            mock_converter = mock_converter_cls.return_value
+            mock_document = Mock()
+            mock_document.document = Mock()
+            mock_document.document.export_to_text.return_value = (
+                "This is test content from PDF"
+            )
+            mock_converter.convert.return_value = mock_document
 
-            # Create a mock PDF file
             with tempfile.NamedTemporaryFile(suffix=".pdf") as mock_file:
                 result = self.parser.parse_file(mock_file.name)
 
-                # Verify the result
                 self.assertEqual(result, "This is test content from PDF")
-                mock_partition.assert_called_once_with(filename=mock_file.name)
+                mock_converter.convert.assert_called_once_with(mock_file.name)
 
-    def test_parse_pdf_file_with_multiple_elements(self):
-        """Test PDF parsing with multiple elements combines text."""
-        with patch("rag.ingestion.parsers.partition_pdf") as mock_partition:
-            # Mock multiple elements
-            mock_element1 = Mock()
-            mock_element1.text = "First paragraph"
-            mock_element2 = Mock()
-            mock_element2.text = "Second paragraph"
-            mock_partition.return_value = [mock_element1, mock_element2]
+    def test_parse_pdf_file_with_multiple_sections(self):
+        """Test Docling PDF parsing combines sections into newline separated text."""
+        with patch("rag.ingestion.parsers.DocumentConverter") as mock_converter_cls:
+            mock_converter = mock_converter_cls.return_value
+            mock_document = Mock()
+            mock_document.document = Mock()
+            mock_document.document.export_to_text.return_value = (
+                "First paragraph\nSecond paragraph"
+            )
+            mock_converter.convert.return_value = mock_document
 
             with tempfile.NamedTemporaryFile(suffix=".pdf") as mock_file:
                 result = self.parser.parse_file(mock_file.name)
 
-                # Verify combined text
                 self.assertEqual(result, "First paragraph\nSecond paragraph")
 
     def test_parse_pdf_file_empty_result(self):
-        """Test PDF parsing with no content returns empty string."""
-        with patch("rag.ingestion.parsers.partition_pdf") as mock_partition:
-            mock_partition.return_value = []
+        """Test Docling PDF parsing with no text returns empty string."""
+        with patch("rag.ingestion.parsers.DocumentConverter") as mock_converter_cls:
+            mock_converter = mock_converter_cls.return_value
+            mock_document = Mock()
+            mock_document.document = Mock()
+            mock_document.document.export_to_text.return_value = ""
+            mock_converter.convert.return_value = mock_document
 
             with tempfile.NamedTemporaryFile(suffix=".pdf") as mock_file:
                 result = self.parser.parse_file(mock_file.name)
 
                 self.assertEqual(result, "")
+
+    def test_parse_pdf_requires_docling_dependency(self):
+        """Test parsing raises helpful error when Docling is unavailable."""
+        with patch("rag.ingestion.parsers.DocumentConverter", None):
+            with tempfile.NamedTemporaryFile(suffix=".pdf") as mock_file:
+                with self.assertRaisesRegex(
+                    ImportError, "Docling dependency is required for PDF parsing"
+                ):
+                    self.parser.parse_file(mock_file.name)
 
     def test_parse_pdf_file_nonexistent_file(self):
         """Test PDF parsing with nonexistent file raises FileNotFoundError."""

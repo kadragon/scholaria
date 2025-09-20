@@ -142,8 +142,10 @@ The included `docker-compose.yml` provides a complete production setup:
 | `LLAMAINDEX_CACHE_DIR` | Cache directory | `storage/llamaindex_cache` |
 | `RAG_SEARCH_LIMIT` | Search result limit | `10` |
 | `RAG_RERANK_TOP_K` | Reranking top-k | `5` |
-| `UNSTRUCTURED_API_URL` | Document processing URL | `http://localhost:8000` (Docker) |
 | `FILE_VALIDATION_MAX_SIZE` | Max file size (bytes) | `10485760` |
+
+Docling-powered PDF parsing runs entirely in-process, so no external service or
+environment variables are required for document conversion.
 
 ### Example .env File
 

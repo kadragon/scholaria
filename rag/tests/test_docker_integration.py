@@ -1,8 +1,8 @@
 """
 Integration tests for Docker Compose service orchestration.
 
-Tests that all external services (PostgreSQL, Redis, Qdrant, MinIO, Unstructured API)
-work together correctly in the Docker Compose environment.
+Tests that all external services (PostgreSQL, Redis, Qdrant, MinIO) and
+Docling-based parsing work together correctly in the Docker Compose environment.
 """
 
 import os
@@ -11,7 +11,6 @@ from io import BytesIO
 
 import pytest
 import redis
-import requests
 from django.conf import settings
 from django.test import TestCase
 from minio import Minio
@@ -20,7 +19,6 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.models import Distance, VectorParams
 
-from rag.ingestion.parsers import PDFParser
 from rag.models import Context, ContextItem, Topic
 from rag.retrieval.qdrant import QdrantService
 from rag.storage import MinIOStorage
@@ -297,32 +295,12 @@ class DockerComposeIntegrationTest(TestCase):
                 except (S3Error, OSError, AttributeError):
                     pass
 
-    def test_unstructured_api_connectivity(self) -> None:
-        """Test Unstructured API service connectivity."""
-        # Test if Unstructured API is available
-        try:
-            response = requests.get(
-                f"{settings.UNSTRUCTURED_API_URL}/healthcheck", timeout=5
-            )
-            if response.status_code != 200:
-                self.skipTest("Unstructured API service is not available")
-        except requests.exceptions.RequestException:
-            self.skipTest("Unstructured API service is not available")
+    def test_docling_dependency_available(self) -> None:
+        """Ensure Docling dependency is available inside Docker Compose environment."""
+        from rag.ingestion import parsers
 
-        # This test verifies that the Unstructured API is accessible
-        # We'll use the PDFParser which connects to the Unstructured API
-        parser = PDFParser()
-
-        # Test that we can connect to the API (even if we don't have a PDF to parse)
-        # We expect this to fail with a specific error, not a connection error
-        try:
-            # This should raise a specific error about invalid input, not connection error
-            parser.parse_file("/tmp/nonexistent_file.pdf")
-        except Exception as e:
-            # We expect a parsing error, not a connection error
-            self.assertNotIn("connection", str(e).lower())
-            self.assertNotIn("refused", str(e).lower())
-            # This confirms the API is reachable
+        if getattr(parsers, "DocumentConverter", None) is None:
+            self.fail("Docling DocumentConverter is not available in the container")
 
     def test_data_consistency_across_services(self) -> None:
         """Test that data remains consistent across PostgreSQL and Qdrant."""

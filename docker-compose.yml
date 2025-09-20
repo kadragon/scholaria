@@ -32,17 +32,10 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9002:9000"
+      - "9003:9001"
     volumes:
       - minio_data:/data
-
-  unstructured-api:
-    image: quay.io/unstructured-io/unstructured-api:latest
-    ports:
-      - "8000:8000"
-    environment:
-      UNSTRUCTURED_API_KEY: "your-api-key-here"
 
 volumes:
   postgres_data:
