@@ -107,39 +107,52 @@ class ContextAdminTest(AdminTestBase):
 
 
 class ContextItemAdminTest(AdminTestBase):
-    def test_contextitem_admin_is_registered(self):
-        """Test that ContextItem model is registered in admin."""
-        self.assertIn(ContextItem, admin.site._registry)
+    def test_contextitem_admin_not_directly_registered(self):
+        """Test that ContextItem model is not directly registered in admin navigation."""
+        # ContextItem is now hidden from main admin navigation
+        # It's managed through Context admin inline
+        self.assertNotIn(ContextItem, admin.site._registry)
 
-    def test_contextitem_admin_list_display(self):
-        """Test ContextItem admin list display configuration."""
-        contextitem_admin = admin.site._registry[ContextItem]
-        expected_fields = [
-            "title",
-            "context",
-            "file_path",
-            "has_uploaded_file",
+    def test_contextitem_admin_class_exists(self):
+        """Test ContextItem admin class exists for inline use."""
+        from rag.admin import ContextItemAdmin
+
+        # The admin class should exist but not be registered
+        self.assertTrue(hasattr(ContextItemAdmin, "list_display"))
+        self.assertTrue(hasattr(ContextItemAdmin, "list_filter"))
+        self.assertTrue(hasattr(ContextItemAdmin, "search_fields"))
+
+    def test_contextitem_inline_in_context_admin(self):
+        """Test that ContextItem is available as inline in Context admin."""
+        context_admin = admin.site._registry[Context]
+        self.assertTrue(hasattr(context_admin, "inlines"))
+        self.assertEqual(len(context_admin.inlines), 1)
+
+        # Check that the inline is ContextItemInline
+        inline_class = context_admin.inlines[0]
+        self.assertEqual(inline_class.model, ContextItem)
+        self.assertEqual(inline_class.verbose_name, "Context Item (Chunk)")
+
+    def test_context_admin_enhanced_features(self):
+        """Test enhanced Context admin features."""
+        context_admin = admin.site._registry[Context]
+
+        # Check list display includes new fields
+        expected_list_display = [
+            "name",
+            "context_type",
+            "processing_status",
+            "chunk_count",
+            "item_count",
             "created_at",
         ]
-        self.assertEqual(list(contextitem_admin.list_display), expected_fields)
+        self.assertEqual(list(context_admin.list_display), expected_list_display)
 
-    def test_contextitem_admin_list_filter(self):
-        """Test ContextItem admin list filter configuration."""
-        contextitem_admin = admin.site._registry[ContextItem]
-        expected_filters = ["context", "created_at", "updated_at"]
-        self.assertEqual(list(contextitem_admin.list_filter), expected_filters)
+        # Check list filter includes processing_status
+        self.assertIn("processing_status", context_admin.list_filter)
 
-    def test_contextitem_admin_search_fields(self):
-        """Test ContextItem admin search fields configuration."""
-        contextitem_admin = admin.site._registry[ContextItem]
-        expected_fields = ["title", "content"]
-        self.assertEqual(list(contextitem_admin.search_fields), expected_fields)
-
-    def test_contextitem_admin_readonly_fields(self):
-        """Test ContextItem admin readonly fields configuration."""
-        contextitem_admin = admin.site._registry[ContextItem]
-        expected_fields = ["created_at", "updated_at", "file_path"]
-        self.assertEqual(list(contextitem_admin.readonly_fields), expected_fields)
+        # Check readonly fields include chunk_count
+        self.assertIn("chunk_count", context_admin.readonly_fields)
 
 
 class TopicContextMappingAdminTest(AdminTestBase):
