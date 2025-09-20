@@ -23,13 +23,14 @@ if TYPE_CHECKING:
 
 @admin.register(Topic)
 class TopicAdmin(admin.ModelAdmin):
-    list_display = ["name", "description", "created_at", "updated_at"]
+    list_display = ["name", "description", "context_count", "created_at", "updated_at"]
     list_filter = ["created_at", "updated_at"]
     search_fields = ["name", "description"]
     actions = ["assign_context_to_topics", "bulk_update_system_prompt"]
+    filter_horizontal = ["contexts"]  # Better UI for ManyToMany selection
     fieldsets = (
         (None, {"fields": ("name", "description", "system_prompt")}),
-        ("Relationships", {"fields": ("contexts",)}),
+        ("Associated Contexts", {"fields": ("contexts",)}),
     )
 
     @admin.action(description="Assign context to selected topics")
@@ -86,13 +87,55 @@ class TopicAdmin(admin.ModelAdmin):
         }
         return render(request, "admin/bulk_update_system_prompt.html", context)
 
+    @admin.display(
+        description="Contexts",
+        ordering="contexts__count",
+    )
+    def context_count(self, obj: Topic) -> int:
+        """Display the number of contexts associated with this topic."""
+        return obj.contexts.count()
+
+
+class ContextItemInline(admin.TabularInline):
+    """Inline admin for ContextItems within Context admin."""
+
+    model = ContextItem
+    extra = 0
+    fields = ["title", "content", "uploaded_file", "file_path"]
+    readonly_fields = ["file_path"]
+    verbose_name = "Context Item (Chunk)"
+    verbose_name_plural = "Context Items (Chunks)"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[ContextItem]:
+        """Limit to show only recent items to avoid performance issues."""
+        qs = super().get_queryset(request)
+        return qs.order_by("-created_at")[:20]  # Show only latest 20 chunks
+
 
 @admin.register(Context)
 class ContextAdmin(admin.ModelAdmin):
-    list_display = ["name", "context_type", "description", "created_at"]
-    list_filter = ["context_type", "created_at", "updated_at"]
+    list_display = [
+        "name",
+        "context_type",
+        "processing_status",
+        "chunk_count",
+        "item_count",
+        "created_at",
+    ]
+    list_filter = ["context_type", "processing_status", "created_at", "updated_at"]
     search_fields = ["name", "description"]
-    actions = ["bulk_update_context_type"]
+    readonly_fields = ["created_at", "updated_at", "chunk_count"]
+    actions = ["bulk_update_context_type", "bulk_update_processing_status"]
+    inlines = [ContextItemInline]
+    fieldsets = (
+        (None, {"fields": ("name", "description", "context_type")}),
+        ("Content", {"fields": ("original_content",), "classes": ("collapse",)}),
+        ("Processing", {"fields": ("processing_status", "chunk_count")}),
+        (
+            "Timestamps",
+            {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
+        ),
+    )
 
     @admin.action(description="Update context type for selected contexts")
     def bulk_update_context_type(
@@ -121,6 +164,41 @@ class ContextAdmin(admin.ModelAdmin):
         }
         return render(request, "admin/bulk_update_context_type.html", context)
 
+    @admin.action(description="Update processing status for selected contexts")
+    def bulk_update_processing_status(
+        self, request: HttpRequest, queryset: QuerySet[Context]
+    ) -> HttpResponse | None:
+        """Bulk action to update processing status for multiple contexts."""
+        if request.method == "POST" and "processing_status" in request.POST:
+            processing_status = request.POST.get("processing_status")
+            if processing_status in dict(Context.PROCESSING_STATUS_CHOICES):
+                count = queryset.update(processing_status=processing_status)
+                messages.success(
+                    request,
+                    f"Successfully updated processing status to '{processing_status}' for {count} contexts.",
+                )
+                return redirect(request.get_full_path())
+            else:
+                messages.error(request, "Invalid processing status selected.")
+                return redirect(request.get_full_path())
+
+        # Show processing status selection form
+        context = {
+            "title": "Update Processing Status",
+            "queryset": queryset,
+            "processing_status_choices": Context.PROCESSING_STATUS_CHOICES,
+            "action": "bulk_update_processing_status",
+        }
+        return render(request, "admin/bulk_update_processing_status.html", context)
+
+    @admin.display(
+        description="Items",
+        ordering="items__count",
+    )
+    def item_count(self, obj: Context) -> int:
+        """Display the number of context items in this context."""
+        return obj.items.count()
+
 
 class ContextItemForm(ModelForm):
     class Meta:
@@ -147,7 +225,8 @@ class ContextItemForm(ModelForm):
         return uploaded_file
 
 
-@admin.register(ContextItem)
+# ContextItem is hidden from main admin navigation - managed through Context admin
+# @admin.register(ContextItem)
 class ContextItemAdmin(admin.ModelAdmin):
     form = ContextItemForm
     list_display = ["title", "context", "file_path", "has_uploaded_file", "created_at"]

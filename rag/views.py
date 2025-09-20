@@ -21,7 +21,7 @@ from rest_framework.serializers import (
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
-from .models import Topic
+from .models import Context, ContextItem, Topic
 from .retrieval.rag import RAGService
 
 if TYPE_CHECKING:
@@ -33,8 +33,45 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class ContextItemSerializer(ModelSerializer[ContextItem]):
+    """Serializer for ContextItem model (chunks)."""
+
+    class Meta:
+        model = ContextItem
+        fields = [
+            "id",
+            "title",
+            "content",
+            "context",
+            "file_path",
+            "metadata",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class ContextSerializer(ModelSerializer[Context]):
+    """Serializer for Context model with full content and metadata."""
+
+    class Meta:
+        model = Context
+        fields = [
+            "id",
+            "name",
+            "description",
+            "context_type",
+            "original_content",
+            "chunk_count",
+            "processing_status",
+            "created_at",
+            "updated_at",
+        ]
+
+
 class TopicSerializer(ModelSerializer[Topic]):
-    """Serializer for Topic model."""
+    """Serializer for Topic model with associated contexts."""
+
+    contexts = ContextSerializer(many=True, read_only=True)
 
     class Meta:
         model = Topic
@@ -43,6 +80,7 @@ class TopicSerializer(ModelSerializer[Topic]):
             "name",
             "description",
             "system_prompt",
+            "contexts",
             "created_at",
             "updated_at",
         ]
@@ -111,6 +149,66 @@ class TopicDetailView(generics.RetrieveAPIView[Topic]):
     def get_queryset(self) -> QuerySet[Topic]:
         """Return all topics."""
         return Topic.objects.all()
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Contexts"],
+        summary="List all contexts",
+        description="Retrieve a list of all available contexts with metadata.",
+        responses={200: ContextSerializer(many=True)},
+    )
+)
+class ContextListView(generics.ListAPIView[Context]):
+    """API endpoint for retrieving all contexts."""
+
+    serializer_class = ContextSerializer
+    pagination_class = None  # Disable pagination for simple context list
+
+    def get_queryset(self) -> QuerySet[Context]:
+        """Return all contexts."""
+        return Context.objects.all()
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Contexts"],
+        summary="Get context details",
+        description="Retrieve detailed information about a specific context by ID.",
+        responses={
+            200: ContextSerializer,
+            404: ErrorResponseSerializer,
+        },
+    )
+)
+class ContextDetailView(generics.RetrieveAPIView[Context]):
+    """API endpoint for retrieving a single context by ID."""
+
+    serializer_class = ContextSerializer
+
+    def get_queryset(self) -> QuerySet[Context]:
+        """Return all contexts."""
+        return Context.objects.all()
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Contexts"],
+        summary="Get context chunks",
+        description="Retrieve all chunks (context items) for a specific context. Internal use only.",
+        responses={200: ContextItemSerializer(many=True)},
+    )
+)
+class ContextChunksView(generics.ListAPIView[ContextItem]):
+    """API endpoint for retrieving chunks (context items) of a specific context."""
+
+    serializer_class = ContextItemSerializer
+    pagination_class = None
+
+    def get_queryset(self) -> QuerySet[ContextItem]:
+        """Return context items for the specified context."""
+        context_id = self.kwargs["context_id"]
+        return ContextItem.objects.filter(context_id=context_id)
 
 
 class QuestionSerializer(Serializer[dict[str, str | int]]):

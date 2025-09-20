@@ -39,9 +39,28 @@ class Context(models.Model):
         ("MARKDOWN", "Markdown"),
     ]
 
+    PROCESSING_STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("PROCESSING", "Processing"),
+        ("COMPLETED", "Completed"),
+        ("FAILED", "Failed"),
+    ]
+
     name = models.CharField(max_length=200)
     description = models.TextField()
     context_type = models.CharField(max_length=20, choices=CONTEXT_TYPE_CHOICES)
+    original_content = models.TextField(
+        blank=True, null=True, help_text="Full document content before chunking"
+    )
+    chunk_count = models.PositiveIntegerField(
+        default=0, help_text="Number of chunks created from this context"
+    )
+    processing_status = models.CharField(
+        max_length=20,
+        choices=PROCESSING_STATUS_CHOICES,
+        default="PENDING",
+        help_text="Current processing status of the context",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -52,6 +71,10 @@ class Context(models.Model):
             raise ValidationError({"description": "This field is required."})
         if not self.context_type:
             raise ValidationError({"context_type": "This field is required."})
+        if self.processing_status and self.processing_status not in dict(
+            self.PROCESSING_STATUS_CHOICES
+        ):
+            raise ValidationError({"processing_status": "Invalid processing status."})
 
     def __str__(self) -> str:
         return self.name
