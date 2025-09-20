@@ -132,6 +132,82 @@ class ContextModelTest(TestCase):
             )
             context.full_clean()
 
+    def test_context_with_original_content(self):
+        """Test creating a context with original content."""
+        original_content = "This is the full document content for a PDF file..."
+        context = Context.objects.create(
+            name="Test Document",
+            description="Test document with original content",
+            context_type="PDF",
+            original_content=original_content,
+        )
+        self.assertEqual(context.original_content, original_content)
+
+    def test_context_with_chunk_count(self):
+        """Test creating a context with chunk count."""
+        context = Context.objects.create(
+            name="Test Document",
+            description="Test document with chunks",
+            context_type="PDF",
+            chunk_count=25,
+        )
+        self.assertEqual(context.chunk_count, 25)
+
+    def test_context_with_processing_status(self):
+        """Test creating a context with processing status."""
+        context = Context.objects.create(
+            name="Test Document",
+            description="Test document with processing status",
+            context_type="PDF",
+            processing_status="COMPLETED",
+        )
+        self.assertEqual(context.processing_status, "COMPLETED")
+
+    def test_context_processing_status_choices(self):
+        """Test that processing status accepts valid choices."""
+        valid_statuses = ["PENDING", "PROCESSING", "COMPLETED", "FAILED"]
+        for status in valid_statuses:
+            context = Context.objects.create(
+                name=f"Test {status}",
+                description=f"Test document with {status} status",
+                context_type="PDF",
+                processing_status=status,
+            )
+            self.assertEqual(context.processing_status, status)
+
+    def test_context_default_values(self):
+        """Test context default values for new fields."""
+        context = Context.objects.create(
+            name="Test Document",
+            description="Test document with defaults",
+            context_type="PDF",
+        )
+        self.assertIsNone(context.original_content)
+        self.assertEqual(context.chunk_count, 0)
+        self.assertEqual(context.processing_status, "PENDING")
+
+    def test_chunk_count_updates_with_context_items(self):
+        """Context.chunk_count should reflect the number of related context items."""
+        context = Context.objects.create(
+            name="Chunked Document",
+            description="Document that will receive chunks",
+            context_type="PDF",
+        )
+
+        item = ContextItem.objects.create(
+            title="Chunk 1",
+            content="First chunk content",
+            context=context,
+        )
+
+        context.refresh_from_db()
+        self.assertEqual(context.chunk_count, 1)
+
+        item.delete()
+
+        context.refresh_from_db()
+        self.assertEqual(context.chunk_count, 0)
+
 
 class ContextItemModelTest(TestCase):
     def setUp(self):

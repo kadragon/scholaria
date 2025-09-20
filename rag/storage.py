@@ -164,12 +164,25 @@ class MinIOStorage:
             uploaded_file.seek(0)
             file_size = uploaded_file.size or 0
 
+            # Handle content_type for FieldFile vs UploadedFile
+            content_type = getattr(uploaded_file, "content_type", None)
+            if not content_type and uploaded_file.name:
+                # Infer content type from file extension
+                if uploaded_file.name.lower().endswith(".pdf"):
+                    content_type = "application/pdf"
+                elif uploaded_file.name.lower().endswith((".md", ".markdown")):
+                    content_type = "text/markdown"
+                elif uploaded_file.name.lower().endswith(".txt"):
+                    content_type = "text/plain"
+                else:
+                    content_type = "application/octet-stream"
+
             self.client.put_object(
                 bucket_name=self.bucket_name,
                 object_name=uploaded_file.name,
                 data=uploaded_file,
                 length=file_size,
-                content_type=uploaded_file.content_type,
+                content_type=content_type,
             )
 
             logger.info(f"Successfully uploaded Django file {uploaded_file.name}")
