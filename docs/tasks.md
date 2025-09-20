@@ -168,10 +168,10 @@
 
 ### Technical Documentation
 
-- [ ] API documentation (OpenAPI/Swagger)
-- [ ] Deployment guide
-- [ ] Admin user guide
-- [ ] End user guide
+- [x] API documentation (OpenAPI/Swagger)
+- [x] Deployment guide
+- [x] Admin user guide
+- [x] End user guide
 
 ### Development Documentation
 
