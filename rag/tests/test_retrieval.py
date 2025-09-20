@@ -456,10 +456,9 @@ class QdrantServiceTest(TestCase):
             query_filter = call_args["query_filter"]
             self.assertIn("must", query_filter)
 
-    def test_context_lookup_caching(self) -> None:
+    @patch("rag.retrieval.qdrant.Topic.objects")
+    def test_context_lookup_caching(self, mock_topic_objects: MagicMock) -> None:
         """Test that context lookups are cached for performance."""
-        from unittest.mock import patch
-
         from django.core.cache import cache
 
         from rag.retrieval.qdrant import QdrantService
@@ -467,33 +466,31 @@ class QdrantServiceTest(TestCase):
         # Clear cache to start fresh
         cache.clear()
 
-        service = QdrantService()
+        # Configure mock for the database query
+        mock_topic_objects.filter.return_value.values_list.return_value.distinct.return_value = [
+            self.context.id
+        ]
 
-        # Create topic IDs for testing
+        service = QdrantService()
         topic_ids = [self.topic.id]
 
-        # Patch the database query to count calls
-        with patch.object(
-            service,
-            "_get_context_ids_for_topics",
-            wraps=service._get_context_ids_for_topics,
-        ) as mock_method:
-            # First call should hit the database
-            result1 = service._get_context_ids_for_topics(topic_ids)
+        # First call should hit the database
+        result1 = service._get_context_ids_for_topics(topic_ids)
+        mock_topic_objects.filter.assert_called_once()
 
-            # Second call with same topic IDs should use cache
-            result2 = service._get_context_ids_for_topics(topic_ids)
+        # Second call with same topic IDs should use cache
+        result2 = service._get_context_ids_for_topics(topic_ids)
 
-            # Verify results are the same
-            self.assertEqual(result1, result2)
+        # Verify results are the same
+        self.assertEqual(result1, result2)
 
-            # Verify the method was called twice (once to populate cache, once from cache)
-            self.assertEqual(mock_method.call_count, 2)
+        # Verify the database was NOT called again
+        mock_topic_objects.filter.assert_called_once()
 
-            # Third call should also use cache
-            result3 = service._get_context_ids_for_topics(topic_ids)
-            self.assertEqual(result1, result3)
-            self.assertEqual(mock_method.call_count, 3)
+        # Third call should also use cache
+        result3 = service._get_context_ids_for_topics(topic_ids)
+        self.assertEqual(result1, result3)
+        mock_topic_objects.filter.assert_called_once()
 
 
 class RerankingServiceTest(TestCase):

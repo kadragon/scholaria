@@ -37,11 +37,12 @@ class Command(BaseCommand):
         metrics = monitor.get_metrics()
         costs = monitor.get_cost_breakdown()
         recommendations = monitor.get_optimization_recommendations()
+        rate_limit_warning = monitor.check_rate_limits()
 
         if options["format"] == "json":
-            self._output_json(metrics, costs, recommendations)
+            self._output_json(metrics, costs, recommendations, rate_limit_warning)
         else:
-            self._output_text(metrics, costs, recommendations)
+            self._output_text(metrics, costs, recommendations, rate_limit_warning)
 
         # Reset metrics if requested
         if options["reset"]:
@@ -53,6 +54,7 @@ class Command(BaseCommand):
         metrics: dict[str, Any],
         costs: dict[str, float],
         recommendations: list[str],
+        rate_limit_warning: bool,
     ) -> None:
         """Output report in human-readable text format."""
         self.stdout.write(self.style.SUCCESS("OpenAI API Usage Report"))
@@ -102,8 +104,7 @@ class Command(BaseCommand):
             self.stdout.write(f"  • Total: ${costs.get('total', 0):.4f}")
 
         # Rate limiting check
-        monitor = OpenAIUsageMonitor()
-        if monitor.check_rate_limits():
+        if rate_limit_warning:
             self.stdout.write(
                 self.style.WARNING("\n⚠️  Rate limiting threshold approached!")
             )
@@ -127,13 +128,14 @@ class Command(BaseCommand):
         metrics: dict[str, Any],
         costs: dict[str, float],
         recommendations: list[str],
+        rate_limit_warning: bool,
     ) -> None:
         """Output report in JSON format."""
         report = {
             "metrics": metrics,
             "costs": costs,
             "recommendations": recommendations,
-            "rate_limit_warning": OpenAIUsageMonitor().check_rate_limits(),
+            "rate_limit_warning": rate_limit_warning,
         }
 
         self.stdout.write(json.dumps(report, indent=2))

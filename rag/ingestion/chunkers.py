@@ -207,18 +207,10 @@ class FAQChunker(TextChunker):
 
     def _extract_qa_pairs(self, text: str) -> list[str]:
         """Extract Q&A pairs from FAQ text."""
-        # Pattern to match Q: ... A: ... pairs
-        qa_pattern = r"Q:\s*([^Q]*?)(?=Q:|$)"
+        # This pattern looks for "Q:" and captures everything until the next "Q:" on a new line or the end of the string.
+        qa_pattern = r"Q:.*?(?=\nQ:|\Z)"
         matches = re.findall(qa_pattern, text, re.DOTALL | re.IGNORECASE)
-
-        qa_pairs = []
-        for match in matches:
-            # Clean up the match and add back the Q: prefix
-            clean_match = match.strip()
-            if clean_match:
-                qa_pairs.append(f"Q: {clean_match}")
-
-        return qa_pairs
+        return [match.strip() for match in matches if match.strip()]
 
     def _chunk_qa_pairs(self, qa_pairs: list[str]) -> list[str]:
         """Group Q&A pairs into appropriately sized chunks."""
