@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.core.exceptions import ValidationError
 from django.db import models
-
-if TYPE_CHECKING:
-    from typing import Any
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 
 
 class Topic(models.Model):
@@ -76,6 +75,14 @@ class Context(models.Model):
         ):
             raise ValidationError({"processing_status": "Invalid processing status."})
 
+    def update_chunk_count(self) -> None:
+        """Recalculate and persist the number of associated context items."""
+        if not self.pk:
+            return
+        new_count = self.items.count()
+        Context.objects.filter(pk=self.pk).update(chunk_count=new_count)
+        self.chunk_count = new_count
+
     def __str__(self) -> str:
         return self.name
 
@@ -112,3 +119,25 @@ class ContextItem(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+
+
+def _refresh_context_chunk_count(instance: ContextItem) -> None:
+    """Helper to keep Context.chunk_count in sync with related items."""
+    if instance.context_id:
+        instance.context.update_chunk_count()
+
+
+@receiver(post_save, sender=ContextItem)
+def context_item_post_save(
+    sender: type[ContextItem], instance: ContextItem, **kwargs: Any
+) -> None:
+    """Update chunk count when a context item is created or updated."""
+    _refresh_context_chunk_count(instance)
+
+
+@receiver(post_delete, sender=ContextItem)
+def context_item_post_delete(
+    sender: type[ContextItem], instance: ContextItem, **kwargs: Any
+) -> None:
+    """Update chunk count when a context item is removed."""
+    _refresh_context_chunk_count(instance)

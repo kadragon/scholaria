@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
+from django.db.models import Count
 from django.forms import ModelForm
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
@@ -32,6 +33,11 @@ class TopicAdmin(admin.ModelAdmin):
         (None, {"fields": ("name", "description", "system_prompt")}),
         ("Associated Contexts", {"fields": ("contexts",)}),
     )
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Topic]:
+        """Annotate queryset with context counts for ordering and display."""
+        queryset = super().get_queryset(request)
+        return queryset.annotate(context_count=Count("contexts", distinct=True))
 
     @admin.action(description="Assign context to selected topics")
     def assign_context_to_topics(
@@ -89,11 +95,11 @@ class TopicAdmin(admin.ModelAdmin):
 
     @admin.display(
         description="Contexts",
-        ordering="contexts__count",
+        ordering="context_count",
     )
     def context_count(self, obj: Topic) -> int:
         """Display the number of contexts associated with this topic."""
-        return obj.contexts.count()
+        return getattr(obj, "context_count", obj.contexts.count())
 
 
 class ContextItemInline(admin.TabularInline):
@@ -136,6 +142,11 @@ class ContextAdmin(admin.ModelAdmin):
             {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
         ),
     )
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Context]:
+        """Annotate queryset with item counts for ordering display columns."""
+        queryset = super().get_queryset(request)
+        return queryset.annotate(item_count=Count("items", distinct=True))
 
     @admin.action(description="Update context type for selected contexts")
     def bulk_update_context_type(
@@ -193,11 +204,11 @@ class ContextAdmin(admin.ModelAdmin):
 
     @admin.display(
         description="Items",
-        ordering="items__count",
+        ordering="item_count",
     )
     def item_count(self, obj: Context) -> int:
         """Display the number of context items in this context."""
-        return obj.items.count()
+        return getattr(obj, "item_count", obj.items.count())
 
 
 class ContextItemForm(ModelForm):

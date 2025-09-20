@@ -186,6 +186,28 @@ class ContextModelTest(TestCase):
         self.assertEqual(context.chunk_count, 0)
         self.assertEqual(context.processing_status, "PENDING")
 
+    def test_chunk_count_updates_with_context_items(self):
+        """Context.chunk_count should reflect the number of related context items."""
+        context = Context.objects.create(
+            name="Chunked Document",
+            description="Document that will receive chunks",
+            context_type="PDF",
+        )
+
+        item = ContextItem.objects.create(
+            title="Chunk 1",
+            content="First chunk content",
+            context=context,
+        )
+
+        context.refresh_from_db()
+        self.assertEqual(context.chunk_count, 1)
+
+        item.delete()
+
+        context.refresh_from_db()
+        self.assertEqual(context.chunk_count, 0)
+
 
 class ContextItemModelTest(TestCase):
     def setUp(self):

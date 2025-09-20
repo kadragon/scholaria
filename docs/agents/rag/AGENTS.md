@@ -18,6 +18,7 @@ Django RAG app with Topic, Context, and ContextItem models.
 - **Context**: Document containers (PDF/FAQ/MARKDOWN)
 - **ContextItem**: Content pieces with file references and metadata
 - **Relationships**: Context → ContextItem (1:N), Topic ↔ Context (N:N)
+- **Chunk Tracking**: `Context.chunk_count` is recomputed via signals whenever `ContextItem` rows change — update signals if ingestion paths bypass standard create/delete.
 
 ### Django Patterns
 - JSONField for metadata, tuple choices, default ordering, descriptive related_name

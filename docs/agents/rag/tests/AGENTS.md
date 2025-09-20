@@ -17,6 +17,8 @@ TDD test suite for RAG models with comprehensive coverage.
 ### Structure
 - `/tests/test_models.py` - Topic, Context, ContextItem tests
 - Comprehensive coverage: models, admin, migrations, E2E
+- Chunk counter tests ensure `Context.chunk_count` stays in sync via signals.
+- Admin tests assert annotated ordering (`context_count`, `item_count`) remains query-safe.
 
 ### Key Patterns
 - ForeignKey validation with `field_id` checks

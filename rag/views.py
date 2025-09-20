@@ -126,8 +126,8 @@ class TopicListView(generics.ListAPIView[Topic]):
     pagination_class = None  # Disable pagination for simple topic list
 
     def get_queryset(self) -> QuerySet[Topic]:
-        """Return all topics."""
-        return Topic.objects.all()
+        """Return all topics with prefetched contexts to avoid N+1 queries."""
+        return Topic.objects.prefetch_related("contexts").all()
 
 
 @extend_schema_view(
@@ -147,8 +147,8 @@ class TopicDetailView(generics.RetrieveAPIView[Topic]):
     serializer_class = TopicSerializer
 
     def get_queryset(self) -> QuerySet[Topic]:
-        """Return all topics."""
-        return Topic.objects.all()
+        """Return all topics with prefetched contexts to avoid N+1 queries."""
+        return Topic.objects.prefetch_related("contexts").all()
 
 
 @extend_schema_view(
