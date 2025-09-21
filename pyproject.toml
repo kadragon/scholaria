@@ -33,6 +33,7 @@ dependencies = [
     "types-redis>=4.6.0",
     "types-requests>=2.31.0",
     "drf-spectacular>=0.28.0",
+    "gunicorn>=21.0.0",
 ]
 
 [build-system]
