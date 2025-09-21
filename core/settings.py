@@ -169,7 +169,7 @@ except ValueError:
 QDRANT_COLLECTION_NAME = os.getenv("QDRANT_COLLECTION_NAME", "scholaria_documents")
 
 # MinIO Configuration
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9002")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
 MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "scholaria-docs")
@@ -261,9 +261,6 @@ try:
     RAG_RERANK_TOP_K = int(os.getenv("RAG_RERANK_TOP_K", "5"))
 except ValueError:
     RAG_RERANK_TOP_K = 5
-
-# Unstructured API Configuration
-UNSTRUCTURED_API_URL = os.getenv("UNSTRUCTURED_API_URL", "http://localhost:8000")
 
 # Django REST Framework Configuration
 REST_FRAMEWORK = {

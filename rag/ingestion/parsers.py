@@ -1,16 +1,22 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any, cast
 
-from unstructured.partition.pdf import partition_pdf
+DocumentConverter: Any | None
 
-if TYPE_CHECKING:
-    pass
+try:
+    from docling.document_converter import (
+        DocumentConverter as _DoclingDocumentConverter,
+    )
+except ImportError:  # pragma: no cover - fallback handled in runtime logic
+    DocumentConverter = None
+else:
+    DocumentConverter = _DoclingDocumentConverter
 
 
 class PDFParser:
-    """Parser for PDF documents using Unstructured API."""
+    """Parser for PDF documents using Docling."""
 
     def parse_file(self, file_path: str) -> str:
         """
@@ -28,15 +34,18 @@ class PDFParser:
         if not Path(file_path).exists():
             raise FileNotFoundError(f"File not found: {file_path}")
 
-        elements = partition_pdf(filename=file_path)
+        if DocumentConverter is None:
+            raise ImportError(
+                "Docling dependency is required for PDF parsing. Install 'docling'."
+            )
 
-        if not elements:
-            return ""
+        converter_cls = cast(Any, DocumentConverter)
+        converter = converter_cls()
+        converted = converter.convert(file_path)
 
-        # Combine all text elements with newlines
-        text_content = "\n".join(element.text for element in elements if element.text)
-
-        return text_content
+        document = getattr(converted, "document", None) if converted else None
+        text_content = document.export_to_text() if document else ""
+        return text_content or ""
 
 
 class MarkdownParser:

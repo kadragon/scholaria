@@ -93,7 +93,7 @@ class FileValidator:
 
         if uploaded_file.size and uploaded_file.size > self.MAX_FILE_SIZE:
             errors.append(
-                f"File size exceeds maximum allowed size of {self.MAX_FILE_SIZE // (1024*1024)}MB"
+                f"File size exceeds maximum allowed size of {self.MAX_FILE_SIZE // (1024 * 1024)}MB"
             )
             return ValidationResult(is_valid=False, errors=errors)
 

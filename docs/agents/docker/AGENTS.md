@@ -15,7 +15,7 @@ Docker Compose integration testing for containerized RAG services.
 
 ### Services
 - PostgreSQL (port 5432), Redis (6379), Qdrant (6333-6334)
-- MinIO (9000-9001), Unstructured API (8000)
+- MinIO (9000-9001); Docling runs in-process within the Django container (no external service)
 
 ### Test Coverage
 - Service connectivity, data persistence, cross-service consistency
@@ -30,7 +30,7 @@ Docker Compose integration testing for containerized RAG services.
 - Automated scripts for Docker testing
 
 ### Validation Results
-- All core services run together in Docker Compose
+- All core services run together in Docker Compose (PostgreSQL, Redis, Qdrant, MinIO)
 - Data flows correctly between PostgreSQL and Qdrant
 - Django cache integrates with Redis
 - Production deployment ready

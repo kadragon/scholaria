@@ -23,7 +23,7 @@ class OpenAIUsageMonitor:
         cache.delete(f"{self.cache_prefix}:requests")
 
     @contextmanager
-    def _cache_lock(self, key: str, timeout: int = 5) -> Generator[None, None, None]:
+    def _cache_lock(self, key: str, timeout: int = 5) -> Generator[None]:
         """Simple cache-based locking mechanism."""
         lock_key = f"{key}:lock"
         acquired = False

@@ -10,11 +10,12 @@ Document ingestion pipeline for PDF/Markdown/FAQ files using Celery.
 - **Celery Tasks**: Use `@shared_task` decorator
 - **Smart Chunking**: Overlap at sentence/word boundaries
 - **Type Safety**: mypy compliance
+- **Docling Dependency**: `docling.document_converter.DocumentConverter` must be available for PDF parsing; surface helpful errors when absent.
 
 ## Context
 
 ### Architecture
-- **Parsers**: PDFParser (Unstructured API), MarkdownParser, FAQParser
+- **Parsers**: PDFParser (Docling), MarkdownParser, FAQParser
 - **Chunkers**: Document-specific chunking with optimized sizes
 - **Tasks**: Background processing with error handling
 
@@ -27,7 +28,7 @@ process_document → parser → chunker → ContextItem creation
 
 ### Core Implementation
 - TDD test suite for parsers and Celery tasks
-- PDF (Unstructured API), Markdown, FAQ parsers
+- PDF (Docling), Markdown, FAQ parsers
 - Smart chunking with boundary detection
 - Background processing with error handling
 

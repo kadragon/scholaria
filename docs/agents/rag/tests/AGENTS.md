@@ -19,6 +19,8 @@ TDD test suite for RAG models with comprehensive coverage.
 - Comprehensive coverage: models, admin, migrations, E2E
 - Chunk counter tests ensure `Context.chunk_count` stays in sync via signals.
 - Admin tests assert annotated ordering (`context_count`, `item_count`) remains query-safe.
+- Documentation regression tests (e.g., `test_admin_user_guide.py`, `test_deployment_guide.py`, `test_end_user_guide.py`, `test_contributing_guidelines.py`) lock required sections and keywords for published guides.
+- PDF parser tests mock Docling's `DocumentConverter` to keep ingestion behavior deterministic without network access.
 
 ### Key Patterns
 - ForeignKey validation with `field_id` checks

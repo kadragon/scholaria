@@ -54,7 +54,7 @@ wait_for_services() {
     local max_attempts=30
     local delay=2
     local required_services=("postgres" "redis" "qdrant")
-    local optional_services=("minio" "unstructured-api")
+    local optional_services=("minio")
 
     print_status "Waiting for required services to be ready..."
 
@@ -104,9 +104,6 @@ check_service_health() {
         "minio")
             curl -s http://localhost:9000/minio/health/live > /dev/null 2>&1
             ;;
-        "unstructured-api")
-            curl -s http://localhost:8000/general/health > /dev/null 2>&1
-            ;;
         *)
             return 0  # Unknown service, assume healthy if running
             ;;
@@ -118,7 +115,7 @@ wait_for_services
 # Final check of all services
 print_status "Final service health check..."
 
-services=("postgres" "redis" "qdrant" "minio" "unstructured-api")
+services=("postgres" "redis" "qdrant" "minio")
 all_healthy=true
 
 for service in "${services[@]}"; do
