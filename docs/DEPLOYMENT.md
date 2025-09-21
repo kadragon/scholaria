@@ -87,13 +87,32 @@ The included `docker-compose.yml` provides a complete production setup:
 - **Redis 7**: Cache and Celery broker
 - **Qdrant**: Vector database for embeddings
 - **MinIO**: S3-compatible object storage
-- **Unstructured API**: Document processing service
+- **Django Web (dev override)**: Optional container from `docker-compose.dev.yml` for running the app in Docker during local testing.
 
 ### Volumes
 - `postgres_data`: Database persistence
 - `redis_data`: Cache persistence
 - `qdrant_data`: Vector database storage
 - `minio_data`: File storage
+
+### Local Development (Docker)
+
+Use the development override file to run the Django web container alongside the backing services for parity with production.
+
+```bash
+# Build and start the full stack with the dev web container
+WEB_PORT=8000 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+
+# Apply database migrations inside the container
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec web uv run python manage.py migrate
+
+# Tail the Django logs
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f web
+```
+
+- Set `WEB_PORT` when 8000 is in use on the host (for example `WEB_PORT=18000`).
+- The `scripts/docker/dev-entrypoint.sh` helper bootstraps uv dependencies at `/opt/uv` before launching `manage.py runserver`.
+- Stop the stack when finished: `docker compose -f docker-compose.yml -f docker-compose.dev.yml down`.
 
 ## Production Considerations
 

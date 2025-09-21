@@ -156,9 +156,8 @@ class FAQQAInline(admin.TabularInline):
     """FAQ-specific inline for Q&A pair management."""
 
     model = ContextItem
-    extra = 0
+    extra = 1
     fields = ["title", "content"]
-    readonly_fields = ["title"]
     verbose_name = "Q&A Pair"
     verbose_name_plural = "Q&A Pairs"
 
@@ -167,9 +166,16 @@ class FAQQAInline(admin.TabularInline):
         qs = super().get_queryset(request)
         return qs.order_by("created_at")
 
-    def has_add_permission(self, request: HttpRequest, obj: Any = None) -> bool:
-        """Disable add permission for FAQ inline - use the admin action instead."""
-        return False
+    def save_model(
+        self, request: HttpRequest, obj: ContextItem, form: Any, change: bool
+    ) -> None:
+        """Override save to ensure proper FAQ formatting."""
+        if obj.title and obj.content and not change:
+            # For new Q&A pairs, ensure proper formatting
+            if not obj.title.endswith("?"):
+                obj.title = f"{obj.title}?"
+        # Skip superclass save_model since it doesn't exist in TabularInline
+        obj.save()
 
 
 class MarkdownChunkInline(admin.TabularInline):
@@ -227,9 +233,7 @@ class ContextAdmin(admin.ModelAdmin):
         "add_qa_pair_action",
     ]
 
-    def get_inlines(
-        self, request: HttpRequest, obj: Context | None
-    ) -> list[type[admin.TabularInline]]:  # type: ignore[override]
+    def get_inlines(self, request: HttpRequest, obj: Context | None) -> list[Any]:
         """Return different inlines based on context type."""
         if obj and obj.context_type == "FAQ":
             return [FAQQAInline]
@@ -476,6 +480,8 @@ class ContextAdmin(admin.ModelAdmin):
             "queryset": faq_contexts,
             "action": "add_qa_pair_action",
             "description": "Add a question-answer pair to the selected FAQ contexts.",
+            "opts": self.model._meta,
+            "app_label": self.model._meta.app_label,
         }
         return render(request, "admin/add_qa_pair.html", template_context)
 

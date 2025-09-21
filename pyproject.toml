@@ -2,7 +2,7 @@
 name = "scholaria"
 version = "0.1.0"
 description = "School Integrated RAG System - MVP-first, TDD-driven development"
-readme = "README.md"
+# readme = "README.md"  # Disabled for Docker builds
 authors = [
     { name = "Kang, Donguk", email = "kangdongouk@gmail.com" }
 ]

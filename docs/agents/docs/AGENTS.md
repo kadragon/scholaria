@@ -15,4 +15,5 @@ Centralized product documentation (guides, playbooks, contributor docs) for Scho
 - `CONTRIBUTING.md` defines contributor workflow emphasizing TDD, "red → green → refactor", and "Tidy First"; update tests alongside structural changes.
 - Existing guides (`ADMIN_GUIDE`, `USER_GUIDE`, `DEPLOYMENT`) follow instructional tone with actionable checklists and command snippets.
 - Deployment guide now documents Docling as an in-process dependency (no external Unstructured API env vars).
+- Deployment guide documents the `docker-compose.dev.yml` override for running the Django web container locally.
 - Add new documentation in Markdown with top-level heading matching file purpose and actionable subsections.

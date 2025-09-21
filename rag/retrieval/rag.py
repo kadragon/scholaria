@@ -23,6 +23,8 @@ class RAGService:
     def __init__(self) -> None:
         self.embedding_service = EmbeddingService()
         self.qdrant_service = QdrantService()
+        # Ensure Qdrant collection exists
+        self.qdrant_service.create_collection()
         self.reranking_service = RerankingService()
         self.chat_client = OpenAI(api_key=getattr(settings, "OPENAI_API_KEY", None))
         self.monitor = OpenAIUsageMonitor()

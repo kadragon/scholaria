@@ -1,0 +1,54 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: ./scripts/docker/dev-entrypoint.sh
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: core.settings
+      DEBUG: "1"
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: ${POSTGRES_DB:-scholaria}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      MINIO_ENDPOINT_URL: http://minio:9000
+      MINIO_CONSOLE_URL: http://localhost:9003
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      AWS_STORAGE_BUCKET_NAME: scholaria
+      AWS_S3_ENDPOINT_URL: http://minio:9000
+      USE_MINIO_SSL: "0"
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-changeme}
+      UV_PROJECT_ENVIRONMENT: /opt/uv
+    volumes:
+      - .:/app
+      - staticfiles:/app/staticfiles
+      - uploads:/app/uploads
+      - media:/app/media
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
+      minio:
+        condition: service_started
+volumes:
+  staticfiles:
+    driver: local
+  uploads:
+    driver: local
+  media:
+    driver: local

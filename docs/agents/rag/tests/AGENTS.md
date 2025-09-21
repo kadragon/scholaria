@@ -21,6 +21,7 @@ TDD test suite for RAG models with comprehensive coverage.
 - Admin tests assert annotated ordering (`context_count`, `item_count`) remains query-safe.
 - Documentation regression tests (e.g., `test_admin_user_guide.py`, `test_deployment_guide.py`, `test_end_user_guide.py`, `test_contributing_guidelines.py`) lock required sections and keywords for published guides.
 - PDF parser tests mock Docling's `DocumentConverter` to keep ingestion behavior deterministic without network access.
+- `/tests/test_local_docker.py` guards the local Docker compose artefacts and expected web service wiring.
 
 ### Key Patterns
 - ForeignKey validation with `field_id` checks

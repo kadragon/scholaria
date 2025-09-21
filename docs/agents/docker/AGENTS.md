@@ -17,6 +17,10 @@ Docker Compose integration testing for containerized RAG services.
 - PostgreSQL (port 5432), Redis (6379), Qdrant (6333-6334)
 - MinIO (9000-9001); Docling runs in-process within the Django container (no external service)
 
+### Development Setup
+- `docker-compose.dev.yml` extends the base compose file to run the Django `web` container locally.
+- `Dockerfile.dev` serves autoreloading `manage.py runserver` with a mounted project volume for hot reloading.
+
 ### Test Coverage
 - Service connectivity, data persistence, cross-service consistency
 - Performance benchmarks, error handling

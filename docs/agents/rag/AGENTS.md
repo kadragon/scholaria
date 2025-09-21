@@ -59,3 +59,4 @@ Django RAG app with Topic, Context, and ContextItem models.
 - FAQ-specific inline editor for Q&A pairs
 - Markdown direct editing with smart chunking by sections
 - Markdown-specific admin interface with chunk preview
+- FAQ Q&A pairs use standard Django inline deletion (select item and save to delete)
