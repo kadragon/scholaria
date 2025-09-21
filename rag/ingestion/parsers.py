@@ -43,19 +43,9 @@ class PDFParser:
         converter = converter_cls()
         converted = converter.convert(file_path)
 
-        if not converted:
-            return ""
-
-        document = getattr(converted, "document", None)
-        if document is None:
-            return ""
-
-        text_content = document.export_to_text()
-
-        if not text_content:
-            return ""
-
-        return text_content
+        document = getattr(converted, "document", None) if converted else None
+        text_content = document.export_to_text() if document else ""
+        return text_content or ""
 
 
 class MarkdownParser:

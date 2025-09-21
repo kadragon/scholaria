@@ -15,7 +15,7 @@ Scholaria is built around disciplined engineering:
 
 1. Read `docs/tasks.md` to understand active priorities.
 2. Review relevant `docs/agents/` knowledge bases for folder-specific context.
-3. Ensure you have Python 3.11+, Docker, and `uv` installed.
+3. Ensure you have Python 3.13+, Docker, and `uv` installed.
 4. Join the team Slack and review the pinned onboarding resources.
 
 ## Workflow Overview
