@@ -388,11 +388,13 @@ class HealthCheckView(APIView):
         try:
             # Basic database connectivity check
             from django.db import connection
+
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
 
             # Check cache connectivity
             from django.core.cache import cache
+
             cache.set("health_check", "ok", 10)
             cache_status = cache.get("health_check") == "ok"
 
