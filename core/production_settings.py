@@ -34,11 +34,13 @@ SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 # SSL/HTTPS Configuration (when behind load balancer/proxy)
 if os.getenv("SECURE_SSL_REDIRECT", "False").lower() == "true":
     SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = (
-        tuple(os.getenv("SECURE_PROXY_SSL_HEADER", "").split(","))
-        if os.getenv("SECURE_PROXY_SSL_HEADER")
-        else None
-    )
+    ssl_header = os.getenv("SECURE_PROXY_SSL_HEADER")
+    if ssl_header:
+        header_parts = ssl_header.split(",", 1)
+        if len(header_parts) == 2:
+            SECURE_PROXY_SSL_HEADER = (header_parts[0].strip(), header_parts[1].strip())
+    else:
+        SECURE_PROXY_SSL_HEADER = None
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
@@ -171,7 +173,12 @@ LOGGING = {
 }
 
 # Static Files Configuration - use manifest storage for cache busting
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+STORAGES = {
+    **STORAGES,
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+    },
+}
 
 # Performance Optimizations
 MIDDLEWARE.insert(1, "django.middleware.cache.UpdateCacheMiddleware")

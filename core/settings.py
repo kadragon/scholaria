@@ -26,12 +26,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-f+=br0u!^3%$^^^3(iodi37msa-*8@zo3q7tb%73^5&v4lbo(l"
+SECRET_KEY = os.getenv(
+    "SECRET_KEY", "django-insecure-f+=br0u!^3%$^^^3(iodi37msa-*8@zo3q7tb%73^5&v4lbo(l"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS: list[str] = []
+# Parse ALLOWED_HOSTS from environment variable
+ALLOWED_HOSTS = []
+if allowed_hosts_env := os.getenv("ALLOWED_HOSTS"):
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",")]
 
 
 # Application definition
@@ -76,6 +81,25 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "core.wsgi.application"
+
+# Security Settings for Production
+if not DEBUG:
+    # HTTPS settings
+    SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "False").lower() == "true"
+    SECURE_PROXY_SSL_HEADER = None
+    if proxy_header := os.getenv("SECURE_PROXY_SSL_HEADER"):
+        header_parts = proxy_header.split(",", 1)
+        if len(header_parts) == 2:
+            SECURE_PROXY_SSL_HEADER = (header_parts[0].strip(), header_parts[1].strip())
+
+    # Trust proxy headers
+    USE_X_FORWARDED_HOST = os.getenv("USE_X_FORWARDED_HOST", "False").lower() == "true"
+    USE_X_FORWARDED_PORT = os.getenv("USE_X_FORWARDED_PORT", "False").lower() == "true"
+
+    # Security headers
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = "DENY"
 
 
 # Database
@@ -129,9 +153,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = os.getenv("LANGUAGE_CODE", "ko-kr")
 
-TIME_ZONE = "UTC"
+TIME_ZONE = os.getenv("TIME_ZONE", "Asia/Seoul")
 
 USE_I18N = True
 
@@ -146,6 +170,16 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
+# Storage configuration
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -226,6 +260,8 @@ FILE_VALIDATION_EXECUTABLE_EXTENSIONS = [
 
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY and not DEBUG:
+    raise ValueError("OPENAI_API_KEY environment variable is required in production")
 try:
     OPENAI_EMBEDDING_DIM = int(os.getenv("OPENAI_EMBEDDING_DIM", "3072"))
 except ValueError:
