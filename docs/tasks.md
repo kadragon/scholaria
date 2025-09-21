@@ -34,17 +34,57 @@
 - [ ] > 80% of test queries return relevant citations
 - [ ] Answer latency < 3 seconds performance benchmarks
 
-### Architecture Improvements (Priority)
+### Context Management System Enhancement (Priority)
+
+#### **Context Type-Specific Workflows**
+- [ ] **PDF Context Enhancement**:
+  - Remove MinIO dependency for PDF storage
+  - Implement upload → parse → chunk → discard file workflow
+  - Add chunk preview without file retention
+  - Update admin interface for PDF-specific workflow
+
+- [ ] **FAQ Context Enhancement**:
+  - Create two-phase FAQ creation process (context creation → Q&A addition)
+  - Implement Q&A pair management interface within Context admin
+  - Add dedicated FAQ chunk management (1 Q&A pair = 1 chunk)
+  - Create FAQ-specific inline editor
+
+- [ ] **Markdown Context Enhancement**:
+  - Enable direct markdown editing in original_content field
+  - Implement smart markdown chunking strategy
+  - Add markdown preview and rendering capabilities
+  - Create markdown-specific admin interface
+
+#### **Admin Interface Improvements**
+- [ ] **Context Type Selection Workflow**:
+  - Implement dynamic form switching based on context_type selection
+  - Create type-specific creation forms
+  - Add contextual help and workflow guidance
+
+- [ ] **Enhanced Chunk Management**:
+  - Improve chunk visualization and editing capabilities
+  - Add chunk-level content preview and editing
+  - Implement chunk reordering and management tools
+  - Add processing status real-time updates
+
+#### **Backend Processing Updates**
+- [ ] **Type-Specific Content Processors**:
+  - Refactor parsing logic for context-type-specific handling
+  - Implement automatic chunking strategies per type
+  - Add processing pipeline with status tracking
+  - Remove file storage dependencies where applicable
+
+### Architecture Improvements (Completed)
 
 - [x] **Refactor Context-Topic Relationship**: Change from 1:N to N:N relationship between Topics and Contexts ✅ COMPLETED
 - [x] **Improve Context Model Structure**: ✅ COMPLETED
   - 1 Context = 1 PDF document OR 1 Markdown file OR Multiple FAQ items ✅
   - Hide individual chunks from admin interface - show only Context-level view ✅
   - Context detail view should show chunk statistics (e.g., "25 chunks, 15,487 characters") ✅
-- [ ] **Enhanced Admin Interface**:
-  - Context creation workflow: select type → upload file → automatic chunking (hidden from user)
-  - Context detail page: show full content, chunk count, processing status
-  - Topic management: multi-select contexts to associate with topics
+- [x] **Enhanced Admin Interface**: ✅ COMPLETED
+  - Context creation workflow: select type → upload file → automatic chunking (hidden from user) ✅
+  - Context detail page: show full content, chunk count, processing status ✅
+  - Topic management: multi-select contexts to associate with topics ✅
 - [x] **Database Schema Updates**: ✅ COMPLETED
   - Add Context.original_content field to store full document text ✅ COMPLETED
   - Add Context.chunk_count and Context.processing_status fields ✅ COMPLETED
