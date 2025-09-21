@@ -18,4 +18,5 @@ Global Django configuration, settings, and project-wide utilities for Scholaria.
 
 ## Changelog
 
+- 2025-09-21: Implemented Context Management System Enhancement - removed MinIO dependency for PDF storage, added upload → parse → chunk → discard file workflow, updated admin interface for PDF-specific workflow
 - 2025-09-20: Removed Unstructured API URL setting after migrating PDF parser to Docling.

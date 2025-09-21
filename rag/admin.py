@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.db.models import Count
-from django.forms import ModelForm
+from django.forms import FileField, ModelForm
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
@@ -102,6 +102,40 @@ class TopicAdmin(admin.ModelAdmin):
         return getattr(obj, "context_count", obj.contexts.count())
 
 
+class ContextForm(ModelForm):
+    """Custom form for Context admin with file upload capability."""
+
+    uploaded_file = FileField(
+        required=False,
+        help_text="Upload a PDF file to automatically parse and create chunks. "
+        "File will be processed and discarded - not stored permanently.",
+    )
+
+    class Meta:
+        model = Context
+        fields = "__all__"
+
+    def clean_uploaded_file(self) -> Any:
+        """Validate uploaded file for PDF context types."""
+        uploaded_file = self.cleaned_data.get("uploaded_file")
+        context_type = self.cleaned_data.get("context_type")
+
+        if uploaded_file and context_type == "PDF":
+            validator = FileValidator()
+            validation_result = validator.validate_file(uploaded_file)
+
+            if not validation_result.is_valid:
+                errors = validation_result.errors or []
+                raise ValidationError(f"File validation failed: {'; '.join(errors)}")
+
+            if validation_result.file_type != "pdf":
+                raise ValidationError(
+                    "Only PDF files are supported for PDF context type."
+                )
+
+        return uploaded_file
+
+
 class ContextItemInline(admin.TabularInline):
     """Inline admin for ContextItems within Context admin."""
 
@@ -115,11 +149,67 @@ class ContextItemInline(admin.TabularInline):
     def get_queryset(self, request: HttpRequest) -> QuerySet[ContextItem]:
         """Limit to show only recent items to avoid performance issues."""
         qs = super().get_queryset(request)
-        return qs.order_by("-created_at")[:20]  # Show only latest 20 chunks
+        return qs.order_by("-created_at")  # Remove slice to avoid filter issues
+
+
+class FAQQAInline(admin.TabularInline):
+    """FAQ-specific inline for Q&A pair management."""
+
+    model = ContextItem
+    extra = 0
+    fields = ["title", "content"]
+    readonly_fields = ["title"]
+    verbose_name = "Q&A Pair"
+    verbose_name_plural = "Q&A Pairs"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[ContextItem]:
+        """Get ContextItems for FAQ contexts only."""
+        qs = super().get_queryset(request)
+        return qs.order_by("created_at")
+
+    def has_add_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        """Disable add permission for FAQ inline - use the admin action instead."""
+        return False
+
+
+class MarkdownChunkInline(admin.TabularInline):
+    """Markdown-specific inline for chunk preview."""
+
+    model = ContextItem
+    extra = 0
+    fields = ["title", "chunk_preview"]
+    readonly_fields = ["title", "chunk_preview"]
+    verbose_name = "Markdown Section"
+    verbose_name_plural = "Markdown Sections"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[ContextItem]:
+        """Get ContextItems for Markdown contexts only."""
+        qs = super().get_queryset(request)
+        return qs.order_by("created_at")
+
+    @admin.display(description="Content Preview")
+    def chunk_preview(self, obj: ContextItem) -> str:
+        """Show a preview of the chunk content."""
+        if obj and obj.content:
+            # Show first 100 characters
+            preview = obj.content[:100]
+            if len(obj.content) > 100:
+                preview += "..."
+            return preview
+        return ""
+
+    def has_add_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        """Disable add permission for Markdown inline - edit content directly."""
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        """Disable delete permission for Markdown inline - edit content directly."""
+        return False
 
 
 @admin.register(Context)
 class ContextAdmin(admin.ModelAdmin):
+    form = ContextForm
     list_display = [
         "name",
         "context_type",
@@ -131,17 +221,96 @@ class ContextAdmin(admin.ModelAdmin):
     list_filter = ["context_type", "processing_status", "created_at", "updated_at"]
     search_fields = ["name", "description"]
     readonly_fields = ["created_at", "updated_at", "chunk_count"]
-    actions = ["bulk_update_context_type", "bulk_update_processing_status"]
-    inlines = [ContextItemInline]
-    fieldsets = (
-        (None, {"fields": ("name", "description", "context_type")}),
-        ("Content", {"fields": ("original_content",), "classes": ("collapse",)}),
-        ("Processing", {"fields": ("processing_status", "chunk_count")}),
-        (
-            "Timestamps",
-            {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
-        ),
-    )
+    actions = [
+        "bulk_update_context_type",
+        "bulk_update_processing_status",
+        "add_qa_pair_action",
+    ]
+
+    def get_inlines(
+        self, request: HttpRequest, obj: Context | None
+    ) -> list[type[admin.TabularInline]]:  # type: ignore[override]
+        """Return different inlines based on context type."""
+        if obj and obj.context_type == "FAQ":
+            return [FAQQAInline]
+        elif obj and obj.context_type == "MARKDOWN":
+            return [MarkdownChunkInline]
+        else:
+            return [ContextItemInline]
+
+    def get_fieldsets(self, request: HttpRequest, obj: Context | None = None) -> Any:
+        """Dynamic fieldsets based on context type."""
+        base_fieldsets = [
+            (None, {"fields": ("name", "description", "context_type")}),
+            ("Processing", {"fields": ("processing_status", "chunk_count")}),
+            (
+                "Timestamps",
+                {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
+            ),
+        ]
+
+        if obj and obj.context_type == "FAQ":
+            # FAQ-specific fieldsets
+            base_fieldsets.insert(
+                1,
+                (
+                    "Q&A Management",
+                    {
+                        "fields": (),
+                        "description": 'Use the "Add Q&A Pair" action below to add question-answer pairs to this FAQ context.',
+                        "classes": ("wide",),
+                    },
+                ),
+            )
+        elif obj and obj.context_type == "PDF":
+            # PDF-specific fieldsets
+            base_fieldsets.insert(
+                1,
+                (
+                    "File Upload",
+                    {
+                        "fields": ("uploaded_file",),
+                        "description": "Upload a PDF file to automatically parse and create chunks.",
+                    },
+                ),
+            )
+        elif obj and obj.context_type == "MARKDOWN":
+            # Markdown-specific fieldsets - put content field first for direct editing
+            base_fieldsets.insert(
+                1,
+                (
+                    "Markdown Content",
+                    {
+                        "fields": ("original_content",),
+                        "description": "Edit markdown content directly. Changes will automatically re-chunk the content when saved.",
+                        "classes": ("wide",),
+                    },
+                ),
+            )
+        else:
+            # For new objects (obj is None) or unknown types, show PDF upload option
+            base_fieldsets.insert(
+                1,
+                (
+                    "File Upload",
+                    {
+                        "fields": ("uploaded_file",),
+                        "description": "For PDF contexts, upload a file to automatically parse and create chunks.",
+                    },
+                ),
+            )
+
+        # Content fieldset for non-markdown types (markdown has its own content section)
+        if not (obj and obj.context_type == "MARKDOWN"):
+            base_fieldsets.insert(
+                -2,
+                (
+                    "Content",
+                    {"fields": ("original_content",), "classes": ("collapse",)},
+                ),
+            )
+
+        return base_fieldsets
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Context]:
         """Annotate queryset with item counts for ordering display columns."""
@@ -209,6 +378,106 @@ class ContextAdmin(admin.ModelAdmin):
     def item_count(self, obj: Context) -> int:
         """Display the number of context items in this context."""
         return getattr(obj, "item_count", obj.items.count())
+
+    def save_model(
+        self, request: HttpRequest, obj: Context, form: Any, change: bool
+    ) -> None:
+        """Custom save method to handle content processing for different context types."""
+        # Get the old content if this is an update
+        old_content = None
+        if change and obj.pk:
+            try:
+                old_obj = Context.objects.get(pk=obj.pk)
+                old_content = old_obj.original_content
+            except Context.DoesNotExist:
+                pass
+
+        # Save the context first
+        super().save_model(request, obj, form, change)
+
+        # Handle markdown content processing if content changed
+        if obj.context_type == "MARKDOWN" and obj.original_content:
+            if not change or old_content != obj.original_content:
+                try:
+                    success = obj.process_markdown_content(obj.original_content)
+                    if success:
+                        messages.success(
+                            request,
+                            f"Successfully processed markdown content and created "
+                            f"{obj.chunk_count} sections.",
+                        )
+                    else:
+                        messages.error(request, "Failed to process markdown content.")
+                except Exception as e:
+                    messages.error(request, f"Error processing markdown: {str(e)}")
+
+        # Handle PDF file upload
+        uploaded_file = form.cleaned_data.get("uploaded_file")
+        if uploaded_file and obj.context_type == "PDF":
+            try:
+                # Use the existing PDF workflow
+                success = obj.process_pdf_upload(uploaded_file)
+                if success:
+                    messages.success(
+                        request,
+                        f"Successfully processed PDF '{uploaded_file.name}' and created "
+                        f"{obj.chunk_count} chunks. Original file was not stored.",
+                    )
+                else:
+                    messages.error(request, "Failed to process PDF file.")
+            except Exception as e:
+                messages.error(request, f"Error processing PDF: {str(e)}")
+
+    @admin.action(description="Add Q&A pair to selected FAQ contexts")
+    def add_qa_pair_action(
+        self, request: HttpRequest, queryset: QuerySet[Context]
+    ) -> HttpResponse | None:
+        """Action to add Q&A pairs to FAQ contexts."""
+        # Filter to only FAQ contexts
+        faq_contexts = queryset.filter(context_type="FAQ")
+
+        if not faq_contexts.exists():
+            messages.error(request, "This action can only be used with FAQ contexts.")
+            return redirect(request.get_full_path())
+
+        if (
+            request.method == "POST"
+            and "question" in request.POST
+            and "answer" in request.POST
+        ):
+            question = request.POST.get("question", "").strip()
+            answer = request.POST.get("answer", "").strip()
+
+            if not question or not answer:
+                messages.error(request, "Both question and answer are required.")
+                return redirect(request.get_full_path())
+
+            success_count = 0
+            for context in faq_contexts:
+                try:
+                    if context.add_qa_pair(question, answer):
+                        success_count += 1
+                except Exception as e:
+                    messages.error(
+                        request, f"Error adding Q&A to {context.name}: {str(e)}"
+                    )
+
+            if success_count > 0:
+                messages.success(
+                    request,
+                    f"Successfully added Q&A pair to {success_count} FAQ context(s).",
+                )
+
+            return redirect(request.get_full_path())
+
+        # Show Q&A input form
+        template_context = {
+            "title": "Add Q&A Pair to FAQ Contexts",
+            "queryset": faq_contexts,
+            "action": "add_qa_pair_action",
+            "description": "Add a question-answer pair to the selected FAQ contexts.",
+        }
+        return render(request, "admin/add_qa_pair.html", template_context)
 
 
 class ContextItemForm(ModelForm):

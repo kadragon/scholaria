@@ -37,23 +37,24 @@
 ### Context Management System Enhancement (Priority)
 
 #### **Context Type-Specific Workflows**
-- [ ] **PDF Context Enhancement**:
-  - Remove MinIO dependency for PDF storage
-  - Implement upload → parse → chunk → discard file workflow
-  - Add chunk preview without file retention
-  - Update admin interface for PDF-specific workflow
 
-- [ ] **FAQ Context Enhancement**:
-  - Create two-phase FAQ creation process (context creation → Q&A addition)
-  - Implement Q&A pair management interface within Context admin
-  - Add dedicated FAQ chunk management (1 Q&A pair = 1 chunk)
-  - Create FAQ-specific inline editor
+- [x] **PDF Context Enhancement**: ✅ COMPLETED
+  - [x] Remove MinIO dependency for PDF storage ✅
+  - [x] Implement upload → parse → chunk → discard file workflow ✅
+  - [x] Add chunk preview without file retention ✅
+  - [x] Update admin interface for PDF-specific workflow ✅
 
-- [ ] **Markdown Context Enhancement**:
-  - Enable direct markdown editing in original_content field
-  - Implement smart markdown chunking strategy
-  - Add markdown preview and rendering capabilities
-  - Create markdown-specific admin interface
+- [x] **FAQ Context Enhancement**: ✅ COMPLETED
+  - [x] Create two-phase FAQ creation process (context creation → Q&A addition) ✅
+  - [x] Implement Q&A pair management interface within Context admin ✅
+  - [x] Add dedicated FAQ chunk management (1 Q&A pair = 1 chunk) ✅
+  - [x] Create FAQ-specific inline editor ✅
+
+- [x] **Markdown Context Enhancement**: ✅ COMPLETED
+  - [x] Enable direct markdown editing in original_content field ✅
+  - [x] Implement smart markdown chunking strategy ✅
+  - [x] Add markdown preview and rendering capabilities ✅
+  - [x] Create markdown-specific admin interface ✅
 
 #### **Admin Interface Improvements**
 - [ ] **Context Type Selection Workflow**:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from django.core.exceptions import ValidationError
@@ -82,6 +84,191 @@ class Context(models.Model):
         new_count = self.items.count()
         Context.objects.filter(pk=self.pk).update(chunk_count=new_count)
         self.chunk_count = new_count
+
+    def process_pdf_upload(self, uploaded_file: Any) -> bool:
+        """
+        Process PDF upload with parse → chunk → discard workflow.
+
+        Args:
+            uploaded_file: Django UploadedFile instance
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Import here to avoid circular imports
+            from .ingestion.chunkers import TextChunker
+            from .ingestion.parsers import PDFParser
+
+            self.processing_status = "PROCESSING"
+            self.save(update_fields=["processing_status"])
+
+            # Create temporary file for parsing
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                # Write uploaded file content to temporary file
+                uploaded_file.seek(0)
+                for chunk in uploaded_file.chunks():
+                    temp_file.write(chunk)
+                temp_file.flush()
+
+                # Parse PDF content
+                parser = PDFParser()
+                parsed_content = parser.parse_file(temp_file.name)
+
+                # Store original content in Context
+                self.original_content = parsed_content
+
+                # Create chunks from parsed content
+                chunker = TextChunker(chunk_size=1000, overlap=200)
+                chunks = chunker.chunk_text(parsed_content)
+
+                # Create ContextItem instances for each chunk
+                for i, chunk_content in enumerate(chunks):
+                    ContextItem.objects.create(
+                        title=f"{self.name} - Chunk {i+1}",
+                        content=chunk_content,
+                        context=self,
+                        # Important: No uploaded_file or file_path - we discard the file
+                    )
+
+                # Update processing status and chunk count
+                self.processing_status = "COMPLETED"
+                self.update_chunk_count()
+                self.save(update_fields=["original_content", "processing_status"])
+
+                return True
+
+        except Exception as e:
+            self.processing_status = "FAILED"
+            self.save(update_fields=["processing_status"])
+            raise e
+        finally:
+            # Clean up temporary file
+            try:
+                Path(temp_file.name).unlink(missing_ok=True)
+            except:  # noqa: E722
+                pass
+
+    def add_qa_pair(self, question: str, answer: str) -> bool:
+        """
+        Add a Q&A pair to an FAQ context.
+        Each Q&A pair becomes a separate chunk (1 Q&A pair = 1 chunk).
+
+        Args:
+            question: The question text
+            answer: The answer text
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if self.context_type != "FAQ":
+                raise ValueError("add_qa_pair can only be used with FAQ contexts")
+
+            # Format the Q&A pair content
+            qa_content = f"Q: {question.strip()}\nA: {answer.strip()}"
+
+            # Get the next Q&A number for the title
+            current_count = self.items.count()
+            qa_number = current_count + 1
+
+            # Create a ContextItem for this Q&A pair
+            ContextItem.objects.create(
+                title=f"{self.name} - Q&A {qa_number}",
+                content=qa_content,
+                context=self,
+                # No uploaded_file or file_path for FAQ pairs
+            )
+
+            # Update the original_content to include all Q&A pairs
+            all_qa_pairs = []
+            for item in self.items.all().order_by("created_at"):
+                all_qa_pairs.append(item.content)
+
+            self.original_content = "\n\n".join(all_qa_pairs)
+
+            # Update processing status and chunk count
+            if self.processing_status == "PENDING":
+                self.processing_status = "COMPLETED"
+
+            self.update_chunk_count()
+            self.save(update_fields=["original_content", "processing_status"])
+
+            return True
+
+        except Exception:
+            return False
+
+    def process_markdown_content(self, markdown_content: str) -> bool:
+        """
+        Process markdown content with smart chunking strategy.
+
+        Args:
+            markdown_content: The markdown content as a string
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if self.context_type != "MARKDOWN":
+                raise ValueError(
+                    "process_markdown_content can only be used with MARKDOWN contexts"
+                )
+
+            # Import here to avoid circular imports
+            from .ingestion.chunkers import MarkdownChunker
+
+            self.processing_status = "PROCESSING"
+            self.save(update_fields=["processing_status"])
+
+            # Store the original markdown content
+            self.original_content = markdown_content.strip()
+
+            # Create chunks using smart markdown chunking
+            chunker = MarkdownChunker(chunk_size=1200, overlap=200)
+            chunks = chunker.chunk_text(markdown_content)
+
+            # Clear existing chunks for this context
+            self.items.all().delete()
+
+            # Create ContextItem instances for each chunk
+            for i, chunk_content in enumerate(chunks):
+                # Create meaningful titles based on content
+                title = self._generate_chunk_title(chunk_content, i + 1)
+
+                ContextItem.objects.create(
+                    title=title,
+                    content=chunk_content,
+                    context=self,
+                    # No uploaded_file or file_path - content is directly edited
+                )
+
+            # Update processing status and chunk count
+            self.processing_status = "COMPLETED"
+            self.update_chunk_count()
+            self.save(update_fields=["original_content", "processing_status"])
+
+            return True
+
+        except Exception:
+            self.processing_status = "FAILED"
+            self.save(update_fields=["processing_status"])
+            return False
+
+    def _generate_chunk_title(self, chunk_content: str, chunk_number: int) -> str:
+        """Generate a meaningful title for a markdown chunk."""
+        # Try to extract the first heading from the chunk
+        lines = chunk_content.split("\n")
+        for line in lines:
+            line = line.strip()
+            if line.startswith("#"):
+                # Extract heading text (remove # symbols and clean up)
+                heading = line.lstrip("#").strip()
+                if heading:
+                    return f"{self.name} - {heading}"
+
+        # If no heading found, use generic chunk title
+        return f"{self.name} - Section {chunk_number}"
 
     def __str__(self) -> str:
         return self.name

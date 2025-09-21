@@ -50,3 +50,12 @@ Django RAG app with Topic, Context, and ContextItem models.
 - Docker integration, performance benchmarks
 - Security validation, error handling
 - Rate limiting, usage monitoring
+
+### Context Enhancement
+
+- Two-phase FAQ creation process implemented
+- Q&A pair management interface in Context admin
+- Type-specific workflows for PDF, FAQ and Markdown contexts
+- FAQ-specific inline editor for Q&A pairs
+- Markdown direct editing with smart chunking by sections
+- Markdown-specific admin interface with chunk preview
