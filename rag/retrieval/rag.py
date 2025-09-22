@@ -4,9 +4,9 @@ import hashlib
 import json
 from typing import TYPE_CHECKING, Any
 
+import openai
 from django.conf import settings
 from django.core.cache import cache
-from openai import OpenAI
 
 from .embeddings import EmbeddingService
 from .monitoring import OpenAIUsageMonitor
@@ -26,7 +26,9 @@ class RAGService:
         # Ensure Qdrant collection exists
         self.qdrant_service.create_collection()
         self.reranking_service = RerankingService()
-        self.chat_client = OpenAI(api_key=getattr(settings, "OPENAI_API_KEY", None))
+        self.chat_client = openai.OpenAI(
+            api_key=getattr(settings, "OPENAI_API_KEY", None)
+        )
         self.monitor = OpenAIUsageMonitor()
 
     def _get_query_cache_key(
@@ -239,8 +241,19 @@ Please provide a comprehensive answer based on the context above. If the context
 
         # Track usage metrics
         if hasattr(response, "usage") and response.usage:
+            # Ensure we get integers rather than MagicMock objects in tests
+            prompt_tokens = (
+                int(response.usage.prompt_tokens)
+                if hasattr(response.usage, "prompt_tokens")
+                else 0
+            )
+            completion_tokens = (
+                int(response.usage.completion_tokens)
+                if hasattr(response.usage, "completion_tokens")
+                else 0
+            )
             self.monitor.track_chat_completion_usage(
-                response.usage.prompt_tokens, response.usage.completion_tokens, model
+                prompt_tokens, completion_tokens, model
             )
         else:
             # Estimate tokens if usage not available

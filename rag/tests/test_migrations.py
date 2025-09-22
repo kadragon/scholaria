@@ -104,7 +104,12 @@ class MigrationCompatibilityTest(TransactionTestCase):
         # Apply second migration
         call_command("migrate", "rag", "0002_context_contextitem", verbosity=0)
 
-        # Now Context should work
+        # Apply all remaining migrations before creating Context
+        # This is necessary because the current model definition includes fields
+        # that are only added in later migrations
+        call_command("migrate", "rag", verbosity=0)
+
+        # Now Context should work with all fields available
         context = Context.objects.create(
             name="Test Context", description="Test", context_type="PDF"
         )

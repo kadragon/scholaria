@@ -38,6 +38,27 @@ TDD test suite for RAG models with comprehensive coverage.
 
 ### Quality Validation
 - Golden dataset with 12 test cases (easy/medium/hard)
-- Performance benchmarks (<3 second requirement)
+- Performance benchmarks: single worker <1s, parallel <5s (accounts for pytest-xdist overhead)
 - Celery task error handling with retry mechanisms
 - Production-ready with comprehensive test suite (200+ tests)
+- Added regression for markdown ingestion when Celery request metadata (`id`/`called_directly`/`eta`) is missing to cover direct task invocation.
+
+### Performance Testing Insights
+- Celery tasks use `bulk_create` for optimal database performance (1000 items in ~0.2s)
+- Test environment detection via `PYTEST_XDIST_WORKER` environment variable
+- Parallel test execution adds ~8-10x overhead due to worker coordination
+- Performance assertions differentiate between single/parallel execution contexts
+
+### Testing Patterns for Monitoring Systems
+- **Mock Monitoring Classes**: Always mock `OpenAIUsageMonitor` in retrieval tests to prevent cache serialization errors with MagicMock objects
+- **Cache Avoidance**: MagicMock objects cannot be pickled by Django's cache system (Redis backend), causing test failures
+- **Pattern**: Use `@patch("rag.retrieval.embeddings.OpenAIUsageMonitor")` and return a mocked instance to bypass cache operations
+
+### Service Mocking in E2E Tests
+- **Service Initialization**: Initialize services within mock context to ensure patches are applied correctly
+- **Correct Patch Paths**: Use import-path-based patches:
+  - EmbeddingService: `@patch("rag.retrieval.embeddings.openai.OpenAI")`
+  - QdrantService: `@patch("rag.retrieval.qdrant.qdrant_client.QdrantClient")`
+- **Alternative Pattern**: Use `@patch.object(ServiceClass, 'method_name')` for simpler, more reliable mocking
+- **Embedding Dimensions**: Test embedding dimensions must match actual service configuration (text-embedding-3-small: 1536, text-embedding-3-large: 3072)
+- **Operation ID Format**: Mock Qdrant responses must include `operation_id` attribute that returns string values

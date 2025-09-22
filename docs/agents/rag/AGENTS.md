@@ -55,8 +55,11 @@ Django RAG app with Topic, Context, and ContextItem models.
 
 - Two-phase FAQ creation process implemented
 - Q&A pair management interface in Context admin
+- Context admin relies on `get_inline_instances` with a default inline list to keep ContextItem inline available while swapping FAQ/Markdown specific inlines per context type
 - Type-specific workflows for PDF, FAQ and Markdown contexts
 - FAQ-specific inline editor for Q&A pairs
 - Markdown direct editing with smart chunking by sections
 - Markdown-specific admin interface with chunk preview
 - FAQ Q&A pairs use standard Django inline deletion (select item and save to delete)
+- Context admin skips inlines on initial creation and defaults missing processing status to `PENDING` to support programmatic form posts.
+- ContextItem admin stays registered (even if hidden in navigation) so `/admin/rag/contextitem/` endpoints remain available for automated workflows.

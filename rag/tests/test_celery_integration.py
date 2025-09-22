@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
@@ -116,6 +117,48 @@ class CeleryTaskProcessingTest(TestCase):
                     self.assertEqual(first_item.metadata["chunk_index"], 1)
                     self.assertEqual(first_item.metadata["total_chunks"], 2)
 
+    def test_task_with_missing_request_metadata(self) -> None:
+        """Task should succeed even if Celery request lacks optional fields."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            test_file = Path(temp_dir) / "test.md"
+            test_file.write_text("# Test Document\n\nThis is test content.")
+
+            # Simulate a Celery task where request is missing optional attributes
+            task_context = SimpleNamespace(request=SimpleNamespace(id=None))
+
+            with patch("rag.tasks.MarkdownParser") as mock_parser_class:
+                mock_parser = Mock()
+                mock_parser.parse_file.return_value = (
+                    "# Test Document\n\nThis is test content."
+                )
+                mock_parser_class.return_value = mock_parser
+
+                with patch(
+                    "rag.ingestion.chunkers.MarkdownChunker"
+                ) as mock_chunker_class:
+                    mock_chunker = Mock()
+                    mock_chunker.chunk_text.return_value = [
+                        "# Test Document",
+                        "This is test content.",
+                    ]
+                    mock_chunker_class.return_value = mock_chunker
+
+                    self.context.context_type = "MARKDOWN"
+                    self.context.save()
+
+                    original = ingest_markdown_document.__wrapped__.__func__
+                    result = original(
+                        task_context,
+                        self.context.id,
+                        str(test_file),
+                        "Test Markdown",
+                    )
+
+                    self.assertEqual(result, 2)
+                    self.assertEqual(
+                        ContextItem.objects.filter(context=self.context).count(), 2
+                    )
+
 
 class CeleryErrorHandlingTest(TestCase):
     """Test Celery task error handling scenarios."""
@@ -177,11 +220,12 @@ class CeleryErrorHandlingTest(TestCase):
         self.assertIn("Parsing failed", str(cm.exception))
 
     @patch("rag.tasks.PDFParser")
-    @patch("rag.ingestion.chunkers.PDFChunker")
+    @patch("rag.tasks.chunkers_module.PDFChunker")
     def test_chunking_error_handling(
         self, mock_chunker_class: Mock, mock_parser_class: Mock
     ) -> None:
         """Test handling of chunking errors."""
+
         # Mock parser success
         mock_parser = Mock()
         mock_parser.parse_file.return_value = "Valid content"
@@ -417,17 +461,22 @@ class CeleryTaskPerformanceTest(TestCase):
     def test_bulk_operations_performance(
         self, mock_chunker_class: Mock, mock_parser_class: Mock
     ) -> None:
-        """Test that tasks use efficient bulk operations."""
+        """Test that tasks use efficient bulk operations and complete within 3 seconds."""
+        import time
+
         # Mock parser and chunker
         mock_parser = Mock()
         mock_parser.parse_file.return_value = "Large document content"
         mock_parser_class.return_value = mock_parser
 
         # Create many chunks to test bulk operations
-        many_chunks = [f"chunk_{i}" for i in range(100)]
+        many_chunks = [f"chunk_{i}" for i in range(1000)]
         mock_chunker = Mock()
         mock_chunker.chunk_text.return_value = many_chunks
         mock_chunker_class.return_value = mock_chunker
+
+        # Time the task execution
+        start_time = time.time()
 
         # Execute task
         result = ingest_pdf_document(
@@ -436,14 +485,30 @@ class CeleryTaskPerformanceTest(TestCase):
             title="Large Document",
         )
 
+        execution_time = time.time() - start_time
+
         # Verify all chunks were created
-        self.assertEqual(result, 100)
-        self.assertEqual(ContextItem.objects.filter(context=self.context).count(), 100)
+        self.assertEqual(result, 1000)
+        self.assertEqual(ContextItem.objects.filter(context=self.context).count(), 1000)
 
         # Verify bulk_create was used (implicit test - if individual saves were used,
         # this test would be much slower)
         items = ContextItem.objects.filter(context=self.context)
-        self.assertEqual(items.count(), 100)
+        self.assertEqual(items.count(), 1000)
+
+        # Performance requirement: must complete within reasonable time
+        # Check if running in parallel (pytest-xdist)
+        import os
+
+        is_parallel = os.environ.get("PYTEST_XDIST_WORKER") is not None
+        max_time = 5.0 if is_parallel else 1.0
+
+        self.assertLess(
+            execution_time,
+            max_time,
+            f"Task took {execution_time:.2f}s, expected < {max_time}s "
+            f"(parallel={is_parallel})",
+        )
 
     @patch("rag.tasks.PDFParser")
     def test_memory_efficient_processing(self, mock_parser_class: Mock) -> None:

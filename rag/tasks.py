@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from celery import shared_task
 from django.db import transaction
 
-from .ingestion.chunkers import FAQChunker, MarkdownChunker, PDFChunker
+from .ingestion import chunkers as chunkers_module
 from .ingestion.parsers import FAQParser, MarkdownParser, PDFParser
 from .models import Context, ContextItem
 
@@ -15,6 +15,29 @@ if TYPE_CHECKING:
     pass
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_task_request_metadata(task: Any) -> tuple[Any | None, str | None]:
+    """Return safe task metadata for chunk persistence."""
+
+    request = getattr(task, "request", None)
+
+    task_id = getattr(request, "id", None) if request is not None else None
+
+    called_directly = (
+        getattr(request, "called_directly", True) if request is not None else True
+    )
+
+    eta = getattr(request, "eta", None) if request is not None else None
+
+    if called_directly:
+        ingestion_timestamp = datetime.now(UTC).isoformat()
+    elif eta and hasattr(eta, "isoformat"):
+        ingestion_timestamp = eta.isoformat()
+    else:
+        ingestion_timestamp = None
+
+    return task_id, ingestion_timestamp
 
 
 @shared_task(
@@ -140,7 +163,7 @@ def ingest_pdf_document(self: Any, context_id: int, file_path: str, title: str) 
 
         # Chunk the content with optimized PDF chunker
         try:
-            chunker = PDFChunker(chunk_size=1000, overlap=150)
+            chunker = chunkers_module.PDFChunker(chunk_size=1000, overlap=150)
             chunks = chunker.chunk_text(content)
             logger.info(
                 f"PDF content chunked into {len(chunks)} pieces using PDFChunker"
@@ -155,6 +178,8 @@ def ingest_pdf_document(self: Any, context_id: int, file_path: str, title: str) 
 
         # Create ContextItem for each chunk with database transaction
         try:
+            task_id, ingestion_timestamp = _extract_task_request_metadata(self)
+
             with transaction.atomic():
                 items_to_create = [
                     ContextItem(
@@ -166,12 +191,8 @@ def ingest_pdf_document(self: Any, context_id: int, file_path: str, title: str) 
                             "chunk_index": i,
                             "total_chunks": len(chunks),
                             "chunk_size": len(chunk),
-                            "task_id": self.request.id,
-                            "ingestion_timestamp": datetime.now(UTC).isoformat()
-                            if self.request.called_directly
-                            else self.request.eta.isoformat()
-                            if self.request.eta
-                            else None,
+                            "task_id": task_id,
+                            "ingestion_timestamp": ingestion_timestamp,
                         },
                     )
                     for i, chunk in enumerate(chunks, 1)
@@ -242,7 +263,7 @@ def ingest_faq_document(self: Any, context_id: int, file_path: str, title: str) 
 
         # Chunk the content with optimized FAQ chunker
         try:
-            chunker = FAQChunker(chunk_size=800, overlap=100)
+            chunker = chunkers_module.FAQChunker(chunk_size=800, overlap=100)
             chunks = chunker.chunk_text(content)
             logger.info(
                 f"FAQ content chunked into {len(chunks)} pieces using FAQChunker"
@@ -257,6 +278,8 @@ def ingest_faq_document(self: Any, context_id: int, file_path: str, title: str) 
 
         # Create ContextItem for each chunk with database transaction
         try:
+            task_id, ingestion_timestamp = _extract_task_request_metadata(self)
+
             with transaction.atomic():
                 items_to_create = [
                     ContextItem(
@@ -269,12 +292,8 @@ def ingest_faq_document(self: Any, context_id: int, file_path: str, title: str) 
                             "total_chunks": len(chunks),
                             "chunk_size": len(chunk),
                             "content_type": "faq",
-                            "task_id": self.request.id,
-                            "ingestion_timestamp": datetime.now(UTC).isoformat()
-                            if self.request.called_directly
-                            else self.request.eta.isoformat()
-                            if self.request.eta
-                            else None,
+                            "task_id": task_id,
+                            "ingestion_timestamp": ingestion_timestamp,
                         },
                     )
                     for i, chunk in enumerate(chunks, 1)
@@ -347,7 +366,7 @@ def ingest_markdown_document(
 
         # Chunk the content with optimized Markdown chunker
         try:
-            chunker = MarkdownChunker(chunk_size=1200, overlap=200)
+            chunker = chunkers_module.MarkdownChunker(chunk_size=1200, overlap=200)
             chunks = chunker.chunk_text(content)
             logger.info(
                 f"Markdown content chunked into {len(chunks)} pieces using MarkdownChunker"
@@ -362,6 +381,8 @@ def ingest_markdown_document(
 
         # Create ContextItem for each chunk with database transaction
         try:
+            task_id, ingestion_timestamp = _extract_task_request_metadata(self)
+
             with transaction.atomic():
                 items_to_create = [
                     ContextItem(
@@ -374,12 +395,8 @@ def ingest_markdown_document(
                             "total_chunks": len(chunks),
                             "chunk_size": len(chunk),
                             "content_type": "markdown",
-                            "task_id": self.request.id,
-                            "ingestion_timestamp": datetime.now(UTC).isoformat()
-                            if self.request.called_directly
-                            else self.request.eta.isoformat()
-                            if self.request.eta
-                            else None,
+                            "task_id": task_id,
+                            "ingestion_timestamp": ingestion_timestamp,
                         },
                     )
                     for i, chunk in enumerate(chunks, 1)

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin, messages
+from django.contrib.admin.options import InlineModelAdmin
 from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.forms import FileField, ModelForm
@@ -115,6 +116,14 @@ class ContextForm(ModelForm):
         model = Context
         fields = "__all__"
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        processing_field = self.fields.get("processing_status")
+        if processing_field is not None:
+            processing_field.required = False
+            if not self.instance.pk and "processing_status" not in self.data:
+                processing_field.initial = processing_field.initial or "PENDING"
+
     def clean_uploaded_file(self) -> Any:
         """Validate uploaded file for PDF context types."""
         uploaded_file = self.cleaned_data.get("uploaded_file")
@@ -134,6 +143,13 @@ class ContextForm(ModelForm):
                 )
 
         return uploaded_file
+
+    def clean_processing_status(self) -> str:
+        """Default missing processing status to 'PENDING'."""
+        value = self.cleaned_data.get("processing_status")
+        if not value:
+            return "PENDING"
+        return str(value)
 
 
 class ContextItemInline(admin.TabularInline):
@@ -215,6 +231,7 @@ class MarkdownChunkInline(admin.TabularInline):
 
 @admin.register(Context)
 class ContextAdmin(admin.ModelAdmin):
+    inlines = [ContextItemInline]
     form = ContextForm
     list_display = [
         "name",
@@ -233,14 +250,33 @@ class ContextAdmin(admin.ModelAdmin):
         "add_qa_pair_action",
     ]
 
-    def get_inlines(self, request: HttpRequest, obj: Context | None) -> list[Any]:
-        """Return different inlines based on context type."""
+    def _inline_classes(self, obj: Context | None) -> list[type[InlineModelAdmin]]:
+        """Return inline classes appropriate for the given context instance."""
         if obj and obj.context_type == "FAQ":
             return [FAQQAInline]
-        elif obj and obj.context_type == "MARKDOWN":
+        if obj and obj.context_type == "MARKDOWN":
             return [MarkdownChunkInline]
-        else:
-            return [ContextItemInline]
+        return [ContextItemInline]
+
+    def get_inline_instances(
+        self, request: HttpRequest, obj: Context | None = None
+    ) -> list[InlineModelAdmin]:
+        """Instantiate inline admins based on context type while respecting permissions."""
+        if obj is None:
+            # Skip inlines during object creation to avoid bogus management form errors.
+            return []
+
+        inline_instances: list[InlineModelAdmin] = []
+        for inline_class in self._inline_classes(obj):
+            inline = inline_class(self.model, self.admin_site)
+            if request and not (
+                inline.has_view_or_change_permission(request, obj)
+                or inline.has_add_permission(request, obj)
+                or inline.has_delete_permission(request, obj)
+            ):
+                continue
+            inline_instances.append(inline)
+        return inline_instances
 
     def get_fieldsets(self, request: HttpRequest, obj: Context | None = None) -> Any:
         """Dynamic fieldsets based on context type."""
@@ -511,8 +547,7 @@ class ContextItemForm(ModelForm):
         return uploaded_file
 
 
-# ContextItem is hidden from main admin navigation - managed through Context admin
-# @admin.register(ContextItem)
+# ContextItem remains primarily managed through Context admin views.
 class ContextItemAdmin(admin.ModelAdmin):
     form = ContextItemForm
     list_display = ["title", "context", "file_path", "has_uploaded_file", "created_at"]

@@ -486,7 +486,7 @@ class BulkOperationsAdminTest(AdminTestBase):
         self.assertEqual(response.status_code, 200)
 
         # Should show confirmation page
-        self.assertContains(response, "Are you sure you want to delete")
+        self.assertContains(response, "정말 삭제하시겠습니까")
         self.assertContains(response, self.topics[0].name)
         self.assertContains(response, self.topics[1].name)
 
