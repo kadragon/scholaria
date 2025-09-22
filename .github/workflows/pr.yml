@@ -1,0 +1,297 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for proper diffs
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Check PR title format
+      run: |
+        # Check if PR title follows conventional commits format
+        title="${{ github.event.pull_request.title }}"
+        if [[ ! "$title" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\(.+\))?: .+ ]]; then
+          echo "❌ PR title must follow conventional commits format:"
+          echo "   feat: add new feature"
+          echo "   fix: bug fix"
+          echo "   docs: documentation changes"
+          echo "   style: formatting changes"
+          echo "   refactor: code refactoring"
+          echo "   test: add or update tests"
+          echo "   chore: maintenance tasks"
+          echo "   perf: performance improvements"
+          echo "   ci: CI/CD changes"
+          echo "   build: build system changes"
+          echo ""
+          echo "Current title: $title"
+          exit 1
+        fi
+        echo "✅ PR title format is valid"
+
+    - name: Check for breaking changes
+      run: |
+        # Check if BREAKING CHANGE is mentioned in PR body when it's a major change
+        if [[ "${{ github.event.pull_request.title }}" =~ ^[^:]+!: ]]; then
+          if ! grep -i "BREAKING CHANGE" <<< "${{ github.event.pull_request.body }}"; then
+            echo "❌ Breaking change detected but no BREAKING CHANGE description found in PR body"
+            exit 1
+          fi
+        fi
+
+    - name: Check changed files
+      run: |
+        # Get list of changed files
+        git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD > changed_files.txt
+
+        echo "📁 Changed files:"
+        cat changed_files.txt
+
+        # Check if tests are included when code changes
+        if grep -E '\.(py)$' changed_files.txt | grep -v test_ | grep -v __pycache__ | head -1; then
+          if ! grep -E 'test_.*\.py$' changed_files.txt; then
+            echo "⚠️  Code changes detected but no test files modified."
+            echo "   Consider adding or updating tests for your changes."
+          else
+            echo "✅ Tests included with code changes"
+          fi
+        fi
+
+    - name: Run quick syntax check
+      run: |
+        echo "🔍 Running syntax check on changed Python files..."
+        if [ -f changed_files.txt ]; then
+          grep '\.py$' changed_files.txt | while read file; do
+            if [ -f "$file" ]; then
+              python -m py_compile "$file"
+              echo "✅ $file"
+            fi
+          done
+        fi
+
+    - name: Check for TODO comments
+      run: |
+        echo "🔍 Checking for TODO comments in new code..."
+        if [ -f changed_files.txt ]; then
+          todos=$(git diff origin/${{ github.event.pull_request.base.ref }}...HEAD | grep '^+' | grep -i 'TODO\|FIXME\|XXX' | wc -l)
+          if [ "$todos" -gt 0 ]; then
+            echo "⚠️  Found $todos new TODO/FIXME/XXX comments:"
+            git diff origin/${{ github.event.pull_request.base.ref }}...HEAD | grep '^+.*\(TODO\|FIXME\|XXX\)'
+            echo ""
+            echo "Please consider addressing these before merging or create GitHub issues for them."
+          else
+            echo "✅ No new TODO comments found"
+          fi
+        fi
+
+  size-check:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check PR size
+      run: |
+        # Count lines changed
+        added=$(git diff --numstat origin/${{ github.event.pull_request.base.ref }}...HEAD | awk '{sum += $1} END {print sum}')
+        deleted=$(git diff --numstat origin/${{ github.event.pull_request.base.ref }}...HEAD | awk '{sum += $2} END {print sum}')
+        total=$((added + deleted))
+
+        echo "📊 PR Statistics:"
+        echo "   Lines added: $added"
+        echo "   Lines deleted: $deleted"
+        echo "   Total changes: $total"
+
+        if [ "$total" -gt 1000 ]; then
+          echo "🔔 Large PR detected ($total lines changed)"
+          echo "   Consider breaking this into smaller PRs for easier review."
+          echo "   Large PRs are harder to review and more likely to introduce bugs."
+
+          # Don't fail for large PRs, just warn
+          echo "::warning::Large PR with $total lines changed. Consider breaking into smaller PRs."
+        elif [ "$total" -gt 500 ]; then
+          echo "⚠️  Medium-sized PR ($total lines changed)"
+          echo "   This is getting large. Consider if it can be split."
+        else
+          echo "✅ Good PR size ($total lines changed)"
+        fi
+
+  dependency-check:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+
+    - name: Check for dependency changes
+      run: |
+        git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD > changed_files.txt
+
+        if grep -q "pyproject.toml\|requirements.*\.txt\|Pipfile" changed_files.txt; then
+          echo "📦 Dependency changes detected"
+
+          # Install safety to check for known vulnerabilities
+          uv pip install safety
+
+          # Generate requirements for safety check
+          uv export --format requirements-txt --no-hashes > requirements.txt
+
+          # Check for known vulnerabilities
+          echo "🔒 Checking for known security vulnerabilities..."
+          uv run safety check --file requirements.txt --output json > safety-report.json || true
+
+          if [ -f safety-report.json ]; then
+            vulnerabilities=$(cat safety-report.json | python -c "import sys, json; data=json.load(sys.stdin); print(len(data.get('vulnerabilities', [])))" 2>/dev/null || echo "0")
+
+            if [ "$vulnerabilities" -gt 0 ]; then
+              echo "❌ Found $vulnerabilities security vulnerabilities in dependencies!"
+              cat safety-report.json
+              exit 1
+            else
+              echo "✅ No known security vulnerabilities found"
+            fi
+          fi
+
+          # Check for major version updates
+          echo "🔍 Checking for major version updates..."
+          if git diff origin/${{ github.event.pull_request.base.ref }}...HEAD pyproject.toml | grep '^+.*[>=].*[0-9]' | grep -v '^+++'; then
+            echo "📈 Major dependency updates detected. Please ensure compatibility."
+          fi
+        else
+          echo "📦 No dependency changes detected"
+        fi
+
+  conventional-commits:
+    name: Conventional Commits Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check commit messages
+      run: |
+        echo "🔍 Checking commit message format..."
+
+        # Get commits in this PR
+        commits=$(git rev-list origin/${{ github.event.pull_request.base.ref }}..HEAD)
+
+        failed=0
+        for commit in $commits; do
+          msg=$(git log --format=%s -n 1 $commit)
+
+          # Skip merge commits
+          if [[ "$msg" =~ ^Merge ]]; then
+            continue
+          fi
+
+          # Check conventional commits format
+          if [[ ! "$msg" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\(.+\))?: .+ ]]; then
+            echo "❌ Invalid commit message format: $msg"
+            echo "   Commit: $commit"
+            failed=1
+          else
+            echo "✅ $msg"
+          fi
+        done
+
+        if [ $failed -eq 1 ]; then
+          echo ""
+          echo "Commit messages must follow conventional commits format:"
+          echo "  type(scope): description"
+          echo ""
+          echo "Types: feat, fix, docs, style, refactor, test, chore, perf, ci, build"
+          echo "Example: feat(auth): add user registration endpoint"
+          exit 1
+        fi
+
+  auto-assign-reviewers:
+    name: Auto-assign Reviewers
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+
+    steps:
+    - name: Auto-assign reviewers
+      uses: actions/github-script@v7
+      with:
+        script: |
+          // Define code owners/reviewers
+          const codeOwners = {
+            'rag/': ['kadragon'],
+            'core/': ['kadragon'],
+            'docs/': ['kadragon'],
+            '.github/': ['kadragon']
+          };
+
+          // Get changed files
+          const { data: files } = await github.rest.pulls.listFiles({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number,
+          });
+
+          // Determine reviewers based on changed files
+          const reviewers = new Set();
+
+          for (const file of files) {
+            for (const [path, owners] of Object.entries(codeOwners)) {
+              if (file.filename.startsWith(path)) {
+                owners.forEach(owner => reviewers.add(owner));
+              }
+            }
+          }
+
+          // Remove PR author from reviewers
+          reviewers.delete(context.payload.pull_request.user.login);
+
+          // Request reviews
+          if (reviewers.size > 0) {
+            await github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              reviewers: Array.from(reviewers),
+            });
+
+            console.log(`Requested reviews from: ${Array.from(reviewers).join(', ')}`);
+          }

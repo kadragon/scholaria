@@ -124,6 +124,11 @@ class ContextForm(ModelForm):
             if not self.instance.pk and "processing_status" not in self.data:
                 processing_field.initial = processing_field.initial or "PENDING"
 
+        # Make chunk_count not required for forms (it's auto-calculated)
+        chunk_count_field = self.fields.get("chunk_count")
+        if chunk_count_field is not None:
+            chunk_count_field.required = False
+
     def clean_uploaded_file(self) -> Any:
         """Validate uploaded file for PDF context types."""
         uploaded_file = self.cleaned_data.get("uploaded_file")

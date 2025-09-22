@@ -384,25 +384,27 @@ class HealthCheckView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request: Request) -> Response:
-        """Return health status of the application."""
+        """Return basic health status of the application."""
+        from core.health import CacheHealthCheck, DatabaseHealthCheck
+
         try:
-            # Basic database connectivity check
-            from django.db import connection
+            # Quick database check
+            db_check = DatabaseHealthCheck()
+            db_result = db_check.check()
 
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT 1")
+            # Quick cache check
+            cache_check = CacheHealthCheck()
+            cache_result = cache_check.check()
 
-            # Check cache connectivity
-            from django.core.cache import cache
-
-            cache.set("health_check", "ok", 10)
-            cache_status = cache.get("health_check") == "ok"
-
-            if cache_status:
+            # Return healthy only if both are healthy
+            if db_result["status"] == "healthy" and cache_result["status"] == "healthy":
                 return Response({"status": "healthy"}, status=status.HTTP_200_OK)
             else:
                 return Response(
-                    {"status": "unhealthy", "error": "Cache not accessible"},
+                    {
+                        "status": "unhealthy",
+                        "error": "Service dependencies unavailable",
+                    },
                     status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
 
@@ -415,5 +417,61 @@ class HealthCheckView(APIView):
 
             return Response(
                 {"status": "unhealthy", "error": "Service unavailable"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+
+class DetailedHealthCheckView(APIView):
+    """Detailed health check endpoint with comprehensive system status."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request) -> Response:
+        """Return detailed health status of all system components."""
+        from django.conf import settings
+
+        from core.health import get_default_health_checker
+
+        # Check if access token is required and provided
+        access_token = getattr(settings, "HEALTH_CHECK_ACCESS_TOKEN", None)
+        if access_token:
+            provided_token = request.GET.get("token") or request.headers.get(
+                "X-Health-Token"
+            )
+            if provided_token != access_token:
+                return Response(
+                    {"error": "Invalid or missing access token"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+
+        try:
+            # Run comprehensive health checks
+            health_checker = get_default_health_checker()
+            results = health_checker.run_all_checks()
+
+            # Determine HTTP status code based on overall health
+            http_status = (
+                status.HTTP_200_OK
+                if results["overall_status"] == "healthy"
+                else status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+            return Response(results, status=http_status)
+
+        except Exception:
+            # Log the error for debugging
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.exception("Detailed health check failed")
+
+            from datetime import datetime
+
+            return Response(
+                {
+                    "overall_status": "unhealthy",
+                    "error": "Health check system failure",
+                    "timestamp": datetime.utcnow().isoformat(),
+                },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )

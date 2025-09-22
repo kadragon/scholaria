@@ -1,5 +1,8 @@
 from .settings import *
 
+# Mark this as testing environment
+TESTING = True
+
 # Override database settings for testing
 DATABASES = {
     "default": {

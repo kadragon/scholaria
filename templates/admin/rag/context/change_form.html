@@ -1,0 +1,125 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{% static 'rag/js/context_type_selection.js' %}"></script>
+    <style>
+        .context-type-help {
+            background-color: #f0f8ff;
+            border: 1px solid #d1ecf1;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            color: #0c5460;
+        }
+
+        .fieldset-description {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .dynamic-fieldset {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .dynamic-fieldset.hidden {
+            display: none !important;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-indicator.pending {
+            background-color: #ffeaa7;
+            color: #e17055;
+        }
+
+        .status-indicator.processing {
+            background-color: #74b9ff;
+            color: #0984e3;
+        }
+
+        .status-indicator.completed {
+            background-color: #55a3ff;
+            color: #00b894;
+        }
+
+        .status-indicator.failed {
+            background-color: #fd79a8;
+            color: #e84393;
+        }
+
+        .workflow-steps {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .workflow-steps h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .workflow-steps ol {
+            margin-bottom: 0;
+        }
+
+        .workflow-steps li {
+            margin-bottom: 5px;
+        }
+    </style>
+{% endblock %}
+
+{% block form_top %}
+    <div class="context-type-help">
+        <h3>Context Type Guide</h3>
+        <ul>
+            <li><strong>PDF:</strong> Upload PDF documents that will be automatically parsed and chunked</li>
+            <li><strong>Markdown:</strong> Create content using Markdown syntax with direct editing capabilities</li>
+            <li><strong>FAQ:</strong> Create question-answer pairs for frequently asked questions</li>
+        </ul>
+    </div>
+
+    <div class="workflow-steps" id="workflow-steps-container">
+        <h4>Workflow Steps</h4>
+        <div id="pdf-workflow" class="workflow-type" style="display: none;">
+            <ol>
+                <li>Select "PDF" as context type</li>
+                <li>Fill in name and description</li>
+                <li>Upload PDF file using the file upload field</li>
+                <li>Save - the PDF will be automatically parsed and chunked</li>
+                <li>Review the generated chunks in the Context Items section</li>
+            </ol>
+        </div>
+        <div id="markdown-workflow" class="workflow-type" style="display: none;">
+            <ol>
+                <li>Select "Markdown" as context type</li>
+                <li>Fill in name and description</li>
+                <li>Enter your markdown content in the Markdown Content field</li>
+                <li>Save - the content will be automatically chunked by sections</li>
+                <li>Review the generated sections in the Markdown Sections</li>
+            </ol>
+        </div>
+        <div id="faq-workflow" class="workflow-type" style="display: none;">
+            <ol>
+                <li>Select "FAQ" as context type</li>
+                <li>Fill in name and description</li>
+                <li>Save the context first</li>
+                <li>Use the "Add Q&A Pair" action to add question-answer pairs</li>
+                <li>Review Q&A pairs in the Q&A Pairs section</li>
+            </ol>
+        </div>
+    </div>
+
+    {{ block.super }}
+{% endblock %}

@@ -34,6 +34,7 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
       - uploads_volume:/app/uploads
+      - logs_volume:/app/logs
     ports:
       - "${WEB_PORT:-8000}:8000"
     depends_on:
@@ -90,6 +91,7 @@ services:
       - SECRET_KEY=${SECRET_KEY}
     volumes:
       - uploads_volume:/app/uploads
+      - logs_volume:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -253,6 +255,57 @@ services:
         max-file: "3"
 
 
+  # Backup Service
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    restart: unless-stopped
+    environment:
+      - BACKUP_DIR=/backup
+      - LOG_DIR=/var/log/scholaria
+      - DB_HOST=postgres
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - DAILY_RETENTION=${BACKUP_DAILY_RETENTION:-7}
+      - WEEKLY_RETENTION=${BACKUP_WEEKLY_RETENTION:-30}
+      - MONTHLY_RETENTION=${BACKUP_MONTHLY_RETENTION:-365}
+      - NOTIFY_EMAIL=${BACKUP_NOTIFY_EMAIL:-}
+      - NOTIFY_WEBHOOK=${BACKUP_NOTIFY_WEBHOOK:-}
+    volumes:
+      - backup_volume:/backup
+      - backup_logs:/var/log/scholaria
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    networks:
+      - scholaria-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles:
+      - backup  # Optional service, enable with --profile backup
+
   # Nginx Reverse Proxy (Optional - for production with SSL)
   nginx:
     image: nginx:1.25-alpine
@@ -303,6 +356,12 @@ volumes:
   media_volume:
     driver: local
   uploads_volume:
+    driver: local
+  logs_volume:
+    driver: local
+  backup_volume:
+    driver: local
+  backup_logs:
     driver: local
 
 networks:

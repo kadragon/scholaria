@@ -18,6 +18,9 @@ Global Django configuration, settings, and project-wide utilities for Scholaria.
 
 ## Changelog
 
+- 2025-09-22: Implemented comprehensive CI/CD pipeline with GitHub Actions - automated testing with matrix strategy, code quality checks (ruff, mypy, bandit), security scanning (Trivy, Semgrep), PR validation, dependabot integration, and automated release workflow
+- 2025-09-22: Implemented comprehensive health check endpoints - added modular health check system with database, cache, and external service checks, detailed health monitoring with performance metrics, access token protection for production
+- 2025-09-22: Implemented structured logging and monitoring system - added JSON formatter, request logging middleware, log aggregation capabilities, Docker volume management for production
 - 2025-09-22: MVP completion - 134 tests passing, all core functionality implemented and production ready
 - 2025-09-21: Implemented Context Management System Enhancement - removed MinIO dependency for PDF storage, added upload → parse → chunk → discard file workflow, updated admin interface for PDF-specific workflow
 - 2025-09-20: Removed Unstructured API URL setting after migrating PDF parser to Docling.

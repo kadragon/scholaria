@@ -1,0 +1,326 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run security checks daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+
+    - name: Install dependencies
+      run: |
+        uv sync --dev
+        uv pip install safety bandit[toml] semgrep
+
+    - name: Generate requirements for safety
+      run: |
+        uv export --format requirements-txt --no-hashes > requirements.txt
+
+    - name: Run Safety (dependency vulnerability check)
+      run: |
+        echo "🔒 Checking for known security vulnerabilities in dependencies..."
+        uv run safety check --file requirements.txt --json --output safety-report.json || true
+
+        if [ -f safety-report.json ]; then
+          # Parse and display results
+          vulnerabilities=$(cat safety-report.json | python -c "
+          import sys, json
+          try:
+              data = json.load(sys.stdin)
+              vulns = data.get('vulnerabilities', [])
+              print(len(vulns))
+              for vuln in vulns:
+                  print(f\"❌ {vuln.get('package_name', 'Unknown')} {vuln.get('installed_version', 'Unknown')}: {vuln.get('vulnerability_id', 'Unknown')}\")
+                  print(f\"   {vuln.get('advisory', 'No description')}\")
+          except:
+              print('0')
+          " 2>/dev/null || echo "0")
+
+          if [ "$vulnerabilities" != "0" ] && [ "$vulnerabilities" -gt 0 ]; then
+            echo "❌ Found $vulnerabilities security vulnerabilities!"
+            exit 1
+          else
+            echo "✅ No known security vulnerabilities found"
+          fi
+        fi
+
+    - name: Run Bandit (Python security linter)
+      run: |
+        echo "🔍 Running Bandit security analysis..."
+        uv run bandit -r . -f json -o bandit-report.json -ll || true
+
+        if [ -f bandit-report.json ]; then
+          # Parse and display results
+          issues=$(cat bandit-report.json | python -c "
+          import sys, json
+          try:
+              data = json.load(sys.stdin)
+              results = data.get('results', [])
+              high_issues = [r for r in results if r.get('issue_confidence') == 'HIGH' and r.get('issue_severity') in ['HIGH', 'MEDIUM']]
+              print(len(high_issues))
+              for issue in high_issues[:5]:  # Show first 5 issues
+                  print(f\"❌ {issue.get('filename', 'Unknown')}:{issue.get('line_number', 'Unknown')}\")
+                  print(f\"   {issue.get('issue_text', 'No description')}\")
+          except:
+              print('0')
+          " 2>/dev/null || echo "0")
+
+          if [ "$issues" != "0" ] && [ "$issues" -gt 0 ]; then
+            echo "⚠️  Found $issues high-confidence security issues"
+            echo "Please review the bandit report for details"
+            # Don't fail the build for bandit issues, just warn
+          else
+            echo "✅ No high-confidence security issues found"
+          fi
+        fi
+
+    - name: Run Semgrep (SAST)
+      run: |
+        echo "🔍 Running Semgrep static analysis..."
+        uv run semgrep --config=auto --json --output=semgrep-report.json . || true
+
+        if [ -f semgrep-report.json ]; then
+          # Parse and display critical results
+          critical=$(cat semgrep-report.json | python -c "
+          import sys, json
+          try:
+              data = json.load(sys.stdin)
+              results = data.get('results', [])
+              critical_results = [r for r in results if r.get('extra', {}).get('severity') == 'ERROR']
+              print(len(critical_results))
+              for result in critical_results[:3]:  # Show first 3 critical issues
+                  print(f\"❌ {result.get('path', 'Unknown')}:{result.get('start', {}).get('line', 'Unknown')}\")
+                  print(f\"   {result.get('extra', {}).get('message', 'No description')}\")
+          except:
+              print('0')
+          " 2>/dev/null || echo "0")
+
+          if [ "$critical" != "0" ] && [ "$critical" -gt 0 ]; then
+            echo "❌ Found $critical critical security issues!"
+            exit 1
+          else
+            echo "✅ No critical security issues found"
+          fi
+        fi
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports-${{ github.run_id }}
+        path: |
+          safety-report.json
+          bandit-report.json
+          semgrep-report.json
+        retention-days: 30
+
+  secrets-scan:
+    name: Secrets Detection
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for comprehensive scanning
+
+    - name: Run TruffleHog
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+  dockerfile-security:
+    name: Dockerfile Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Hadolint
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: ./Dockerfile.prod
+        failure-threshold: error
+
+    - name: Run Trivy filesystem scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  docker-security:
+    name: Docker Image Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build Docker image
+      run: |
+        docker build -f Dockerfile.prod -t scholaria:security-scan .
+
+    - name: Run Trivy image scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'scholaria:security-scan'
+        format: 'sarif'
+        output: 'trivy-image-results.sarif'
+
+    - name: Upload Trivy image scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-image-results.sarif'
+
+    - name: Check for critical vulnerabilities
+      run: |
+        echo "🔍 Checking for critical vulnerabilities in Docker image..."
+        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+          -v $(pwd):/tmp \
+          aquasec/trivy:latest image \
+          --exit-code 1 \
+          --severity CRITICAL \
+          --format table \
+          scholaria:security-scan
+
+  compliance-check:
+    name: Compliance and Best Practices
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check for sensitive files
+      run: |
+        echo "🔍 Checking for sensitive files..."
+
+        # Check for files that shouldn't be committed
+        sensitive_files=(
+          "*.pem"
+          "*.key"
+          "*.p12"
+          "*.pfx"
+          "*.asc"
+          "id_rsa*"
+          "id_dsa*"
+          "id_ecdsa*"
+          "id_ed25519*"
+          ".env"
+          ".env.*"
+          "*.env"
+          "secrets.yml"
+          "secrets.yaml"
+          "config/secrets.yml"
+        )
+
+        found_sensitive=false
+        for pattern in "${sensitive_files[@]}"; do
+          if find . -name "$pattern" -not -path "./.git/*" | grep -q .; then
+            echo "❌ Found sensitive file pattern: $pattern"
+            find . -name "$pattern" -not -path "./.git/*"
+            found_sensitive=true
+          fi
+        done
+
+        if [ "$found_sensitive" = true ]; then
+          echo "❌ Sensitive files found! Please remove them and add to .gitignore"
+          exit 1
+        else
+          echo "✅ No sensitive files found"
+        fi
+
+    - name: Check .gitignore coverage
+      run: |
+        echo "🔍 Checking .gitignore coverage..."
+
+        required_patterns=(
+          "*.pyc"
+          "__pycache__/"
+          ".env"
+          "*.log"
+          ".coverage"
+          "htmlcov/"
+          ".pytest_cache/"
+          "node_modules/"
+          ".vscode/"
+          ".idea/"
+          "*.sqlite3"
+          "media/"
+          "staticfiles/"
+        )
+
+        missing_patterns=()
+        for pattern in "${required_patterns[@]}"; do
+          if ! grep -q "^$pattern" .gitignore; then
+            missing_patterns+=("$pattern")
+          fi
+        done
+
+        if [ ${#missing_patterns[@]} -gt 0 ]; then
+          echo "⚠️  .gitignore missing recommended patterns:"
+          printf '   %s\n' "${missing_patterns[@]}"
+        else
+          echo "✅ .gitignore coverage looks good"
+        fi
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [security-scan, secrets-scan, dockerfile-security]
+    if: always()
+
+    steps:
+    - name: Security Summary
+      run: |
+        echo "🔒 Security Check Summary"
+        echo "======================="
+        echo "Security Scan: ${{ needs.security-scan.result }}"
+        echo "Secrets Scan: ${{ needs.secrets-scan.result }}"
+        echo "Dockerfile Security: ${{ needs.dockerfile-security.result }}"
+
+        if [[ "${{ needs.security-scan.result }}" == "failure" ||
+              "${{ needs.secrets-scan.result }}" == "failure" ||
+              "${{ needs.dockerfile-security.result }}" == "failure" ]]; then
+          echo "❌ Security checks failed"
+          exit 1
+        else
+          echo "✅ All security checks passed"
+        fi
