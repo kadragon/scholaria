@@ -406,8 +406,14 @@ class HealthCheckView(APIView):
                     status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
 
-        except Exception as e:
+        except Exception:
+            # Log the error for debugging but don't expose internal details
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.exception("Health check failed")
+
             return Response(
-                {"status": "unhealthy", "error": str(e)},
+                {"status": "unhealthy", "error": "Service unavailable"},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )

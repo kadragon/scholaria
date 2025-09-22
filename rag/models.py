@@ -321,38 +321,20 @@ def context_item_post_save(
     """Update chunk count and generate embeddings when a context item is created or updated."""
     _refresh_context_chunk_count(instance)
 
-    # Generate and store embeddings for new ContextItems
+    # Generate and store embeddings for new ContextItems asynchronously
     if created and instance.content:
         try:
-            from rag.retrieval.embeddings import EmbeddingService
-            from rag.retrieval.qdrant import QdrantService
+            from rag.tasks import generate_context_item_embedding
 
-            embedding_service = EmbeddingService()
-            qdrant_service = QdrantService()
-
-            # Ensure collection exists
-            qdrant_service.create_collection()
-
-            # Generate embedding
-            embedding = embedding_service.generate_embedding(instance.content)
-
-            # Store in Qdrant
-            metadata = instance.metadata or {}
-            qdrant_service.store_embedding(
-                context_item_id=instance.id,
-                embedding=embedding,
-                metadata={
-                    "chunk_index": metadata.get("chunk_index", 0),
-                    "source_file": metadata.get("source_file", ""),
-                },
-            )
+            # Queue embedding generation as async task
+            generate_context_item_embedding.delay(instance.id)
         except Exception as e:
             # Log the error but don't fail the save operation
             import logging
 
             logger = logging.getLogger(__name__)
             logger.error(
-                f"Failed to generate embedding for ContextItem {instance.id}: {e}"
+                f"Failed to queue embedding generation task for ContextItem {instance.id}: {e}"
             )
 
 

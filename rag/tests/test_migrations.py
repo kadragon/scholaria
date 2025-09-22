@@ -7,12 +7,15 @@ without losing data integrity or causing schema conflicts.
 
 from typing import Any, cast
 
+import pytest
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TransactionTestCase
 
 
+@pytest.mark.migration
+@pytest.mark.slow
 class MigrationCompatibilityTest(TransactionTestCase):
     """Test migration rollback and forward compatibility."""
 

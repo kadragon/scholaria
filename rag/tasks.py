@@ -396,3 +396,87 @@ def ingest_markdown_document(
     except Exception as e:
         logger.error(f"Markdown ingestion failed for {title}: {e}", exc_info=True)
         raise
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(ConnectionError,),
+    retry_kwargs={"max_retries": 3, "countdown": 60},
+)  # type: ignore[misc]
+def generate_context_item_embedding(self: Any, context_item_id: int) -> bool:
+    """
+    Generate and store embedding for a ContextItem asynchronously.
+
+    Args:
+        context_item_id: ID of the ContextItem to generate embedding for
+
+    Returns:
+        True if embedding was generated successfully, False otherwise
+
+    Raises:
+        ContextItem.DoesNotExist: If ContextItem doesn't exist
+        ConnectionError: If OpenAI API or Qdrant is unavailable
+    """
+    try:
+        logger.info(f"Generating embedding for ContextItem {context_item_id}")
+
+        # Get ContextItem with error handling
+        try:
+            context_item = ContextItem.objects.get(id=context_item_id)
+        except ContextItem.DoesNotExist:
+            logger.error(f"ContextItem not found: {context_item_id}")
+            raise
+
+        # Only generate embedding if content exists
+        if not context_item.content:
+            logger.warning(f"No content found for ContextItem {context_item_id}")
+            return False
+
+        try:
+            from rag.retrieval.embeddings import EmbeddingService
+            from rag.retrieval.qdrant import QdrantService
+
+            embedding_service = EmbeddingService()
+            qdrant_service = QdrantService()
+
+            # Ensure collection exists
+            qdrant_service.create_collection()
+
+            # Generate embedding
+            embedding = embedding_service.generate_embedding(context_item.content)
+
+            # Store in Qdrant
+            metadata = context_item.metadata or {}
+            qdrant_service.store_embedding(
+                context_item_id=context_item.id,
+                embedding=embedding,
+                metadata={
+                    "chunk_index": metadata.get("chunk_index", 0),
+                    "source_file": metadata.get("source_file", ""),
+                },
+            )
+
+            logger.info(
+                f"Successfully generated embedding for ContextItem {context_item_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Failed to generate embedding for ContextItem {context_item_id}: {e}"
+            )
+            # Retry for network-related errors
+            if (
+                "network" in str(e).lower()
+                or "timeout" in str(e).lower()
+                or "connection" in str(e).lower()
+            ):
+                raise self.retry(countdown=60, max_retries=3) from e
+            raise
+
+    except Exception as e:
+        logger.error(
+            f"Embedding generation task failed for ContextItem {context_item_id}: {e}",
+            exc_info=True,
+        )
+        raise

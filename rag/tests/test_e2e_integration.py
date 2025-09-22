@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
+import pytest
 from django.test import TestCase
 
 from rag.models import Context, ContextItem, Topic
@@ -19,6 +20,8 @@ if TYPE_CHECKING:
     pass
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class EndToEndIngestionFlowTest(TestCase):
     """Test complete ingestion flow: upload → parse → embed → store."""
 
@@ -336,6 +339,8 @@ A: The system supports PDF, Markdown, and FAQ file formats.
             mock_qdrant.upsert.assert_called_once()
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class EndToEndQAFlowTest(TestCase):
     """Test complete Q&A flow: select topic → ask question → get answer."""
 
@@ -721,6 +726,8 @@ class EndToEndQAFlowTest(TestCase):
         self.assertIn("updated_at", topic_detail)
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class EndToEndAdminWorkflowTest(TestCase):
     """Test complete admin workflow: create topic → upload docs → map contexts."""
 
