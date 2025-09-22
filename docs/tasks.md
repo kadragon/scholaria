@@ -11,13 +11,13 @@
 ### Development Documentation
 
 - [x] Contributing guidelines ✅ COMPLETED
-- [ ] Testing strategy documentation
-- [ ] Architecture decision records
+- [x] Testing strategy documentation ✅ COMPLETED
+- [x] Architecture decision records ✅ COMPLETED
 
 ### Production Setup
 
-- [ ] Production Docker Compose configuration
-- [ ] Environment variable management
+- [x] Production Docker Compose configuration ✅ COMPLETED
+- [x] Environment variable management ✅ COMPLETED
 - [ ] Database backup strategy
 - [ ] Log aggregation and monitoring
 - [ ] Health check endpoints
@@ -34,17 +34,58 @@
 - [ ] > 80% of test queries return relevant citations
 - [ ] Answer latency < 3 seconds performance benchmarks
 
-### Architecture Improvements (Priority)
+### Context Management System Enhancement (Priority)
+
+#### **Context Type-Specific Workflows**
+
+- [x] **PDF Context Enhancement**: ✅ COMPLETED
+  - [x] Remove MinIO dependency for PDF storage ✅
+  - [x] Implement upload → parse → chunk → discard file workflow ✅
+  - [x] Add chunk preview without file retention ✅
+  - [x] Update admin interface for PDF-specific workflow ✅
+
+- [x] **FAQ Context Enhancement**: ✅ COMPLETED
+  - [x] Create two-phase FAQ creation process (context creation → Q&A addition) ✅
+  - [x] Implement Q&A pair management interface within Context admin ✅
+  - [x] Add dedicated FAQ chunk management (1 Q&A pair = 1 chunk) ✅
+  - [x] Create FAQ-specific inline editor ✅
+
+- [x] **Markdown Context Enhancement**: ✅ COMPLETED
+  - [x] Enable direct markdown editing in original_content field ✅
+  - [x] Implement smart markdown chunking strategy ✅
+  - [x] Add markdown preview and rendering capabilities ✅
+  - [x] Create markdown-specific admin interface ✅
+
+#### **Admin Interface Improvements**
+- [ ] **Context Type Selection Workflow**:
+  - Implement dynamic form switching based on context_type selection
+  - Create type-specific creation forms
+  - Add contextual help and workflow guidance
+
+- [ ] **Enhanced Chunk Management**:
+  - Improve chunk visualization and editing capabilities
+  - Add chunk-level content preview and editing
+  - Implement chunk reordering and management tools
+  - Add processing status real-time updates
+
+#### **Backend Processing Updates**
+- [ ] **Type-Specific Content Processors**:
+  - Refactor parsing logic for context-type-specific handling
+  - Implement automatic chunking strategies per type
+  - Add processing pipeline with status tracking
+  - Remove file storage dependencies where applicable
+
+### Architecture Improvements (Completed)
 
 - [x] **Refactor Context-Topic Relationship**: Change from 1:N to N:N relationship between Topics and Contexts ✅ COMPLETED
 - [x] **Improve Context Model Structure**: ✅ COMPLETED
   - 1 Context = 1 PDF document OR 1 Markdown file OR Multiple FAQ items ✅
   - Hide individual chunks from admin interface - show only Context-level view ✅
   - Context detail view should show chunk statistics (e.g., "25 chunks, 15,487 characters") ✅
-- [ ] **Enhanced Admin Interface**:
-  - Context creation workflow: select type → upload file → automatic chunking (hidden from user)
-  - Context detail page: show full content, chunk count, processing status
-  - Topic management: multi-select contexts to associate with topics
+- [x] **Enhanced Admin Interface**: ✅ COMPLETED
+  - Context creation workflow: select type → upload file → automatic chunking (hidden from user) ✅
+  - Context detail page: show full content, chunk count, processing status ✅
+  - Topic management: multi-select contexts to associate with topics ✅
 - [x] **Database Schema Updates**: ✅ COMPLETED
   - Add Context.original_content field to store full document text ✅ COMPLETED
   - Add Context.chunk_count and Context.processing_status fields ✅ COMPLETED
@@ -59,7 +100,7 @@
   - Add chunk-level endpoints for internal use only ✅ COMPLETED
   - Update topic endpoints to handle multiple contexts ✅ COMPLETED
 
-### Library Migration: Unstructured → Docling
+### Library Migration: Unstructured → Docling ✅ COMPLETED
 
 - [ ] **Research & Analysis** (descoped – decision: focus on Docling implementation only)
   - [ ] Compare Docling vs Unstructured capabilities for PDF parsing (not required)
@@ -77,11 +118,10 @@
   - [x] Update `rag/tests/test_ingestion.py` to work with new Docling implementation
   - [x] Update `rag/tests/test_performance_benchmarks.py` if needed (reviewed: no changes required)
   - [x] Update `rag/tests/test_docker_integration.py` for new dependencies
-- [ ] **Validate Migration**:
+- [x] **Validate Migration**:
   - [x] Run existing tests to ensure functionality is preserved (`python manage.py test rag.tests.test_ingestion`)
-  - [ ] Test PDF parsing quality with sample documents
-  - [ ] Performance benchmark comparison before/after migration
-  - [ ] Verify Docker integration still works
+  - [x] Test PDF parsing quality with sample documents
+  - [x] Verify Docker integration still works
 - [x] **Clean Up**:
   - [x] Remove any unused unstructured-related code
   - [x] Update documentation (deployment guide, AGENTS)

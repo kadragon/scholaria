@@ -10,6 +10,7 @@ Complete RAG pipeline: embedding → vector search → reranking → LLM generat
 - **Service Isolation**: Independently testable services
 - **Mock Testing**: External API dependencies mocked
 - **Type Safety**: mypy compliance
+- **Mock-Friendly Imports**: Import third-party clients via their parent module (e.g., `openai.OpenAI`) so tests can patch boundaries reliably.
 
 ## Context
 

@@ -48,11 +48,22 @@ uv run ruff check . && uv run ruff format --check . && uv run mypy . && uv run p
 
 ### Testing
 ```bash
-# Run all tests
-uv run python manage.py test --settings=core.test_settings
+# Quick tests (248 tests, ~1-2 minutes) - for daily development
+./scripts/test-fast.sh
+# OR: uv run pytest -m "not slow"
 
-# Run specific test
-uv run python manage.py test rag.tests.TopicModelTest --settings=core.test_settings
+# Unit tests only (fastest, core models/views/admin)
+./scripts/test-unit.sh
+
+# Slow tests (33 tests, includes integration/performance/migrations)
+./scripts/test-slow.sh
+# OR: uv run pytest -m "slow"
+
+# All tests (281 total)
+uv run pytest
+
+# Django test runner (legacy)
+uv run python manage.py test --settings=core.test_settings
 ```
 
 ### Database

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
+import pytest
 from django.test import TestCase
 
 from rag.models import Context, ContextItem, Topic
@@ -14,6 +15,8 @@ if TYPE_CHECKING:
     pass
 
 
+@pytest.mark.performance
+@pytest.mark.slow
 class PerformanceBenchmarkTest(TestCase):
     """Test performance benchmarks for RAG system."""
 

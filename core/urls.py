@@ -23,6 +23,8 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from rag.views import HealthCheckView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("rag.urls")),
@@ -33,5 +35,6 @@ urlpatterns = [
         name="swagger-ui",
     ),
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+    path("health/", HealthCheckView.as_view(), name="health-check"),
     path("", include("rag.web_urls")),  # Include rag web URLs at root
 ]

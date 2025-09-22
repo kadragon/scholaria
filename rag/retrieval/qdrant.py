@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+import qdrant_client
 from django.conf import settings
 from django.core.cache import cache
-from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
 from rag.models import ContextItem, Topic
@@ -18,7 +18,7 @@ class QdrantService:
 
     def __init__(self) -> None:
         # Keep original client creation for compatibility
-        self.client = QdrantClient(
+        self.client = qdrant_client.QdrantClient(
             host=getattr(settings, "QDRANT_HOST", "localhost"),
             port=getattr(settings, "QDRANT_PORT", 6333),
         )

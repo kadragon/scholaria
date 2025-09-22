@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from sentence_transformers import CrossEncoder
+import sentence_transformers
 
 if TYPE_CHECKING:
     pass
@@ -12,7 +12,7 @@ class RerankingService:
     """Service for reranking search results using BGE reranker."""
 
     def __init__(self) -> None:
-        self.model = CrossEncoder("BAAI/bge-reranker-base")
+        self.model = sentence_transformers.CrossEncoder("BAAI/bge-reranker-base")
 
     def rerank_results(
         self,

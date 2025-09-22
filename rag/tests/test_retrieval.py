@@ -54,61 +54,59 @@ class EmbeddingServiceTest(TestCase):
         with self.assertRaises(ValueError):
             service.generate_embedding(None)
 
-    @patch("rag.retrieval.embeddings.EmbeddingCache")
-    @patch("rag.retrieval.embeddings.OpenAI")
-    def test_generate_embedding_api_call(
-        self, mock_openai: MagicMock, mock_cache_class: MagicMock
-    ) -> None:
+    def test_generate_embedding_api_call(self) -> None:
         """Test that the OpenAI API is called correctly."""
-        from rag.retrieval.embeddings import EmbeddingService
+        from unittest.mock import MagicMock, patch
 
-        # Mock the OpenAI client and response
-        mock_client = MagicMock()
-        mock_openai.return_value = mock_client
+        from rag.retrieval.embeddings import EmbeddingService
 
         expected_embedding = build_embedding(0.1)
         mock_response = MagicMock()
         mock_response.data = [MagicMock(embedding=expected_embedding)]
-        mock_client.embeddings.create.return_value = mock_response
 
-        # Mock cache to be disabled
-        mock_cache = MagicMock()
-        mock_cache.enabled.return_value = False
-        mock_cache_class.return_value = mock_cache
+        # Mock usage with proper attribute values instead of MagicMock
+        mock_usage = MagicMock()
+        mock_usage.total_tokens = 10
+        mock_response.usage = mock_usage
 
         service = EmbeddingService()
-        result = service.generate_embedding("test text")
 
-        # Verify the API was called correctly
-        mock_client.embeddings.create.assert_called_once_with(
-            model=settings.OPENAI_EMBEDDING_MODEL, input="test text"
-        )
+        # Patch the client directly
+        with (
+            patch.object(service, "client") as mock_client,
+            patch.object(service, "cache") as mock_cache,
+        ):
+            mock_client.embeddings.create.return_value = mock_response
+            mock_cache.enabled.return_value = False
 
-        self.assertEqual(result, expected_embedding)
+            result = service.generate_embedding("test text")
 
-    @patch("rag.retrieval.embeddings.EmbeddingCache")
-    @patch("rag.retrieval.embeddings.OpenAI")
-    def test_generate_embedding_api_error(
-        self, mock_openai: MagicMock, mock_cache_class: MagicMock
-    ) -> None:
+            # Verify the API was called correctly
+            mock_client.embeddings.create.assert_called_once_with(
+                model=settings.OPENAI_EMBEDDING_MODEL, input="test text"
+            )
+
+            self.assertEqual(result, expected_embedding)
+
+    def test_generate_embedding_api_error(self) -> None:
         """Test handling of OpenAI API errors."""
+        from unittest.mock import patch
+
         from rag.retrieval.embeddings import EmbeddingService
 
-        # Mock the OpenAI client to raise an exception
-        mock_client = MagicMock()
-        mock_openai.return_value = mock_client
-        mock_client.embeddings.create.side_effect = Exception("API Error")
-
-        # Mock cache to be disabled
-        mock_cache = MagicMock()
-        mock_cache.enabled.return_value = False
-        mock_cache_class.return_value = mock_cache
-
         service = EmbeddingService()
 
-        with self.assertRaises(Exception) as cm:
-            service.generate_embedding("test text")
-        self.assertEqual(str(cm.exception), "API Error")
+        # Patch the client directly
+        with (
+            patch.object(service, "client") as mock_client,
+            patch.object(service, "cache") as mock_cache,
+        ):
+            mock_client.embeddings.create.side_effect = Exception("API Error")
+            mock_cache.enabled.return_value = False
+
+            with self.assertRaises(Exception) as cm:
+                service.generate_embedding("test text")
+            self.assertEqual(str(cm.exception), "API Error")
 
     def test_generate_embeddings_batch(self) -> None:
         """Test batch embedding generation."""
@@ -133,69 +131,63 @@ class EmbeddingServiceTest(TestCase):
         with self.assertRaises(ValueError):
             service.generate_embeddings_batch([])
 
-    @patch("rag.retrieval.embeddings.EmbeddingCache")
-    @patch("rag.retrieval.embeddings.OpenAI")
-    def test_generate_embedding_cache_hit(
-        self,
-        mock_openai: MagicMock,
-        mock_cache_class: MagicMock,
-    ) -> None:
+    def test_generate_embedding_cache_hit(self) -> None:
         """Ensure cached embeddings are returned without new API calls."""
+        from unittest.mock import patch
+
         from rag.retrieval.embeddings import EmbeddingService
-
-        mock_client = MagicMock()
-        mock_openai.return_value = mock_client
-
-        mock_cache = MagicMock()
-        mock_cache.enabled.return_value = True
-        mock_cache.get.return_value = build_embedding(0.9)
-        mock_cache_class.return_value = mock_cache
 
         service = EmbeddingService()
-        result = service.generate_embedding("cached text")
 
-        mock_cache.get.assert_called_once_with(
-            "cached text", settings.OPENAI_EMBEDDING_MODEL
-        )
-        mock_client.embeddings.create.assert_not_called()
-        self.assertEqual(result, build_embedding(0.9))
+        # Patch the client and cache directly
+        with (
+            patch.object(service, "client") as mock_client,
+            patch.object(service, "cache") as mock_cache,
+        ):
+            mock_cache.enabled.return_value = True
+            mock_cache.get.return_value = build_embedding(0.9)
 
-    @patch("rag.retrieval.embeddings.EmbeddingCache")
-    @patch("rag.retrieval.embeddings.OpenAI")
-    def test_generate_embeddings_batch_api_call(
-        self, mock_openai: MagicMock, mock_cache_class: MagicMock
-    ) -> None:
+            result = service.generate_embedding("cached text")
+
+            mock_cache.get.assert_called_once_with(
+                "cached text", settings.OPENAI_EMBEDDING_MODEL
+            )
+            mock_client.embeddings.create.assert_not_called()
+            self.assertEqual(result, build_embedding(0.9))
+
+    def test_generate_embeddings_batch_api_call(self) -> None:
         """Test that batch API calls work correctly."""
-        from rag.retrieval.embeddings import EmbeddingService
+        from unittest.mock import MagicMock, patch
 
-        # Mock the OpenAI client and response
-        mock_client = MagicMock()
-        mock_openai.return_value = mock_client
+        from rag.retrieval.embeddings import EmbeddingService
 
         mock_response = MagicMock()
         mock_response.data = [
             MagicMock(embedding=build_embedding(0.1)),
             MagicMock(embedding=build_embedding(0.4)),
         ]
-        mock_client.embeddings.create.return_value = mock_response
-
-        # Mock cache to be disabled
-        mock_cache = MagicMock()
-        mock_cache.enabled.return_value = False
-        mock_cache_class.return_value = mock_cache
 
         service = EmbeddingService()
-        texts = ["text 1", "text 2"]
-        results = service.generate_embeddings_batch(texts)
 
-        # Verify the API was called correctly
-        mock_client.embeddings.create.assert_called_once_with(
-            model=settings.OPENAI_EMBEDDING_MODEL, input=texts
-        )
+        # Patch the client directly
+        with (
+            patch.object(service, "client") as mock_client,
+            patch.object(service, "cache") as mock_cache,
+        ):
+            mock_client.embeddings.create.return_value = mock_response
+            mock_cache.enabled.return_value = False
 
-        self.assertEqual(len(results), 2)
-        self.assertEqual(results[0], build_embedding(0.1))
-        self.assertEqual(results[1], build_embedding(0.4))
+            texts = ["text 1", "text 2"]
+            results = service.generate_embeddings_batch(texts)
+
+            # Verify the API was called correctly
+            mock_client.embeddings.create.assert_called_once_with(
+                model=settings.OPENAI_EMBEDDING_MODEL, input=texts
+            )
+
+            self.assertEqual(len(results), 2)
+            self.assertEqual(results[0], build_embedding(0.1))
+            self.assertEqual(results[1], build_embedding(0.4))
 
 
 class QdrantServiceTest(TestCase):
@@ -261,39 +253,44 @@ class QdrantServiceTest(TestCase):
                 metadata={"title": "Test Item"},
             )
 
-    @patch("rag.retrieval.qdrant.QdrantClient")
-    def test_store_embedding_api_call(self, mock_qdrant_client: MagicMock) -> None:
+    def test_store_embedding_api_call(self) -> None:
         """Test that Qdrant API is called correctly for storage."""
-        # Mock the Qdrant client
-        mock_client = MagicMock()
-        mock_qdrant_client.return_value = mock_client
+        from unittest.mock import MagicMock, patch
 
         mock_response = MagicMock()
         mock_response.operation_id = "test-operation-id"
-        mock_client.upsert.return_value = mock_response
 
         service = QdrantService()
-        embedding = build_embedding()
-        metadata = {"title": "Test Item"}
 
-        result = service.store_embedding(
-            context_item_id=self.context_item.id, embedding=embedding, metadata=metadata
-        )
+        # Patch the client directly
+        with patch.object(service, "client") as mock_client:
+            mock_client.upsert.return_value = mock_response
 
-        # Verify the API was called correctly
-        mock_client.upsert.assert_called_once()
-        call_args = mock_client.upsert.call_args[1]
+            embedding = build_embedding()
+            metadata = {"title": "Test Item"}
 
-        self.assertEqual(call_args["collection_name"], settings.QDRANT_COLLECTION_NAME)
-        self.assertEqual(len(call_args["points"]), 1)
+            result = service.store_embedding(
+                context_item_id=self.context_item.id,
+                embedding=embedding,
+                metadata=metadata,
+            )
 
-        point = call_args["points"][0]
-        self.assertEqual(point.id, self.context_item.id)
-        self.assertEqual(point.vector, embedding)
-        self.assertIn("title", point.payload)
-        self.assertIn("context_item_id", point.payload)
+            # Verify the API was called correctly
+            mock_client.upsert.assert_called_once()
+            call_args = mock_client.upsert.call_args[1]
 
-        self.assertEqual(result, "test-operation-id")
+            self.assertEqual(
+                call_args["collection_name"], settings.QDRANT_COLLECTION_NAME
+            )
+            self.assertEqual(len(call_args["points"]), 1)
+
+            point = call_args["points"][0]
+            self.assertEqual(point.id, self.context_item.id)
+            self.assertEqual(point.vector, embedding)
+            self.assertIn("title", point.payload)
+            self.assertIn("context_item_id", point.payload)
+
+            self.assertEqual(result, "test-operation-id")
 
     def test_search_similar_success(self) -> None:
         """Test successful similarity search."""
@@ -326,12 +323,9 @@ class QdrantServiceTest(TestCase):
                 query_embedding=query_embedding, topic_ids=[], limit=5
             )
 
-    @patch("rag.retrieval.qdrant.QdrantClient")
-    def test_search_similar_api_call(self, mock_qdrant_client: MagicMock) -> None:
+    def test_search_similar_api_call(self) -> None:
         """Test that Qdrant search API is called correctly."""
-        # Mock the Qdrant client
-        mock_client = MagicMock()
-        mock_qdrant_client.return_value = mock_client
+        from unittest.mock import MagicMock, patch
 
         # Mock search response
         mock_scored_point = MagicMock()
@@ -343,32 +337,37 @@ class QdrantServiceTest(TestCase):
             "content": "Test content",
         }
 
-        mock_client.search.return_value = [mock_scored_point]
-
         service = QdrantService()
-        query_embedding = build_embedding()
-        topic_ids = [self.topic.id]
 
-        results = service.search_similar(
-            query_embedding=query_embedding, topic_ids=topic_ids, limit=5
-        )
+        # Patch the client directly
+        with patch.object(service, "client") as mock_client:
+            mock_client.search.return_value = [mock_scored_point]
 
-        # Verify the search API was called correctly
-        mock_client.search.assert_called_once()
-        call_args = mock_client.search.call_args[1]
+            query_embedding = build_embedding()
+            topic_ids = [self.topic.id]
 
-        self.assertEqual(call_args["collection_name"], settings.QDRANT_COLLECTION_NAME)
-        self.assertEqual(call_args["query_vector"], query_embedding)
-        self.assertEqual(call_args["limit"], 5)
-        self.assertIn("query_filter", call_args)
+            results = service.search_similar(
+                query_embedding=query_embedding, topic_ids=topic_ids, limit=5
+            )
 
-        # Verify results format
-        self.assertEqual(len(results), 1)
-        result = results[0]
-        self.assertEqual(result["context_item_id"], self.context_item.id)
-        self.assertEqual(result["score"], 0.95)
-        self.assertIn("title", result)
-        self.assertIn("content", result)
+            # Verify the search API was called correctly
+            mock_client.search.assert_called_once()
+            call_args = mock_client.search.call_args[1]
+
+            self.assertEqual(
+                call_args["collection_name"], settings.QDRANT_COLLECTION_NAME
+            )
+            self.assertEqual(call_args["query_vector"], query_embedding)
+            self.assertEqual(call_args["limit"], 5)
+            self.assertIn("query_filter", call_args)
+
+            # Verify results format
+            self.assertEqual(len(results), 1)
+            result = results[0]
+            self.assertEqual(result["context_item_id"], self.context_item.id)
+            self.assertEqual(result["score"], 0.95)
+            self.assertIn("title", result)
+            self.assertIn("content", result)
 
     def test_create_collection_success(self) -> None:
         """Test successful collection creation."""
@@ -377,28 +376,30 @@ class QdrantServiceTest(TestCase):
 
         self.assertTrue(result)
 
-    @patch("rag.retrieval.qdrant.QdrantClient")
-    def test_create_collection_api_call(self, mock_qdrant_client: MagicMock) -> None:
+    def test_create_collection_api_call(self) -> None:
         """Test that collection creation API is called correctly."""
-        # Mock the Qdrant client
-        mock_client = MagicMock()
-        mock_qdrant_client.return_value = mock_client
+        from unittest.mock import patch
 
         service = QdrantService()
-        result = service.create_collection()
 
-        # Verify the API was called correctly
-        mock_client.create_collection.assert_called_once()
-        call_args = mock_client.create_collection.call_args[1]
+        # Patch the client directly
+        with patch.object(service, "client") as mock_client:
+            result = service.create_collection()
 
-        self.assertEqual(call_args["collection_name"], settings.QDRANT_COLLECTION_NAME)
-        self.assertIn("vectors_config", call_args)
+            # Verify the API was called correctly
+            mock_client.create_collection.assert_called_once()
+            call_args = mock_client.create_collection.call_args[1]
 
-        self.assertTrue(result)
+            self.assertEqual(
+                call_args["collection_name"], settings.QDRANT_COLLECTION_NAME
+            )
+            self.assertIn("vectors_config", call_args)
+
+            self.assertTrue(result)
 
     def test_search_similar_performance_optimization(self) -> None:
         """Test that search_similar uses optimized context filtering."""
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import patch
 
         from rag.retrieval.qdrant import QdrantService
 
@@ -430,12 +431,11 @@ class QdrantServiceTest(TestCase):
         topic2.contexts.add(context2)
         topic3.contexts.add(context3)
 
-        with patch("rag.retrieval.qdrant.QdrantClient") as mock_client_class:
-            mock_client = MagicMock()
-            mock_client_class.return_value = mock_client
+        service = QdrantService()
+
+        with patch.object(service, "client") as mock_client:
             mock_client.search.return_value = []
 
-            service = QdrantService()
             query_embedding = build_embedding()
 
             # Test with multiple topics to ensure efficient context filtering
@@ -563,55 +563,54 @@ class RerankingServiceTest(TestCase):
         with self.assertRaises(ValueError):
             service.rerank_results(None, search_results)
 
-    @patch("rag.retrieval.reranking.CrossEncoder")
-    def test_rerank_results_model_call(self, mock_cross_encoder: MagicMock) -> None:
+    def test_rerank_results_model_call(self) -> None:
         """Test that BGE reranking model is called correctly."""
+        from unittest.mock import MagicMock, patch
+
         from rag.retrieval.reranking import RerankingService
 
-        # Mock the CrossEncoder
+        # Mock the CrossEncoder model
         mock_model = MagicMock()
-        mock_cross_encoder.return_value = mock_model
         mock_model.predict.return_value = [0.9, 0.3, 0.7]  # Rerank scores
 
         service = RerankingService()
 
-        search_results = [
-            {"context_item_id": 1, "content": "Machine learning content"},
-            {"context_item_id": 2, "content": "Cooking recipes"},
-            {"context_item_id": 3, "content": "Deep learning networks"},
-        ]
+        # Patch the model directly
+        with patch.object(service, "model", mock_model):
+            search_results = [
+                {"context_item_id": 1, "content": "Machine learning content"},
+                {"context_item_id": 2, "content": "Cooking recipes"},
+                {"context_item_id": 3, "content": "Deep learning networks"},
+            ]
 
-        query = "machine learning"
-        reranked_results = service.rerank_results(query, search_results)
+            query = "machine learning"
+            reranked_results = service.rerank_results(query, search_results)
 
-        # Verify model was initialized correctly
-        mock_cross_encoder.assert_called_once_with("BAAI/bge-reranker-base")
+            # Verify predict was called with correct input pairs
+            mock_model.predict.assert_called_once()
+            call_args = mock_model.predict.call_args[0][0]  # Get the input pairs
 
-        # Verify predict was called with correct input pairs
-        mock_model.predict.assert_called_once()
-        call_args = mock_model.predict.call_args[0][0]  # Get the input pairs
+            self.assertEqual(len(call_args), 3)
+            for i, pair in enumerate(call_args):
+                self.assertEqual(pair[0], query)
+                self.assertEqual(pair[1], search_results[i]["content"])
 
-        self.assertEqual(len(call_args), 3)
-        for i, pair in enumerate(call_args):
-            self.assertEqual(pair[0], query)
-            self.assertEqual(pair[1], search_results[i]["content"])
+            # Verify results are reranked and include rerank_score
+            self.assertEqual(len(reranked_results), 3)
 
-        # Verify results are reranked and include rerank_score
-        self.assertEqual(len(reranked_results), 3)
+            # Results should be sorted by rerank_score (descending)
+            self.assertEqual(
+                reranked_results[0]["context_item_id"], 1
+            )  # Highest score (0.9)
+            self.assertEqual(reranked_results[0]["rerank_score"], 0.9)
 
-        # Results should be sorted by rerank_score (descending)
-        self.assertEqual(
-            reranked_results[0]["context_item_id"], 1
-        )  # Highest score (0.9)
-        self.assertEqual(reranked_results[0]["rerank_score"], 0.9)
+            self.assertEqual(
+                reranked_results[1]["context_item_id"], 3
+            )  # Second highest (0.7)
+            self.assertEqual(reranked_results[1]["rerank_score"], 0.7)
 
-        self.assertEqual(
-            reranked_results[1]["context_item_id"], 3
-        )  # Second highest (0.7)
-        self.assertEqual(reranked_results[1]["rerank_score"], 0.7)
-
-        self.assertEqual(reranked_results[2]["context_item_id"], 2)  # Lowest (0.3)
-        self.assertEqual(reranked_results[2]["rerank_score"], 0.3)
+            self.assertEqual(reranked_results[2]["context_item_id"], 2)  # Lowest (0.3)
+            self.assertEqual(reranked_results[2]["rerank_score"], 0.3)
 
     def test_rerank_results_top_k_limit(self) -> None:
         """Test reranking with top_k limitation."""
@@ -647,22 +646,25 @@ class RerankingServiceTest(TestCase):
         # Should return all available results
         self.assertEqual(len(reranked_results), 2)
 
-    @patch("rag.retrieval.reranking.CrossEncoder")
-    def test_rerank_results_model_error(self, mock_cross_encoder: MagicMock) -> None:
+    def test_rerank_results_model_error(self) -> None:
         """Test handling of model errors during reranking."""
+        from unittest.mock import MagicMock, patch
+
         from rag.retrieval.reranking import RerankingService
 
-        # Mock the CrossEncoder to raise an exception
+        # Mock the model to raise an exception
         mock_model = MagicMock()
-        mock_cross_encoder.return_value = mock_model
         mock_model.predict.side_effect = Exception("Model error")
 
         service = RerankingService()
-        search_results = [{"context_item_id": 1, "content": "test"}]
 
-        with self.assertRaises(Exception) as cm:
-            service.rerank_results("test query", search_results)
-        self.assertEqual(str(cm.exception), "Model error")
+        # Patch the model directly
+        with patch.object(service, "model", mock_model):
+            search_results = [{"context_item_id": 1, "content": "test"}]
+
+            with self.assertRaises(Exception) as cm:
+                service.rerank_results("test query", search_results)
+            self.assertEqual(str(cm.exception), "Model error")
 
 
 class RAGServiceTest(TestCase):
@@ -736,57 +738,11 @@ class RAGServiceTest(TestCase):
         with self.assertRaises(ValueError):
             service.query("test query", [])
 
-    @patch("rag.retrieval.rag.EmbeddingService")
-    @patch("rag.retrieval.rag.QdrantService")
-    @patch("rag.retrieval.rag.RerankingService")
-    @patch("rag.retrieval.rag.OpenAI")
-    def test_query_pipeline_orchestration(
-        self,
-        mock_openai: MagicMock,
-        mock_reranking: MagicMock,
-        mock_qdrant: MagicMock,
-        mock_embedding: MagicMock,
-    ) -> None:
+    def test_query_pipeline_orchestration(self) -> None:
         """Test that the complete RAG pipeline orchestrates all services correctly."""
+        from unittest.mock import MagicMock, patch
+
         from rag.retrieval.rag import RAGService
-
-        # Mock the embedding service
-        mock_embedding_instance = MagicMock()
-        mock_embedding.return_value = mock_embedding_instance
-        mock_embedding_instance.generate_embedding.return_value = build_embedding()
-
-        # Mock the Qdrant service
-        mock_qdrant_instance = MagicMock()
-        mock_qdrant.return_value = mock_qdrant_instance
-        mock_qdrant_instance.search_similar.return_value = [
-            {
-                "context_item_id": self.context_item.id,
-                "score": 0.9,
-                "title": "Neural Networks",
-                "content": "Neural networks are fundamental to deep learning.",
-                "context_id": self.context.id,
-                "context_type": "PDF",
-            }
-        ]
-
-        # Mock the reranking service
-        mock_reranking_instance = MagicMock()
-        mock_reranking.return_value = mock_reranking_instance
-        mock_reranking_instance.rerank_results.return_value = [
-            {
-                "context_item_id": self.context_item.id,
-                "score": 0.9,
-                "title": "Neural Networks",
-                "content": "Neural networks are fundamental to deep learning.",
-                "context_id": self.context.id,
-                "context_type": "PDF",
-                "rerank_score": 0.95,
-            }
-        ]
-
-        # Mock OpenAI client
-        mock_client = MagicMock()
-        mock_openai.return_value = mock_client
 
         mock_response = MagicMock()
         mock_response.choices = [
@@ -796,35 +752,67 @@ class RAGServiceTest(TestCase):
                 )
             )
         ]
-        mock_client.chat.completions.create.return_value = mock_response
 
         service = RAGService()
-        query = "What are neural networks?"
-        topic_ids = [self.topic.id]
 
-        result = service.query(query, topic_ids)
+        # Patch all service components directly
+        with (
+            patch.object(service, "embedding_service") as mock_embedding_service,
+            patch.object(service, "qdrant_service") as mock_qdrant_service,
+            patch.object(service, "reranking_service") as mock_reranking_service,
+            patch.object(service, "chat_client") as mock_chat_client,
+        ):
+            # Setup mock responses
+            mock_embedding_service.generate_embedding.return_value = build_embedding()
+            mock_qdrant_service.search_similar.return_value = [
+                {
+                    "context_item_id": self.context_item.id,
+                    "score": 0.9,
+                    "title": "Neural Networks",
+                    "content": "Neural networks are fundamental to deep learning.",
+                    "context_id": self.context.id,
+                    "context_type": "PDF",
+                }
+            ]
+            mock_reranking_service.rerank_results.return_value = [
+                {
+                    "context_item_id": self.context_item.id,
+                    "score": 0.9,
+                    "title": "Neural Networks",
+                    "content": "Neural networks are fundamental to deep learning.",
+                    "context_id": self.context.id,
+                    "context_type": "PDF",
+                    "rerank_score": 0.95,
+                }
+            ]
+            mock_chat_client.chat.completions.create.return_value = mock_response
 
-        # Verify embedding service was called
-        mock_embedding_instance.generate_embedding.assert_called_once_with(query)
+            query = "What are neural networks?"
+            topic_ids = [self.topic.id]
 
-        # Verify Qdrant search was called
-        mock_qdrant_instance.search_similar.assert_called_once_with(
-            query_embedding=build_embedding(), topic_ids=topic_ids, limit=10
-        )
+            result = service.query(query, topic_ids)
 
-        # Verify reranking was called
-        mock_reranking_instance.rerank_results.assert_called_once()
+            # Verify embedding service was called
+            mock_embedding_service.generate_embedding.assert_called_once_with(query)
 
-        # Verify OpenAI was called
-        mock_client.chat.completions.create.assert_called_once()
+            # Verify Qdrant search was called
+            mock_qdrant_service.search_similar.assert_called_once_with(
+                query_embedding=build_embedding(), topic_ids=topic_ids, limit=10
+            )
 
-        # Verify result structure
-        self.assertEqual(
-            result["answer"],
-            "Neural networks are computational models inspired by biological neural networks.",
-        )
-        self.assertEqual(len(result["sources"]), 1)
-        self.assertEqual(result["sources"][0]["title"], "Neural Networks")
+            # Verify reranking was called
+            mock_reranking_service.rerank_results.assert_called_once()
+
+            # Verify OpenAI was called
+            mock_chat_client.chat.completions.create.assert_called_once()
+
+            # Verify result structure
+            self.assertEqual(
+                result["answer"],
+                "Neural networks are computational models inspired by biological neural networks.",
+            )
+            self.assertEqual(len(result["sources"]), 1)
+            self.assertEqual(result["sources"][0]["title"], "Neural Networks")
 
     def test_query_no_results_found(self) -> None:
         """Test RAG query when no similar documents are found."""
@@ -846,23 +834,23 @@ class RAGServiceTest(TestCase):
         self.assertIn("sources", result)
         self.assertIn("context_items", result)
 
-    @patch("rag.retrieval.rag.EmbeddingService")
-    def test_query_embedding_service_error(self, mock_embedding: MagicMock) -> None:
+    def test_query_embedding_service_error(self) -> None:
         """Test handling of embedding service errors."""
-        from rag.retrieval.rag import RAGService
+        from unittest.mock import patch
 
-        # Mock embedding service to raise an exception
-        mock_embedding_instance = MagicMock()
-        mock_embedding.return_value = mock_embedding_instance
-        mock_embedding_instance.generate_embedding.side_effect = Exception(
-            "Embedding error"
-        )
+        from rag.retrieval.rag import RAGService
 
         service = RAGService()
 
-        with self.assertRaises(Exception) as cm:
-            service.query("test query", [self.topic.id])
-        self.assertEqual(str(cm.exception), "Embedding error")
+        # Patch the embedding service directly
+        with patch.object(service, "embedding_service") as mock_embedding_service:
+            mock_embedding_service.generate_embedding.side_effect = Exception(
+                "Embedding error"
+            )
+
+            with self.assertRaises(Exception) as cm:
+                service.query("test query", [self.topic.id])
+            self.assertEqual(str(cm.exception), "Embedding error")
 
     def test_query_with_limit_parameter(self) -> None:
         """Test RAG query with custom limit parameter."""
@@ -911,21 +899,18 @@ class RAGServiceTest(TestCase):
         # Clear cache to start fresh
         cache.clear()
 
+        service = RAGService()
+
         # Mock all external services to control behavior
         with (
-            patch("rag.retrieval.rag.EmbeddingService") as mock_embedding_service,
-            patch("rag.retrieval.rag.QdrantService") as mock_qdrant_service,
-            patch("rag.retrieval.rag.RerankingService") as mock_reranking_service,
-            patch("rag.retrieval.rag.OpenAI") as mock_openai,
+            patch.object(service, "embedding_service") as mock_embedding_service,
+            patch.object(service, "qdrant_service") as mock_qdrant_service,
+            patch.object(service, "reranking_service") as mock_reranking_service,
+            patch.object(service, "chat_client") as mock_chat_client,
         ):
             # Setup mocks
-            mock_embedding_instance = MagicMock()
-            mock_embedding_service.return_value = mock_embedding_instance
-            mock_embedding_instance.generate_embedding.return_value = [0.1, 0.2, 0.3]
-
-            mock_qdrant_instance = MagicMock()
-            mock_qdrant_service.return_value = mock_qdrant_instance
-            mock_qdrant_instance.search_similar.return_value = [
+            mock_embedding_service.generate_embedding.return_value = [0.1, 0.2, 0.3]
+            mock_qdrant_service.search_similar.return_value = [
                 {
                     "context_item_id": 1,
                     "score": 0.9,
@@ -934,10 +919,7 @@ class RAGServiceTest(TestCase):
                     "context_type": "PDF",
                 }
             ]
-
-            mock_reranking_instance = MagicMock()
-            mock_reranking_service.return_value = mock_reranking_instance
-            mock_reranking_instance.rerank_results.return_value = [
+            mock_reranking_service.rerank_results.return_value = [
                 {
                     "context_item_id": 1,
                     "score": 0.9,
@@ -948,13 +930,9 @@ class RAGServiceTest(TestCase):
                 }
             ]
 
-            mock_chat_client = MagicMock()
-            mock_openai.return_value = mock_chat_client
             mock_response = MagicMock()
             mock_response.choices[0].message.content = "This is a test answer."
             mock_chat_client.chat.completions.create.return_value = mock_response
-
-            service = RAGService()
 
             # First query should hit all services
             query = "What is machine learning?"
@@ -963,9 +941,9 @@ class RAGServiceTest(TestCase):
             result1 = service.query(query, topic_ids)
 
             # Verify external services were called
-            mock_embedding_instance.generate_embedding.assert_called()
-            mock_qdrant_instance.search_similar.assert_called()
-            mock_reranking_instance.rerank_results.assert_called()
+            mock_embedding_service.generate_embedding.assert_called()
+            mock_qdrant_service.search_similar.assert_called()
+            mock_reranking_service.rerank_results.assert_called()
             mock_chat_client.chat.completions.create.assert_called()
 
             # Verify result structure
@@ -987,21 +965,18 @@ class RAGServiceTest(TestCase):
         # Clear cache to start fresh
         cache.clear()
 
+        service = RAGService()
+
         # Mock all external services to control behavior
         with (
-            patch("rag.retrieval.rag.EmbeddingService") as mock_embedding_service,
-            patch("rag.retrieval.rag.QdrantService") as mock_qdrant_service,
-            patch("rag.retrieval.rag.RerankingService") as mock_reranking_service,
-            patch("rag.retrieval.rag.OpenAI") as mock_openai,
+            patch.object(service, "embedding_service") as mock_embedding_service,
+            patch.object(service, "qdrant_service") as mock_qdrant_service,
+            patch.object(service, "reranking_service") as mock_reranking_service,
+            patch.object(service, "chat_client") as mock_chat_client,
         ):
             # Setup mocks
-            mock_embedding_instance = MagicMock()
-            mock_embedding_service.return_value = mock_embedding_instance
-            mock_embedding_instance.generate_embedding.return_value = [0.1, 0.2, 0.3]
-
-            mock_qdrant_instance = MagicMock()
-            mock_qdrant_service.return_value = mock_qdrant_instance
-            mock_qdrant_instance.search_similar.return_value = [
+            mock_embedding_service.generate_embedding.return_value = [0.1, 0.2, 0.3]
+            mock_qdrant_service.search_similar.return_value = [
                 {
                     "context_item_id": 1,
                     "score": 0.9,
@@ -1010,10 +985,7 @@ class RAGServiceTest(TestCase):
                     "context_type": "PDF",
                 }
             ]
-
-            mock_reranking_instance = MagicMock()
-            mock_reranking_service.return_value = mock_reranking_instance
-            mock_reranking_instance.rerank_results.return_value = [
+            mock_reranking_service.rerank_results.return_value = [
                 {
                     "context_item_id": 1,
                     "score": 0.9,
@@ -1024,13 +996,9 @@ class RAGServiceTest(TestCase):
                 }
             ]
 
-            mock_chat_client = MagicMock()
-            mock_openai.return_value = mock_chat_client
             mock_response = MagicMock()
             mock_response.choices[0].message.content = "This is a cached test answer."
             mock_chat_client.chat.completions.create.return_value = mock_response
-
-            service = RAGService()
 
             # First query should hit all services
             query = "What is neural network architecture?"
@@ -1039,18 +1007,18 @@ class RAGServiceTest(TestCase):
             result1 = service.query(query, topic_ids)
 
             # Verify external services were called for first query
-            self.assertEqual(mock_embedding_instance.generate_embedding.call_count, 1)
-            self.assertEqual(mock_qdrant_instance.search_similar.call_count, 1)
-            self.assertEqual(mock_reranking_instance.rerank_results.call_count, 1)
+            self.assertEqual(mock_embedding_service.generate_embedding.call_count, 1)
+            self.assertEqual(mock_qdrant_service.search_similar.call_count, 1)
+            self.assertEqual(mock_reranking_service.rerank_results.call_count, 1)
             self.assertEqual(mock_chat_client.chat.completions.create.call_count, 1)
 
             # Second identical query should use cache
             result2 = service.query(query, topic_ids)
 
             # Verify services were NOT called again (still at 1 call each)
-            self.assertEqual(mock_embedding_instance.generate_embedding.call_count, 1)
-            self.assertEqual(mock_qdrant_instance.search_similar.call_count, 1)
-            self.assertEqual(mock_reranking_instance.rerank_results.call_count, 1)
+            self.assertEqual(mock_embedding_service.generate_embedding.call_count, 1)
+            self.assertEqual(mock_qdrant_service.search_similar.call_count, 1)
+            self.assertEqual(mock_reranking_service.rerank_results.call_count, 1)
             self.assertEqual(mock_chat_client.chat.completions.create.call_count, 1)
 
             # Results should be identical
@@ -1062,9 +1030,9 @@ class RAGServiceTest(TestCase):
             service.query(query, topic_ids, limit=20)
 
             # Services should be called again for different parameters
-            self.assertEqual(mock_embedding_instance.generate_embedding.call_count, 2)
-            self.assertEqual(mock_qdrant_instance.search_similar.call_count, 2)
-            self.assertEqual(mock_reranking_instance.rerank_results.call_count, 2)
+            self.assertEqual(mock_embedding_service.generate_embedding.call_count, 2)
+            self.assertEqual(mock_qdrant_service.search_similar.call_count, 2)
+            self.assertEqual(mock_reranking_service.rerank_results.call_count, 2)
             self.assertEqual(mock_chat_client.chat.completions.create.call_count, 2)
 
 
@@ -1083,10 +1051,9 @@ class OpenAIUsageMonitoringTest(TestCase):
         from rag.retrieval.embeddings import EmbeddingService
         from rag.retrieval.monitoring import OpenAIUsageMonitor
 
-        with patch("rag.retrieval.embeddings.OpenAI") as mock_openai:
-            mock_client = MagicMock()
-            mock_openai.return_value = mock_client
+        service = EmbeddingService()
 
+        with patch.object(service, "client") as mock_client:
             # Mock embedding response
             mock_response = MagicMock()
             mock_response.data = [MagicMock()]
@@ -1094,8 +1061,6 @@ class OpenAIUsageMonitoringTest(TestCase):
             mock_response.usage.prompt_tokens = 10
             mock_response.usage.total_tokens = 10
             mock_client.embeddings.create.return_value = mock_response
-
-            service = EmbeddingService()
             monitor = OpenAIUsageMonitor()
 
             # Clear any existing metrics
@@ -1120,20 +1085,17 @@ class OpenAIUsageMonitoringTest(TestCase):
         from rag.retrieval.monitoring import OpenAIUsageMonitor
         from rag.retrieval.rag import RAGService
 
+        service = RAGService()
+
         with (
-            patch("rag.retrieval.rag.EmbeddingService") as mock_embedding_service,
-            patch("rag.retrieval.rag.QdrantService") as mock_qdrant_service,
-            patch("rag.retrieval.rag.RerankingService") as mock_reranking_service,
-            patch("rag.retrieval.rag.OpenAI") as mock_openai,
+            patch.object(service, "embedding_service") as mock_embedding_service,
+            patch.object(service, "qdrant_service") as mock_qdrant_service,
+            patch.object(service, "reranking_service") as mock_reranking_service,
+            patch.object(service, "chat_client") as mock_chat_client,
         ):
             # Setup mocks for pipeline
-            mock_embedding_instance = MagicMock()
-            mock_embedding_service.return_value = mock_embedding_instance
-            mock_embedding_instance.generate_embedding.return_value = [0.1, 0.2, 0.3]
-
-            mock_qdrant_instance = MagicMock()
-            mock_qdrant_service.return_value = mock_qdrant_instance
-            mock_qdrant_instance.search_similar.return_value = [
+            mock_embedding_service.generate_embedding.return_value = [0.1, 0.2, 0.3]
+            mock_qdrant_service.search_similar.return_value = [
                 {
                     "context_item_id": 1,
                     "score": 0.9,
@@ -1142,10 +1104,7 @@ class OpenAIUsageMonitoringTest(TestCase):
                     "context_type": "PDF",
                 }
             ]
-
-            mock_reranking_instance = MagicMock()
-            mock_reranking_service.return_value = mock_reranking_instance
-            mock_reranking_instance.rerank_results.return_value = [
+            mock_reranking_service.rerank_results.return_value = [
                 {
                     "context_item_id": 1,
                     "score": 0.9,
@@ -1157,16 +1116,12 @@ class OpenAIUsageMonitoringTest(TestCase):
             ]
 
             # Mock chat completion
-            mock_chat_client = MagicMock()
-            mock_openai.return_value = mock_chat_client
             mock_response = MagicMock()
             mock_response.choices[0].message.content = "Test answer"
             mock_response.usage.prompt_tokens = 50
             mock_response.usage.completion_tokens = 30
             mock_response.usage.total_tokens = 80
             mock_chat_client.chat.completions.create.return_value = mock_response
-
-            service = RAGService()
             monitor = OpenAIUsageMonitor()
 
             # Clear any existing metrics

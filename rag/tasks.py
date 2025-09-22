@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from celery import shared_task
 from django.db import transaction
 
-from .ingestion.chunkers import FAQChunker, MarkdownChunker, PDFChunker
+from .ingestion import chunkers as chunkers_module
 from .ingestion.parsers import FAQParser, MarkdownParser, PDFParser
 from .models import Context, ContextItem
 
@@ -15,6 +15,29 @@ if TYPE_CHECKING:
     pass
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_task_request_metadata(task: Any) -> tuple[Any | None, str | None]:
+    """Return safe task metadata for chunk persistence."""
+
+    request = getattr(task, "request", None)
+
+    task_id = getattr(request, "id", None) if request is not None else None
+
+    called_directly = (
+        getattr(request, "called_directly", True) if request is not None else True
+    )
+
+    eta = getattr(request, "eta", None) if request is not None else None
+
+    if called_directly:
+        ingestion_timestamp = datetime.now(UTC).isoformat()
+    elif eta and hasattr(eta, "isoformat"):
+        ingestion_timestamp = eta.isoformat()
+    else:
+        ingestion_timestamp = None
+
+    return task_id, ingestion_timestamp
 
 
 @shared_task(
@@ -140,7 +163,7 @@ def ingest_pdf_document(self: Any, context_id: int, file_path: str, title: str) 
 
         # Chunk the content with optimized PDF chunker
         try:
-            chunker = PDFChunker(chunk_size=1000, overlap=150)
+            chunker = chunkers_module.PDFChunker(chunk_size=1000, overlap=150)
             chunks = chunker.chunk_text(content)
             logger.info(
                 f"PDF content chunked into {len(chunks)} pieces using PDFChunker"
@@ -155,6 +178,8 @@ def ingest_pdf_document(self: Any, context_id: int, file_path: str, title: str) 
 
         # Create ContextItem for each chunk with database transaction
         try:
+            task_id, ingestion_timestamp = _extract_task_request_metadata(self)
+
             with transaction.atomic():
                 items_to_create = [
                     ContextItem(
@@ -166,12 +191,8 @@ def ingest_pdf_document(self: Any, context_id: int, file_path: str, title: str) 
                             "chunk_index": i,
                             "total_chunks": len(chunks),
                             "chunk_size": len(chunk),
-                            "task_id": self.request.id,
-                            "ingestion_timestamp": datetime.now(UTC).isoformat()
-                            if self.request.called_directly
-                            else self.request.eta.isoformat()
-                            if self.request.eta
-                            else None,
+                            "task_id": task_id,
+                            "ingestion_timestamp": ingestion_timestamp,
                         },
                     )
                     for i, chunk in enumerate(chunks, 1)
@@ -242,7 +263,7 @@ def ingest_faq_document(self: Any, context_id: int, file_path: str, title: str) 
 
         # Chunk the content with optimized FAQ chunker
         try:
-            chunker = FAQChunker(chunk_size=800, overlap=100)
+            chunker = chunkers_module.FAQChunker(chunk_size=800, overlap=100)
             chunks = chunker.chunk_text(content)
             logger.info(
                 f"FAQ content chunked into {len(chunks)} pieces using FAQChunker"
@@ -257,6 +278,8 @@ def ingest_faq_document(self: Any, context_id: int, file_path: str, title: str) 
 
         # Create ContextItem for each chunk with database transaction
         try:
+            task_id, ingestion_timestamp = _extract_task_request_metadata(self)
+
             with transaction.atomic():
                 items_to_create = [
                     ContextItem(
@@ -269,12 +292,8 @@ def ingest_faq_document(self: Any, context_id: int, file_path: str, title: str) 
                             "total_chunks": len(chunks),
                             "chunk_size": len(chunk),
                             "content_type": "faq",
-                            "task_id": self.request.id,
-                            "ingestion_timestamp": datetime.now(UTC).isoformat()
-                            if self.request.called_directly
-                            else self.request.eta.isoformat()
-                            if self.request.eta
-                            else None,
+                            "task_id": task_id,
+                            "ingestion_timestamp": ingestion_timestamp,
                         },
                     )
                     for i, chunk in enumerate(chunks, 1)
@@ -347,7 +366,7 @@ def ingest_markdown_document(
 
         # Chunk the content with optimized Markdown chunker
         try:
-            chunker = MarkdownChunker(chunk_size=1200, overlap=200)
+            chunker = chunkers_module.MarkdownChunker(chunk_size=1200, overlap=200)
             chunks = chunker.chunk_text(content)
             logger.info(
                 f"Markdown content chunked into {len(chunks)} pieces using MarkdownChunker"
@@ -362,6 +381,8 @@ def ingest_markdown_document(
 
         # Create ContextItem for each chunk with database transaction
         try:
+            task_id, ingestion_timestamp = _extract_task_request_metadata(self)
+
             with transaction.atomic():
                 items_to_create = [
                     ContextItem(
@@ -374,12 +395,8 @@ def ingest_markdown_document(
                             "total_chunks": len(chunks),
                             "chunk_size": len(chunk),
                             "content_type": "markdown",
-                            "task_id": self.request.id,
-                            "ingestion_timestamp": datetime.now(UTC).isoformat()
-                            if self.request.called_directly
-                            else self.request.eta.isoformat()
-                            if self.request.eta
-                            else None,
+                            "task_id": task_id,
+                            "ingestion_timestamp": ingestion_timestamp,
                         },
                     )
                     for i, chunk in enumerate(chunks, 1)
@@ -395,4 +412,88 @@ def ingest_markdown_document(
 
     except Exception as e:
         logger.error(f"Markdown ingestion failed for {title}: {e}", exc_info=True)
+        raise
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(ConnectionError,),
+    retry_kwargs={"max_retries": 3, "countdown": 60},
+)  # type: ignore[misc]
+def generate_context_item_embedding(self: Any, context_item_id: int) -> bool:
+    """
+    Generate and store embedding for a ContextItem asynchronously.
+
+    Args:
+        context_item_id: ID of the ContextItem to generate embedding for
+
+    Returns:
+        True if embedding was generated successfully, False otherwise
+
+    Raises:
+        ContextItem.DoesNotExist: If ContextItem doesn't exist
+        ConnectionError: If OpenAI API or Qdrant is unavailable
+    """
+    try:
+        logger.info(f"Generating embedding for ContextItem {context_item_id}")
+
+        # Get ContextItem with error handling
+        try:
+            context_item = ContextItem.objects.get(id=context_item_id)
+        except ContextItem.DoesNotExist:
+            logger.error(f"ContextItem not found: {context_item_id}")
+            raise
+
+        # Only generate embedding if content exists
+        if not context_item.content:
+            logger.warning(f"No content found for ContextItem {context_item_id}")
+            return False
+
+        try:
+            from rag.retrieval.embeddings import EmbeddingService
+            from rag.retrieval.qdrant import QdrantService
+
+            embedding_service = EmbeddingService()
+            qdrant_service = QdrantService()
+
+            # Ensure collection exists
+            qdrant_service.create_collection()
+
+            # Generate embedding
+            embedding = embedding_service.generate_embedding(context_item.content)
+
+            # Store in Qdrant
+            metadata = context_item.metadata or {}
+            qdrant_service.store_embedding(
+                context_item_id=context_item.id,
+                embedding=embedding,
+                metadata={
+                    "chunk_index": metadata.get("chunk_index", 0),
+                    "source_file": metadata.get("source_file", ""),
+                },
+            )
+
+            logger.info(
+                f"Successfully generated embedding for ContextItem {context_item_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Failed to generate embedding for ContextItem {context_item_id}: {e}"
+            )
+            # Retry for network-related errors
+            if (
+                "network" in str(e).lower()
+                or "timeout" in str(e).lower()
+                or "connection" in str(e).lower()
+            ):
+                raise self.retry(countdown=60, max_retries=3) from e
+            raise
+
+    except Exception as e:
+        logger.error(
+            f"Embedding generation task failed for ContextItem {context_item_id}: {e}",
+            exc_info=True,
+        )
         raise

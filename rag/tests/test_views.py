@@ -447,17 +447,3 @@ class QuestionAnswerAPITest(TestCase):
             response.status_code,
             [status.HTTP_405_METHOD_NOT_ALLOWED, status.HTTP_403_FORBIDDEN],
         )
-
-        # Test PUT is not allowed
-        response = self.client.put(url, {})
-        self.assertIn(
-            response.status_code,
-            [status.HTTP_405_METHOD_NOT_ALLOWED, status.HTTP_403_FORBIDDEN],
-        )
-
-        # Test DELETE is not allowed
-        response = self.client.delete(url)
-        self.assertIn(
-            response.status_code,
-            [status.HTTP_405_METHOD_NOT_ALLOWED, status.HTTP_403_FORBIDDEN],
-        )

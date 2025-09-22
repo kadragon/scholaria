@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import openai
 from django.conf import settings
-from openai import OpenAI
 
 from .cache import EmbeddingCache
 from .monitoring import OpenAIUsageMonitor
@@ -16,7 +16,7 @@ class EmbeddingService:
     """Service for generating embeddings using OpenAI API."""
 
     def __init__(self) -> None:
-        self.client = OpenAI(api_key=getattr(settings, "OPENAI_API_KEY", None))
+        self.client = openai.OpenAI(api_key=getattr(settings, "OPENAI_API_KEY", None))
         self.model = getattr(
             settings, "OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"
         )
@@ -52,7 +52,13 @@ class EmbeddingService:
 
         # Track usage metrics
         if hasattr(response, "usage") and response.usage:
-            self.monitor.track_embedding_usage(response.usage.total_tokens, self.model)
+            # Ensure we get integers rather than MagicMock objects in tests
+            total_tokens = (
+                int(response.usage.total_tokens)
+                if hasattr(response.usage, "total_tokens")
+                else 0
+            )
+            self.monitor.track_embedding_usage(total_tokens, self.model)
         else:
             # Estimate tokens if usage not available (approximate 4 chars per token)
             estimated_tokens = len(text) // 4
@@ -103,9 +109,13 @@ class EmbeddingService:
 
             # Track usage metrics
             if hasattr(response, "usage") and response.usage:
-                self.monitor.track_embedding_usage(
-                    response.usage.total_tokens, self.model
+                # Ensure we get integers rather than MagicMock objects in tests
+                total_tokens = (
+                    int(response.usage.total_tokens)
+                    if hasattr(response.usage, "total_tokens")
+                    else 0
                 )
+                self.monitor.track_embedding_usage(total_tokens, self.model)
             else:
                 # Estimate tokens if usage not available
                 estimated_tokens = sum(len(text) // 4 for text in texts_to_fetch)

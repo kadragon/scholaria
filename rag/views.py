@@ -376,3 +376,44 @@ class QAInterfaceView(TemplateView):
         context = super().get_context_data(**kwargs)
         context["topic"] = get_object_or_404(Topic, id=kwargs["topic_id"])
         return context
+
+
+class HealthCheckView(APIView):
+    """Simple health check endpoint for production monitoring."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request) -> Response:
+        """Return health status of the application."""
+        try:
+            # Basic database connectivity check
+            from django.db import connection
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+
+            # Check cache connectivity
+            from django.core.cache import cache
+
+            cache.set("health_check", "ok", 10)
+            cache_status = cache.get("health_check") == "ok"
+
+            if cache_status:
+                return Response({"status": "healthy"}, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {"status": "unhealthy", "error": "Cache not accessible"},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+
+        except Exception:
+            # Log the error for debugging but don't expose internal details
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.exception("Health check failed")
+
+            return Response(
+                {"status": "unhealthy", "error": "Service unavailable"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
