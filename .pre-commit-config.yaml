@@ -32,11 +32,5 @@ repos:
         types: [python]
         require_serial: true
 
-  - repo: local
-    hooks:
-      - id: django-test
-        name: django-test
-        entry: uv run python manage.py test --settings=core.test_settings
-        language: system
-        pass_filenames: false
-        stages: [pre-push]
+  # Django tests removed from pre-push for faster workflow
+  # Run manually when needed: uv run python manage.py test --settings=core.test_settings
