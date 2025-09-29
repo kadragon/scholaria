@@ -110,6 +110,88 @@
             color: #7f8c8d;
         }
 
+        /* Navigation Styles */
+        .nav-menu {
+            background: #2c3e50;
+            color: white;
+            padding: 0.75rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .nav-menu .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .nav-brand a {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .brand-icon {
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Breadcrumb Styles */
+        .breadcrumb {
+            background: #ecf0f1;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        .breadcrumb-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 14px;
+        }
+
+        .breadcrumb-item {
+            color: #7f8c8d;
+        }
+
+        .breadcrumb-item a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .breadcrumb-item a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            color: #bdc3c7;
+        }
+
+        .breadcrumb-current {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -118,11 +200,58 @@
             .card {
                 padding: 1rem;
             }
+
+            .nav-menu .container {
+                padding: 0 10px;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .nav-link {
+                padding: 0.25rem 0.5rem;
+                font-size: 14px;
+            }
+
+            .brand-text {
+                display: none;
+            }
         }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <!-- Navigation Menu -->
+    <nav class="nav-menu">
+        <div class="container">
+            <div class="nav-brand">
+                <a href="{% url 'rag_web:topic-selection' %}">
+                    <span class="brand-icon">🎓</span>
+                    <span class="brand-text">Scholaria RAG</span>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="{% url 'rag_web:topic-selection' %}" class="nav-link">Home</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="#help" class="nav-link">Help</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb Navigation -->
+    {% block breadcrumb %}
+    <div class="breadcrumb">
+        <div class="container">
+            <nav class="breadcrumb-nav">
+                <a href="{% url 'rag_web:topic-selection' %}" class="breadcrumb-item breadcrumb-home">Home</a>
+                <span class="breadcrumb-separator">›</span>
+                <span class="breadcrumb-item breadcrumb-current">{% block breadcrumb_current %}Topics{% endblock %}</span>
+            </nav>
+        </div>
+    </div>
+    {% endblock %}
+
     <div class="header">
         <div class="container">
             <h1>{% block header %}Scholaria RAG System{% endblock %}</h1>

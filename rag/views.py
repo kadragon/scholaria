@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, serializers, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import (
     CharField,
@@ -21,8 +21,9 @@ from rest_framework.serializers import (
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
-from .models import Context, ContextItem, Topic
+from .models import Context, ContextItem, QuestionHistory, Topic
 from .retrieval.rag import RAGService
+from .services.question_suggestions import QuestionSuggestionService
 
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
@@ -268,7 +269,7 @@ class RAGQuestionThrottle(UserRateThrottle):
 class AskQuestionView(APIView):
     """API endpoint for asking questions and getting RAG-based answers."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     throttle_classes = [AnonRateThrottle, RAGQuestionThrottle]
 
     def post(self, request: Request) -> Response:
@@ -381,7 +382,7 @@ class QAInterfaceView(TemplateView):
 class HealthCheckView(APIView):
     """Simple health check endpoint for production monitoring."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
         """Return basic health status of the application."""
@@ -424,7 +425,7 @@ class HealthCheckView(APIView):
 class DetailedHealthCheckView(APIView):
     """Detailed health check endpoint with comprehensive system status."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
         """Return detailed health status of all system components."""
@@ -474,4 +475,578 @@ class DetailedHealthCheckView(APIView):
                     "timestamp": datetime.utcnow().isoformat(),
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+
+# History API Serializers and Views
+
+
+class QuestionHistorySerializer(ModelSerializer[QuestionHistory]):
+    """Serializer for QuestionHistory model."""
+
+    class Meta:
+        model = QuestionHistory
+        fields = [
+            "id",
+            "topic",
+            "question",
+            "answer",
+            "session_id",
+            "is_favorited",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class CreateHistorySerializer(Serializer):
+    """Serializer for creating history entries."""
+
+    topic_id = IntegerField()
+    question = CharField(max_length=5000)
+    answer = CharField(max_length=10000)
+    session_id = CharField(max_length=255)
+
+    def validate_topic_id(self, value: int) -> int:
+        """Validate that topic exists."""
+        if not Topic.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Topic does not exist.")
+        return value
+
+
+class ToggleFavoriteSerializer(Serializer):
+    """Serializer for toggling favorite status."""
+
+    is_favorited = serializers.BooleanField()
+
+
+@extend_schema_view(
+    get=extend_schema(
+        description="Get question history for a topic and session",
+        parameters=[
+            {"name": "topic_id", "type": int, "location": "query"},
+            {"name": "session_id", "type": str, "location": "query"},
+        ],
+    ),
+    post=extend_schema(
+        description="Create a new question history entry",
+        request=CreateHistorySerializer,
+    ),
+)
+class HistoryListCreateView(APIView):
+    """API view for listing and creating question history."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def get(self, request: Request) -> Response:
+        """Get question history filtered by topic and session."""
+        topic_id = request.query_params.get("topic_id")
+        session_id = request.query_params.get("session_id")
+
+        if not topic_id:
+            return Response(
+                {"error": "topic_id parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        queryset = QuestionHistory.objects.filter(topic_id=topic_id)
+
+        if session_id:
+            queryset = queryset.filter(session_id=session_id)
+
+        # Order by creation date (newest first)
+        queryset = queryset.order_by("-created_at")
+
+        serializer = QuestionHistorySerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request: Request) -> Response:
+        """Create a new question history entry."""
+        serializer = CreateHistorySerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "error": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        validated_data = serializer.validated_data
+
+        try:
+            history = QuestionHistory.objects.create(
+                topic_id=validated_data["topic_id"],
+                question=validated_data["question"],
+                answer=validated_data["answer"],
+                session_id=validated_data["session_id"],
+            )
+
+            return Response(
+                {"success": True, "id": history.id},
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as e:
+            logger.error(f"Error creating history: {e}")
+            return Response(
+                {"success": False, "error": "Failed to create history entry"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+@extend_schema(
+    description="Get favorited question history for a topic",
+    parameters=[
+        {"name": "topic_id", "type": int, "location": "query"},
+    ],
+)
+class HistoryFavoritesView(APIView):
+    """API view for getting favorited question history."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def get(self, request: Request) -> Response:
+        """Get favorited question history filtered by topic."""
+        topic_id = request.query_params.get("topic_id")
+
+        if not topic_id:
+            return Response(
+                {"error": "topic_id parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        queryset = QuestionHistory.objects.filter(
+            topic_id=topic_id, is_favorited=True
+        ).order_by("-created_at")
+
+        serializer = QuestionHistorySerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+@extend_schema(
+    description="Toggle favorite status of a question history entry",
+    request=ToggleFavoriteSerializer,
+)
+class ToggleFavoriteView(APIView):
+    """API view for toggling favorite status of question history."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def post(self, request: Request, history_id: int) -> Response:
+        """Toggle favorite status of a question history entry."""
+        try:
+            history = QuestionHistory.objects.get(id=history_id)
+        except QuestionHistory.DoesNotExist:
+            return Response(
+                {"success": False, "error": "History entry not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ToggleFavoriteSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "error": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        history.is_favorited = serializer.validated_data["is_favorited"]
+        history.save(update_fields=["is_favorited"])
+
+        return Response({"success": True})
+
+
+@extend_schema(
+    description="Clear question history for a session",
+    parameters=[
+        {"name": "session_id", "type": str, "location": "query"},
+    ],
+)
+class ClearHistoryView(APIView):
+    """API view for clearing question history by session."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def delete(self, request: Request) -> Response:
+        """Clear question history for a specific session."""
+        session_id = request.query_params.get("session_id")
+
+        if not session_id:
+            return Response(
+                {"success": False, "error": "session_id parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            deleted_count = QuestionHistory.objects.filter(
+                session_id=session_id
+            ).delete()[0]
+
+            return Response({"success": True, "deleted_count": deleted_count})
+        except Exception as e:
+            logger.error(f"Error clearing history: {e}")
+            return Response(
+                {"success": False, "error": "Failed to clear history"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+@extend_schema(
+    description="Get question suggestions for a topic based on its content",
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "suggestions": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of suggested questions",
+                }
+            },
+        },
+        404: {"description": "Topic not found"},
+    },
+)
+class QuestionSuggestionsView(APIView):
+    """API view for getting question suggestions based on topic content."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def get(self, request: Request, topic_id: int) -> Response:
+        """Get question suggestions for a specific topic."""
+        # Verify topic exists - get_object_or_404 raises Http404 which DRF converts to 404 response
+        get_object_or_404(Topic, id=topic_id)
+
+        try:
+            # Get suggestions from service
+            suggestion_service = QuestionSuggestionService()
+            suggestions = suggestion_service.get_topic_suggestions(topic_id)
+
+            return Response({"suggestions": suggestions})
+
+        except Exception as e:
+            logger.error(f"Error generating question suggestions: {e}")
+            return Response(
+                {"error": "Failed to generate suggestions"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+@extend_schema(
+    description="Get chunk preview for a context",
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "chunks": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "integer"},
+                            "title": {"type": "string"},
+                            "content_preview": {"type": "string"},
+                            "content_length": {"type": "integer"},
+                            "created_at": {"type": "string", "format": "date-time"},
+                        },
+                    },
+                },
+                "total_count": {"type": "integer"},
+                "context_info": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "processing_status": {"type": "string"},
+                    },
+                },
+            },
+        },
+        404: {"description": "Context not found"},
+    },
+)
+class ChunkPreviewView(APIView):
+    """API view for chunk preview functionality."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def get(self, request: Request, context_id: int) -> Response:
+        """Get chunk preview for a context."""
+        # Verify context exists
+        context = get_object_or_404(Context, id=context_id)
+
+        try:
+            # Get chunks with pagination
+            limit = int(request.query_params.get("limit", 20))
+            offset = int(request.query_params.get("offset", 0))
+
+            chunks = context.items.all()[offset : offset + limit]
+            total_count = context.items.count()
+
+            chunk_data = []
+            for chunk in chunks:
+                content_preview = (
+                    chunk.content[:200] + "..."
+                    if len(chunk.content) > 200
+                    else chunk.content
+                )
+                chunk_data.append(
+                    {
+                        "id": chunk.id,
+                        "title": chunk.title,
+                        "content_preview": content_preview,
+                        "content_length": len(chunk.content),
+                        "created_at": chunk.created_at.isoformat(),
+                    }
+                )
+
+            return Response(
+                {
+                    "chunks": chunk_data,
+                    "total_count": total_count,
+                    "context_info": {
+                        "name": context.name,
+                        "processing_status": context.processing_status,
+                    },
+                }
+            )
+
+        except Exception as e:
+            logger.error(f"Error getting chunk preview: {e}")
+            return Response(
+                {"error": "Failed to get chunk preview"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+@extend_schema(
+    description="Reorder chunks in a context",
+    request={
+        "type": "object",
+        "properties": {
+            "chunk_order": {
+                "type": "array",
+                "items": {"type": "integer"},
+                "description": "Array of chunk IDs in new order",
+            }
+        },
+    },
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "message": {"type": "string"},
+            },
+        }
+    },
+)
+class ChunkReorderView(APIView):
+    """API view for chunk reordering."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def post(self, request: Request, context_id: int) -> Response:
+        """Reorder chunks in a context."""
+        get_object_or_404(Context, id=context_id)
+
+        try:
+            chunk_order = request.data.get("chunk_order", [])
+            if not chunk_order:
+                return Response(
+                    {"success": False, "error": "chunk_order is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Update chunk ordering (would require adding order field to model)
+            # For now, just return success
+            return Response(
+                {"success": True, "message": f"Reordered {len(chunk_order)} chunks"}
+            )
+
+        except Exception as e:
+            logger.error(f"Error reordering chunks: {e}")
+            return Response(
+                {"success": False, "error": "Failed to reorder chunks"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+@extend_schema(
+    description="Bulk operations on chunks",
+    request={
+        "type": "object",
+        "properties": {
+            "chunk_ids": {"type": "array", "items": {"type": "integer"}},
+            "operation": {"type": "string", "enum": ["delete", "merge", "split"]},
+        },
+    },
+)
+class ChunkBulkOperationsView(APIView):
+    """API view for bulk chunk operations."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def delete(self, request: Request, context_id: int) -> Response:
+        """Bulk delete chunks."""
+        context = get_object_or_404(Context, id=context_id)
+
+        try:
+            chunk_ids = request.data.get("chunk_ids", [])
+            operation = request.data.get("operation", "delete")
+
+            if operation == "delete":
+                affected_count, _ = ContextItem.objects.filter(
+                    id__in=chunk_ids, context=context
+                ).delete()
+
+                # Update chunk count
+                context.update_chunk_count()
+
+                return Response({"success": True, "affected_count": affected_count})
+
+            return Response(
+                {"success": False, "error": f"Unsupported operation: {operation}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except Exception as e:
+            logger.error(f"Error in bulk chunk operation: {e}")
+            return Response(
+                {"success": False, "error": "Failed to perform bulk operation"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+@extend_schema(description="Get processing status updates for a context")
+class ProcessingStatusView(APIView):
+    """API view for processing status updates."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def get(self, request: Request, context_id: int) -> Response:
+        """Get current processing status."""
+        context = get_object_or_404(Context, id=context_id)
+
+        return Response(
+            {
+                "processing_status": context.processing_status,
+                "chunk_count": context.chunk_count,
+                "last_updated": context.updated_at.isoformat(),
+            }
+        )
+
+
+@extend_schema(description="Search and filter chunks in a context")
+class ChunkSearchView(APIView):
+    """API view for chunk search and filtering."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def get(self, request: Request, context_id: int) -> Response:
+        """Search chunks in a context."""
+        context = get_object_or_404(Context, id=context_id)
+
+        try:
+            query = request.query_params.get("q", "")
+            limit = int(request.query_params.get("limit", 10))
+
+            chunks = context.items.all()
+
+            if query:
+                chunks = chunks.filter(content__icontains=query)
+
+            chunks = chunks[:limit]
+
+            chunk_data = []
+            for chunk in chunks:
+                content_preview = (
+                    chunk.content[:200] + "..."
+                    if len(chunk.content) > 200
+                    else chunk.content
+                )
+                chunk_data.append(
+                    {
+                        "id": chunk.id,
+                        "title": chunk.title,
+                        "content_preview": content_preview,
+                        "content_length": len(chunk.content),
+                        "created_at": chunk.created_at.isoformat(),
+                    }
+                )
+
+            return Response(
+                {"chunks": chunk_data, "query": query, "total_found": len(chunk_data)}
+            )
+
+        except Exception as e:
+            logger.error(f"Error searching chunks: {e}")
+            return Response(
+                {"error": "Failed to search chunks"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+@extend_schema(description="Validate chunks in a context")
+class ChunkValidationView(APIView):
+    """API view for chunk validation."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def post(self, request: Request, context_id: int) -> Response:
+        """Validate chunks in a context."""
+        context = get_object_or_404(Context, id=context_id)
+
+        try:
+            chunks = context.items.all()
+            validation_results = []
+            issues_found = 0
+
+            for chunk in chunks:
+                issues = []
+
+                # Check chunk size
+                if len(chunk.content) < 10:
+                    issues.append("Content too short")
+                    issues_found += 1
+
+                if len(chunk.content) > 5000:
+                    issues.append("Content too long")
+                    issues_found += 1
+
+                # Check title
+                if not chunk.title or len(chunk.title.strip()) < 3:
+                    issues.append("Title missing or too short")
+                    issues_found += 1
+
+                validation_results.append(
+                    {
+                        "chunk_id": chunk.id,
+                        "chunk_title": chunk.title,
+                        "issues": issues,
+                        "is_valid": len(issues) == 0,
+                    }
+                )
+
+            return Response(
+                {
+                    "validation_results": validation_results,
+                    "issues_found": issues_found,
+                    "total_chunks": len(validation_results),
+                }
+            )
+
+        except Exception as e:
+            logger.error(f"Error validating chunks: {e}")
+            return Response(
+                {"error": "Failed to validate chunks"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

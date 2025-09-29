@@ -78,15 +78,16 @@ class RequestLoggingMiddlewareTest(TestCase):
         # Create a mock request
         request = MagicMock()
         request.META = {"REMOTE_ADDR": "192.168.1.1"}
+        request.headers.get.return_value = None
 
         ip = middleware._get_client_ip(request)
         self.assertEqual(ip, "192.168.1.1")
 
         # Test with X-Forwarded-For header
         request.META = {
-            "HTTP_X_FORWARDED_FOR": "10.0.0.1, 192.168.1.1",
             "REMOTE_ADDR": "192.168.1.1",
         }
+        request.headers.get.return_value = "10.0.0.1, 192.168.1.1"
 
         ip = middleware._get_client_ip(request)
         self.assertEqual(ip, "10.0.0.1")

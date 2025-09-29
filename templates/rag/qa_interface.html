@@ -5,34 +5,113 @@
 {% block header %}{{ topic.name }} - Ask a Question{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="topic-info">
-        <h2>{{ topic.name }}</h2>
-        <p class="topic-description">{{ topic.description }}</p>
-        <a href="{% url 'rag_web:topic-selection' %}" class="btn" style="margin-bottom: 1.5rem;">← Back to Topics</a>
+<div class="qa-container mobile-optimized">
+    <!-- History Sidebar -->
+    <div id="historySidebar" class="history-sidebar mobile-container">
+        <div class="sidebar-header">
+            <h3>History</h3>
+            <button type="button" class="close-sidebar touch-target" onclick="toggleHistorySidebar()">×</button>
+        </div>
+
+        <div class="sidebar-tabs">
+            <button class="tab-btn active touch-target" onclick="showTab('recent')">Recent</button>
+            <button class="tab-btn touch-target" onclick="showTab('favorites')">Favorites ★</button>
+        </div>
+
+        <div class="sidebar-content">
+            <div id="recent-tab" class="tab-content active">
+                <div class="history-list" id="historyList">
+                    <!-- History items will be populated here -->
+                </div>
+                <button type="button" class="clear-history-btn mobile-button touch-action" onclick="clearHistory()">Clear History</button>
+            </div>
+
+            <div id="favorites-tab" class="tab-content">
+                <div class="favorites-list" id="favoritesList">
+                    <!-- Favorite items will be populated here -->
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="card mobile-form">
+            <div class="topic-info">
+                <div class="topic-header">
+                    <button type="button" class="history-toggle-btn touch-target" onclick="toggleHistorySidebar()">
+                        📋 History
+                    </button>
+                    <h2 class="mobile-text">{{ topic.name }}</h2>
+                    <a href="{% url 'rag_web:topic-selection' %}" class="btn mobile-button" style="margin-bottom: 1.5rem;">← Back to Topics</a>
+                </div>
+                <p class="topic-description mobile-text">{{ topic.description }}</p>
+            </div>
 
     <div class="qa-form">
         <form id="questionForm">
             {% csrf_token %}
             <div class="form-group">
-                <label for="question">Your Question:</label>
+                <label for="question" class="mobile-text">Your Question:</label>
                 <textarea
                     id="question"
                     name="question"
+                    class="touch-action mobile-text"
                     placeholder="Type your question here..."
                     required
                 ></textarea>
+                <div id="typingIndicator" class="typing-indicator" style="display: none;">
+                    <span class="typing-text">Thinking...</span>
+                    <div class="typing-dots">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                </div>
                 <div id="questionError" class="error" style="display: none;"></div>
             </div>
-            <button type="submit" class="btn btn-block" id="submitBtn">
+            <button type="submit" class="btn btn-block mobile-button touch-action large-touch-target" id="submitBtn">
                 Ask Question
             </button>
         </form>
     </div>
 
+    <!-- Question Suggestions Section -->
+    <div class="question-suggestions mobile-container" id="suggestionsContainer">
+        <div class="suggestions-header">
+            <h3 class="mobile-text">💡 Suggested Questions</h3>
+            <button type="button" class="refresh-suggestions-btn touch-target" onclick="refreshSuggestions()" title="Refresh suggestions">
+                🔄
+            </button>
+        </div>
+        <div class="suggestions-content">
+            <div id="suggestionsLoading" class="suggestions-loading" style="display: none;">
+                <span class="mobile-text">Loading suggestions...</span>
+            </div>
+            <div id="suggestionsList" class="suggestions-list">
+                <!-- Suggestions will be populated here -->
+            </div>
+            <div id="suggestionsEmpty" class="suggestions-empty" style="display: none;">
+                <span class="mobile-text">No suggestions available for this topic yet.</span>
+            </div>
+        </div>
+    </div>
+
     <div id="loadingDiv" class="loading" style="display: none;">
         <p>Processing your question...</p>
+    </div>
+
+    <div id="enhancedLoadingDiv" class="enhanced-loading" style="display: none;">
+        <div class="loading-animation">
+            <div class="loading-dots">
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            </div>
+            <div class="loading-message">
+                Analyzing your question and searching through knowledge base...
+            </div>
+        </div>
     </div>
 
     <div id="answerDiv" class="answer-section" style="display: none;">
@@ -48,6 +127,8 @@
     <div id="errorDiv" class="error-section" style="display: none;">
         <h3>Error:</h3>
         <div id="errorContent" class="error-content"></div>
+    </div>
+    </div>
     </div>
 </div>
 
@@ -131,6 +212,577 @@
     background: #bdc3c7;
     cursor: not-allowed;
 }
+
+/* Typing indicator styles */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #6c757d;
+    transition: opacity 0.3s ease;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 0.2rem;
+}
+
+.typing-dots .dot {
+    width: 4px;
+    height: 4px;
+    background: #6c757d;
+    border-radius: 50%;
+    animation: typing-pulse 1.4s ease-in-out infinite both;
+}
+
+.typing-dots .dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots .dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-dots .dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes typing-pulse {
+    0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Enhanced loading animation */
+.enhanced-loading {
+    text-align: center;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 1rem 0;
+    transition: opacity 0.3s ease;
+}
+
+.loading-animation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.loading-dots {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.loading-dot {
+    width: 12px;
+    height: 12px;
+    background: #3498db;
+    border-radius: 50%;
+    animation: loading-bounce 1.4s ease-in-out infinite both;
+}
+
+.loading-dot:nth-child(1) { animation-delay: -0.32s; }
+.loading-dot:nth-child(2) { animation-delay: -0.16s; }
+.loading-dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes loading-bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+    }
+    40% {
+        transform: scale(1);
+    }
+}
+
+.loading-message {
+    color: #7f8c8d;
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* Smooth answer reveal animation */
+.answer-section {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.answer-section.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.answer-content {
+    transition: all 0.3s ease;
+}
+
+/* History Sidebar Styles */
+.qa-container {
+    display: flex;
+    gap: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.history-sidebar {
+    width: 300px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    height: fit-content;
+    max-height: 80vh;
+    overflow-y: auto;
+    transform: translateX(-320px);
+    transition: transform 0.3s ease;
+    position: sticky;
+    top: 1rem;
+}
+
+.history-sidebar.sidebar-open {
+    transform: translateX(0);
+}
+
+.main-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.close-sidebar {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #7f8c8d;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-sidebar:hover {
+    color: #e74c3c;
+}
+
+.sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid #eee;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #7f8c8d;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    color: #3498db;
+    background: #f8f9fa;
+    border-bottom: 2px solid #3498db;
+}
+
+.tab-btn:hover {
+    background: #f8f9fa;
+}
+
+.sidebar-content {
+    padding: 1rem;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.history-list, .favorites-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-item {
+    padding: 0.75rem;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.history-item:hover {
+    background: #f8f9fa;
+    border-color: #3498db;
+}
+
+.history-item-question {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+    font-size: 14px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.history-item-time {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-bottom: 0.5rem;
+}
+
+.favorite-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #ffd700;
+    padding: 2px;
+    line-height: 1;
+}
+
+.favorite-btn:hover {
+    transform: scale(1.2);
+}
+
+.favorite-btn.favorited {
+    color: #ffd700;
+}
+
+.favorite-btn.not-favorited {
+    color: #ddd;
+}
+
+.clear-history-btn {
+    width: 100%;
+    padding: 0.5rem;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 1rem;
+    transition: background 0.3s ease;
+}
+
+.clear-history-btn:hover {
+    background: #c0392b;
+}
+
+.topic-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.history-toggle-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.history-toggle-btn:hover {
+    background: #2980b9;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .qa-container {
+        flex-direction: column;
+        padding: 0.5rem;
+    }
+
+    .history-sidebar {
+        width: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        max-height: 100vh;
+        z-index: 1000;
+        transform: translateX(-100%);
+        border-radius: 0;
+    }
+
+    .history-sidebar.sidebar-open {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        width: 100%;
+    }
+
+    .topic-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+/* Mobile Touch Optimization */
+.mobile-optimized {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    position: relative;
+}
+
+.touch-action {
+    touch-action: manipulation;
+}
+
+.mobile-container {
+    padding: 0.5rem;
+}
+
+.mobile-form {
+    padding: 1rem;
+}
+
+.mobile-button {
+    padding: 14px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+    min-height: 48px;
+}
+
+.mobile-text {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.large-touch-target {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px;
+}
+
+@media (max-width: 768px) {
+    .qa-container {
+        padding: 0.5rem;
+    }
+
+    .main-content .card {
+        padding: 1rem;
+    }
+
+    .form-group textarea {
+        font-size: 16px;
+        min-height: 120px;
+        padding: 14px;
+    }
+
+    .form-group input {
+        font-size: 16px;
+        padding: 14px;
+    }
+
+    .btn {
+        min-height: 48px;
+        font-size: 16px;
+        padding: 14px 20px;
+    }
+
+    .history-toggle-btn {
+        min-height: 44px;
+        font-size: 14px;
+        padding: 10px 16px;
+    }
+}
+
+/* Question Suggestions Styles */
+.question-suggestions {
+    margin: 2rem 0;
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: 1px solid #e1e5e9;
+}
+
+.suggestions-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f0f2f5;
+}
+
+.suggestions-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.refresh-suggestions-btn {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    min-width: 44px;
+}
+
+.refresh-suggestions-btn:hover {
+    background: #e9ecef;
+    transform: rotate(180deg);
+}
+
+.suggestions-content {
+    position: relative;
+}
+
+.suggestions-loading {
+    text-align: center;
+    padding: 1rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.suggestion-item {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+}
+
+.suggestion-item:hover {
+    background: #e9ecef;
+    border-color: #3498db;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.15);
+}
+
+.suggestion-item:active {
+    transform: translateY(0);
+    background: #dee2e6;
+}
+
+.suggestion-item::before {
+    content: '❓';
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+    opacity: 0.7;
+}
+
+.suggestions-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+    font-style: italic;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+}
+
+/* Animation for suggestions */
+.suggestion-item {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: suggestionFadeIn 0.3s ease forwards;
+}
+
+.suggestion-item:nth-child(1) { animation-delay: 0.1s; }
+.suggestion-item:nth-child(2) { animation-delay: 0.2s; }
+.suggestion-item:nth-child(3) { animation-delay: 0.3s; }
+.suggestion-item:nth-child(4) { animation-delay: 0.4s; }
+.suggestion-item:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes suggestionFadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile optimizations for suggestions */
+@media (max-width: 768px) {
+    .question-suggestions {
+        margin: 1rem 0;
+        padding: 1rem;
+    }
+
+    .suggestions-header h3 {
+        font-size: 1rem;
+    }
+
+    .suggestion-item {
+        padding: 0.875rem;
+        font-size: 16px;
+        min-height: 48px;
+    }
+
+    .refresh-suggestions-btn {
+        padding: 10px;
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
 </style>
 
 <script>
@@ -139,9 +791,288 @@ document.addEventListener('DOMContentLoaded', function() {
     const questionInput = document.getElementById('question');
     const submitBtn = document.getElementById('submitBtn');
     const loadingDiv = document.getElementById('loadingDiv');
+    const enhancedLoadingDiv = document.getElementById('enhancedLoadingDiv');
     const answerDiv = document.getElementById('answerDiv');
     const errorDiv = document.getElementById('errorDiv');
     const questionError = document.getElementById('questionError');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    let typingTimer;
+    let currentSessionId = generateSessionId();
+
+    // Touch and gesture variables
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    // Mobile touch optimization and haptic feedback
+    function hapticFeedback(type = 'light') {
+        if (navigator.vibrate) {
+            switch (type) {
+                case 'light':
+                    navigator.vibrate(10);
+                    break;
+                case 'medium':
+                    navigator.vibrate(25);
+                    break;
+                case 'heavy':
+                    navigator.vibrate(50);
+                    break;
+            }
+        }
+    }
+
+    // Touch gesture handling
+    function handleSwipe() {
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
+        const absX = Math.abs(diffX);
+        const absY = Math.abs(diffY);
+
+        // Minimum swipe distance
+        if (Math.max(absX, absY) < 50) return;
+
+        if (absX > absY) {
+            // Horizontal swipe
+            if (diffX > 0) {
+                // Swipe right - open sidebar
+                if (!document.getElementById('historySidebar').classList.contains('sidebar-open')) {
+                    toggleHistorySidebar();
+                    hapticFeedback('light');
+                }
+            } else {
+                // Swipe left - close sidebar
+                if (document.getElementById('historySidebar').classList.contains('sidebar-open')) {
+                    toggleHistorySidebar();
+                    hapticFeedback('light');
+                }
+            }
+        }
+    }
+
+    function touchStart(e) {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }
+
+    function touchEnd(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        handleSwipe();
+    }
+
+    // Add touch event listeners for swipe gestures
+    if (window.innerWidth <= 768) {
+        document.addEventListener('touchstart', touchStart, { passive: true });
+        document.addEventListener('touchend', touchEnd, { passive: true });
+    }
+
+    // History sidebar functionality
+    function toggleHistorySidebar() {
+        const sidebar = document.getElementById('historySidebar');
+        sidebar.classList.toggle('sidebar-open');
+    }
+
+    function showTab(tabName) {
+        // Hide all tab contents
+        const tabs = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => tab.classList.remove('active'));
+
+        // Remove active class from all tab buttons
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => btn.classList.remove('active'));
+
+        // Show selected tab and activate button
+        document.getElementById(tabName + '-tab').classList.add('active');
+        event.target.classList.add('active');
+
+        // Load content for the selected tab
+        if (tabName === 'recent') {
+            loadQuestionHistory();
+        } else if (tabName === 'favorites') {
+            loadFavorites();
+        }
+    }
+
+    function generateSessionId() {
+        return 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    }
+
+    function addToHistory(question, answer) {
+        const historyData = {
+            topic_id: {{ topic.id }},
+            question: question,
+            answer: answer,
+            session_id: currentSessionId
+        };
+
+        // Save to server
+        fetch('/api/history/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(historyData)
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadQuestionHistory(); // Refresh history list
+            }
+        }).catch(error => {
+            console.error('Error saving history:', error);
+        });
+    }
+
+    function loadQuestionHistory() {
+        fetch(`/api/history/?topic_id={{ topic.id }}&session_id=${currentSessionId}`)
+            .then(response => response.json())
+            .then(data => {
+                const historyList = document.getElementById('historyList');
+                historyList.innerHTML = '';
+
+                if (data.length === 0) {
+                    historyList.innerHTML = '<p style="color: #7f8c8d; text-align: center; padding: 1rem;">No history yet</p>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const historyItem = createHistoryItem(item);
+                    historyList.appendChild(historyItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading history:', error);
+            });
+    }
+
+    function loadFavorites() {
+        fetch(`/api/history/favorites/?topic_id={{ topic.id }}`)
+            .then(response => response.json())
+            .then(data => {
+                const favoritesList = document.getElementById('favoritesList');
+                favoritesList.innerHTML = '';
+
+                if (data.length === 0) {
+                    favoritesList.innerHTML = '<p style="color: #7f8c8d; text-align: center; padding: 1rem;">No favorites yet</p>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const historyItem = createHistoryItem(item);
+                    favoritesList.appendChild(historyItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading favorites:', error);
+            });
+    }
+
+    function createHistoryItem(item) {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        historyItem.onclick = () => loadQuestionFromHistory(item);
+
+        const timeStr = new Date(item.created_at).toLocaleString();
+
+        historyItem.innerHTML = `
+            <button class="favorite-btn ${item.is_favorited ? 'favorited' : 'not-favorited'}"
+                    onclick="event.stopPropagation(); toggleFavorite(${item.id}, this)">
+                ${item.is_favorited ? '★' : '☆'}
+            </button>
+            <div class="history-item-question">${item.question}</div>
+            <div class="history-item-time">${timeStr}</div>
+        `;
+
+        return historyItem;
+    }
+
+    function loadQuestionFromHistory(item) {
+        // Load question into form
+        document.getElementById('question').value = item.question;
+
+        // Show the answer
+        showAnswer({
+            answer: item.answer,
+            citations: [] // Historical answers don't have citations
+        });
+
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+            toggleHistorySidebar();
+        }
+    }
+
+    function toggleFavorite(historyId, button) {
+        const isFavorited = button.classList.contains('favorited');
+        const newFavoriteState = !isFavorited;
+
+        fetch(`/api/history/${historyId}/favorite/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ is_favorited: newFavoriteState })
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update button appearance
+                if (newFavoriteState) {
+                    button.classList.remove('not-favorited');
+                    button.classList.add('favorited');
+                    button.textContent = '★';
+                } else {
+                    button.classList.remove('favorited');
+                    button.classList.add('not-favorited');
+                    button.textContent = '☆';
+                }
+            }
+        }).catch(error => {
+            console.error('Error toggling favorite:', error);
+        });
+    }
+
+    function clearHistory() {
+        if (!confirm('Are you sure you want to clear all history for this session?')) {
+            return;
+        }
+
+        fetch(`/api/history/clear/?session_id=${currentSessionId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadQuestionHistory();
+            }
+        }).catch(error => {
+            console.error('Error clearing history:', error);
+        });
+    }
+
+    // Load initial history when page loads
+    loadQuestionHistory();
+
+    // Typing indicator functionality
+    questionInput.addEventListener('input', function() {
+        showTypingIndicator();
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(hideTypingIndicator, 1500);
+    });
+
+    function showTypingIndicator() {
+        if (questionInput.value.trim().length > 0) {
+            typingIndicator.style.display = 'flex';
+        }
+    }
+
+    function hideTypingIndicator() {
+        typingIndicator.style.display = 'none';
+    }
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -178,6 +1109,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 showAnswer(data);
+                // Add to history after successful answer
+                addToHistory(question, data.answer);
             } else {
                 showApiError(data.error || 'An error occurred while processing your question.');
             }
@@ -200,19 +1133,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function hideAll() {
+        hideTypingIndicator();
         questionError.style.display = 'none';
         answerDiv.style.display = 'none';
+        answerDiv.classList.remove('fade-in');
         errorDiv.style.display = 'none';
     }
 
     function showLoading() {
-        loadingDiv.style.display = 'block';
+        hideTypingIndicator();
+        loadingDiv.style.display = 'none'; // Hide old loading
+        enhancedLoadingDiv.style.display = 'block'; // Show enhanced loading
         submitBtn.disabled = true;
         submitBtn.textContent = 'Processing...';
     }
 
     function hideLoading() {
         loadingDiv.style.display = 'none';
+        enhancedLoadingDiv.style.display = 'none';
         submitBtn.disabled = false;
         submitBtn.textContent = 'Ask Question';
     }
@@ -240,8 +1178,98 @@ document.addEventListener('DOMContentLoaded', function() {
             citationsContent.innerHTML = '<p>No sources found.</p>';
         }
 
+        // Show answer with smooth animation
         answerDiv.style.display = 'block';
+        // Force a reflow to ensure the element is rendered before adding the class
+        answerDiv.offsetHeight;
+        answerDiv.classList.add('fade-in');
     }
+
+    // Question Suggestions Functionality
+    const topicId = {{ topic.id }};
+    const suggestionsList = document.getElementById('suggestionsList');
+    const suggestionsLoading = document.getElementById('suggestionsLoading');
+    const suggestionsEmpty = document.getElementById('suggestionsEmpty');
+
+    // Load suggestions on page load
+    loadQuestionSuggestions();
+
+    async function loadQuestionSuggestions() {
+        showSuggestionsLoading();
+
+        try {
+            const response = await fetch(`/api/topics/${topicId}/suggestions/`);
+            const data = await response.json();
+
+            if (response.ok && data.suggestions && data.suggestions.length > 0) {
+                displaySuggestions(data.suggestions);
+            } else {
+                showSuggestionsEmpty();
+            }
+        } catch (error) {
+            console.error('Error loading suggestions:', error);
+            showSuggestionsEmpty();
+        }
+    }
+
+    function displaySuggestions(suggestions) {
+        hideSuggestionsStates();
+        suggestionsList.innerHTML = '';
+
+        suggestions.forEach((suggestion, index) => {
+            const suggestionDiv = document.createElement('div');
+            suggestionDiv.className = 'suggestion-item touch-action';
+            suggestionDiv.textContent = suggestion;
+            suggestionDiv.onclick = () => useSuggestion(suggestion);
+
+            // Add haptic feedback for mobile
+            suggestionDiv.addEventListener('touchstart', function() {
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            });
+
+            suggestionsList.appendChild(suggestionDiv);
+        });
+    }
+
+    function useSuggestion(suggestion) {
+        const questionTextarea = document.getElementById('question');
+        questionTextarea.value = suggestion;
+        questionTextarea.focus();
+
+        // Scroll to question form
+        questionTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Add visual feedback
+        questionTextarea.style.borderColor = '#3498db';
+        setTimeout(() => {
+            questionTextarea.style.borderColor = '';
+        }, 1000);
+    }
+
+    function showSuggestionsLoading() {
+        suggestionsList.style.display = 'none';
+        suggestionsEmpty.style.display = 'none';
+        suggestionsLoading.style.display = 'block';
+    }
+
+    function showSuggestionsEmpty() {
+        suggestionsList.style.display = 'none';
+        suggestionsLoading.style.display = 'none';
+        suggestionsEmpty.style.display = 'block';
+    }
+
+    function hideSuggestionsStates() {
+        suggestionsLoading.style.display = 'none';
+        suggestionsEmpty.style.display = 'none';
+        suggestionsList.style.display = 'flex';
+    }
+
+    // Global function for refresh button
+    window.refreshSuggestions = function() {
+        loadQuestionSuggestions();
+    };
 });
 </script>
 {% endblock %}
