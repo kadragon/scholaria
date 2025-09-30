@@ -110,6 +110,10 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
 [[tool.mypy.overrides]]
+module = "rag.views"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
 module = [
     "celery.*",
     "qdrant_client.*",

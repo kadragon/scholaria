@@ -39,8 +39,8 @@ class ChunkManagementTestCase(TestCase):
         self.chunks = []
         for i in range(5):
             chunk = ContextItem.objects.create(
-                title=f"Chunk {i+1}",
-                content=f"This is content for chunk {i+1}. It contains information about topic {i+1}.",
+                title=f"Chunk {i + 1}",
+                content=f"This is content for chunk {i + 1}. It contains information about topic {i + 1}.",
                 context=self.context,
             )
             self.chunks.append(chunk)
@@ -60,7 +60,7 @@ class ChunkManagementTestCase(TestCase):
         """Test API endpoint for chunk preview."""
         self.client.force_login(self.user)
 
-        url = f"/api/contexts/{self.context.id}/chunks/preview/"
+        url = f"/api/contexts/{self.context.pk}/chunks/preview/"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
@@ -87,7 +87,7 @@ class ChunkManagementTestCase(TestCase):
         self.client.force_login(self.user)
 
         # Test accessing chunk through context admin (inline editing)
-        context_url = f"/admin/rag/context/{self.context.id}/change/"
+        context_url = f"/admin/rag/context/{self.context.pk}/change/"
 
         response = self.client.get(context_url)
         self.assertEqual(response.status_code, 200)
@@ -103,7 +103,7 @@ class ChunkManagementTestCase(TestCase):
         # Test reordering chunks
         new_order = [chunk.id for chunk in reversed(self.chunks)]
 
-        url = f"/api/contexts/{self.context.id}/chunks/reorder/"
+        url = f"/api/contexts/{self.context.pk}/chunks/reorder/"
         response = self.client.post(
             url,
             data=json.dumps({"chunk_order": new_order}),
@@ -122,7 +122,7 @@ class ChunkManagementTestCase(TestCase):
         chunk_ids = [chunk.id for chunk in self.chunks[:3]]
 
         # Test bulk delete
-        url = f"/api/contexts/{self.context.id}/chunks/bulk/"
+        url = f"/api/contexts/{self.context.pk}/chunks/bulk/"
         response = self.client.delete(
             url,
             data=json.dumps({"chunk_ids": chunk_ids, "operation": "delete"}),
@@ -143,7 +143,7 @@ class ChunkManagementTestCase(TestCase):
         self.context.processing_status = "PROCESSING"
         self.context.save()
 
-        url = f"/api/contexts/{self.context.id}/status/"
+        url = f"/api/contexts/{self.context.pk}/status/"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
@@ -156,7 +156,7 @@ class ChunkManagementTestCase(TestCase):
         """Test chunk search and filtering functionality."""
         self.client.force_login(self.user)
 
-        url = f"/api/contexts/{self.context.id}/chunks/search/"
+        url = f"/api/contexts/{self.context.pk}/chunks/search/"
 
         # Test search by content
         response = self.client.get(url, {"q": "content", "limit": "10"})
@@ -171,7 +171,7 @@ class ChunkManagementTestCase(TestCase):
         self.client.force_login(self.user)
 
         # Test chunk validation
-        url = f"/api/contexts/{self.context.id}/chunks/validate/"
+        url = f"/api/contexts/{self.context.pk}/chunks/validate/"
         response = self.client.post(url)
 
         self.assertEqual(response.status_code, 200)
@@ -185,7 +185,7 @@ class ChunkManagementTestCase(TestCase):
         self.client.force_login(self.user)
 
         # Admin change view should show chunk statistics
-        url = f"/admin/rag/context/{self.context.id}/change/"
+        url = f"/admin/rag/context/{self.context.pk}/change/"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
@@ -202,7 +202,7 @@ class ChunkManagementTestCase(TestCase):
 
         self.client.force_login(self.user)
 
-        url = f"/api/contexts/{self.context.id}/chunks/preview/"
+        url = f"/api/contexts/{self.context.pk}/chunks/preview/"
         response = self.client.get(url)
 
         data = json.loads(response.content)
@@ -216,14 +216,15 @@ class ChunkManagementTestCase(TestCase):
 
         self.assertIsNotNone(long_chunk_data)
         # Preview should be truncated
-        self.assertLess(len(long_chunk_data["content_preview"]), 500)
-        # Should indicate truncation
-        self.assertTrue(long_chunk_data["content_preview"].endswith("..."))
+        if long_chunk_data is not None:
+            self.assertLess(len(long_chunk_data["content_preview"]), 500)
+            # Should indicate truncation
+            self.assertTrue(long_chunk_data["content_preview"].endswith("..."))
 
     def test_chunk_management_permissions(self):
         """Test that chunk management requires proper permissions."""
         # Test without login
-        url = f"/api/contexts/{self.context.id}/chunks/preview/"
+        url = f"/api/contexts/{self.context.pk}/chunks/preview/"
         response = self.client.get(url)
 
         # Should require authentication (401 or 403)

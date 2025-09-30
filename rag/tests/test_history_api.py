@@ -59,7 +59,7 @@ class QuestionHistoryAPITest(TestCase):
 
         response = self.client.get(
             reverse("api_question_history"),
-            {"topic_id": self.topic.pk, "session_id": "test-session-get"},
+            {"topic_id": str(self.topic.pk), "session_id": "test-session-get"},
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
