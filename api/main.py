@@ -7,7 +7,7 @@ POC implementation for Django to FastAPI migration.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import topics
+from api.routers import contexts, topics
 
 app = FastAPI(
     title="Scholaria RAG API",
@@ -24,6 +24,7 @@ app.add_middleware(
 )
 
 app.include_router(topics.router, prefix="/api", tags=["topics"])
+app.include_router(contexts.router, prefix="/api", tags=["contexts"])
 
 
 @app.get("/health")
