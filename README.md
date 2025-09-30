@@ -2,6 +2,8 @@
 
 ✅ **MVP COMPLETE & PRODUCTION READY** - TDD-driven Retrieval-Augmented Generation system for schools.
 
+⚠️ **MIGRATION IN PROGRESS**: Django → FastAPI migration (Phase 1)
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -27,9 +29,21 @@
    ```
 
 4. **Start development server:**
+
+   **Django (existing - port 8000):**
    ```bash
    uv run python manage.py runserver
    ```
+
+   **FastAPI (new - port 8001):**
+   ```bash
+   uv run uvicorn api.main:app --reload --port 8001
+   ```
+
+   Access:
+   - Django Admin: http://localhost:8000/admin
+   - FastAPI Docs: http://localhost:8001/docs
+   - FastAPI API: http://localhost:8001/api/topics
 
 ## 🛠️ Development Commands
 
