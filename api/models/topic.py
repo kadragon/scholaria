@@ -14,6 +14,7 @@ from api.models.base import Base
 
 if TYPE_CHECKING:
     from api.models.context import Context
+    from api.models.history import QuestionHistory
 
 
 class Topic(Base):
@@ -35,6 +36,12 @@ class Topic(Base):
         back_populates="topics",
         lazy="selectin",
         order_by="Context.id",
+    )
+    question_histories: Mapped[list[QuestionHistory]] = relationship(
+        "QuestionHistory",
+        back_populates="topic",
+        lazy="select",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:

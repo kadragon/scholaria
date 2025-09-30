@@ -34,6 +34,38 @@ services:
         condition: service_started
       qdrant:
         condition: service_started
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: ./scripts/docker/fastapi-dev-entrypoint.sh
+    ports:
+      - "${FASTAPI_PORT:-8001}:8001"
+    environment:
+      DEBUG: "1"
+      DB_ENGINE: postgresql
+      DB_NAME: ${POSTGRES_DB:-scholaria}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-changeme}
+      UV_PROJECT_ENVIRONMENT: /opt/uv
+    volumes:
+      - .:/app
+      - staticfiles:/app/staticfiles
+      - uploads:/app/uploads
+      - media:/app/media
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
 volumes:
   staticfiles:
     driver: local

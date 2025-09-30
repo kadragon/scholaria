@@ -36,10 +36,10 @@ Scholaria RAG 시스템을 Django에서 FastAPI로 점진적으로 전환하며,
 **Goal**: 조회 API만 FastAPI로 이전
 
 - [ ] **API 라우터 생성** (`api/routers/`)
-  - `topics.py`: GET /api/topics, GET /api/topics/{id}
-  - `contexts.py`: GET /api/contexts, GET /api/contexts/{id}
-  - `history.py`: GET /api/history
-- [ ] **Pydantic 스키마** (`api/schemas.py`)
+  - [x] topics.py: GET /api/topics, GET /api/topics/{id}
+  - [x] contexts.py: GET /api/contexts, GET /api/contexts/{id}
+  - [x] history.py: GET /api/history ▶ (slug: fastapi-readonly-api)
+- [x] **Pydantic 스키마** (`api/schemas.py`)
   - TopicOut, ContextOut, QuestionHistoryOut
 - [ ] **서비스 레이어** (`api/services/`)
   - Django `rag/retrieval/` 로직 복사 → SQLAlchemy 쿼리로 변환

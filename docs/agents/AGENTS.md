@@ -70,6 +70,9 @@ docker-compose up -d
 - SQLAlchemy가 Django DB 테이블을 직접 재사용하며 Topic↔Context 다대다 조인 테이블은 `rag_topic_contexts` (BigAuto id + `topic_id`, `context_id`).
 - FastAPI POC 테스트(`api/tests/test_topics_poc.py`)는 로컬 PostgreSQL(5432) 접근이 필요하므로 샌드박스/CI에서는 연결 불가 시 실패함.
 - FastAPI Pydantic 스키마는 `settings.TIME_ZONE` 기준 ISO 문자열로 datetime을 직렬화하여 Django 응답 포맷과 일치.
+- FastAPI SQLAlchemy 설정이 Django 테스트 DB와 자동으로 동기화되도록 `api.config.Settings.database_config()`가 Django `DATABASES` 값을 우선 사용하고, 테스트용 sqlite 파일은 `tmp/test.sqlite3`로 고정.
+- 개발 Docker Compose (`docker-compose.dev.yml`)에 `fastapi` 서비스가 추가되어 `docker compose -f docker-compose.yml -f docker-compose.dev.yml up web fastapi` 명령으로 Django(8000)와 FastAPI(8001)를 동시에 기동 가능.
+- FastAPI에 `/api/history` read-only 엔드포인트가 추가되어 토픽/세션별 질문 히스토리를 반환하며, SQLAlchemy `QuestionHistory` 모델과 공유 sqlite 테스트 DB를 사용.
 
 ### 프로덕션 기능
 - **모니터링**: 헬스 체크 엔드포인트, 구조화된 로깅, 성능 메트릭

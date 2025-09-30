@@ -30,13 +30,18 @@
 
 4. **Start development server:**
 
-   **Django (existing - port 8000):**
+   **Docker (hybrid runtime):**
    ```bash
-   uv run python manage.py runserver
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml up web fastapi
    ```
+   > 필요 시 `FASTAPI_PORT` 환경변수로 FastAPI 호스트 포트를 조정할 수 있습니다.
 
-   **FastAPI (new - port 8001):**
+   **Manual (per framework):**
    ```bash
+   # Django (existing - port 8000)
+   uv run python manage.py runserver
+
+   # FastAPI (new - port 8001)
    uv run uvicorn api.main:app --reload --port 8001
    ```
 

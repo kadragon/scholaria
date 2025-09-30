@@ -4,10 +4,13 @@ from .settings import *
 TESTING = True
 
 # Override database settings for testing
+TEST_DB_PATH = BASE_DIR / "tmp" / "test.sqlite3"
+TEST_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
+        "NAME": str(TEST_DB_PATH),
     }
 }
 

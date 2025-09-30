@@ -18,9 +18,11 @@
 - [ ] **Phase 1: 기반 구조 준비** (1-2주):
   - [x] POC: 단일 엔드포인트 전환 (GET /api/topics)
   - [x] FastAPI + SQLAlchemy + Alembic 환경 구축
-  - [ ] Docker 하이브리드 구성 (Django 8000 + FastAPI 8001)
+  - [x] ▶ Docker 하이브리드 구성 (Django 8000 + FastAPI 8001) (slug: docker-hybrid-compose)
   - [x] ▶ FastAPI Topic↔Context 관계 매핑 (slug: fastapi-topic-context-relations)
+  - [x] ▶ FastAPI Context DB 동기화 (slug: fastapi-contexts-transaction)
 - [ ] **Phase 2-8**: 단계별 API 전환 → Refine Admin 구축 → Django 제거
+- [x] ▶ FastAPI history read API (slug: fastapi-readonly-api)
 - **문서**: `docs/agents/tasks/django-to-fastapi-migration/` (RESEARCH, PLAN, PROGRESS)
 - **예상 기간**: 12-18주, Critical: Phase 6 (Refine Admin 4-6주)
 - **주요 기술**: FastAPI + SQLAlchemy + Refine + shadcn/ui + React Query

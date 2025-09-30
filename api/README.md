@@ -9,6 +9,7 @@ Django → FastAPI 마이그레이션 진행 중 (Phase 1)
 - ✅ GET /api/topics/{id} - 토픽 상세 조회
 - ✅ GET /api/contexts - 컨텍스트 목록 조회
 - ✅ GET /api/contexts/{id} - 컨텍스트 상세 조회
+- ✅ GET /api/history - 토픽/세션별 질문 히스토리 조회
 - ✅ GET /health - 헬스 체크
 
 ### 테스트
@@ -19,7 +20,10 @@ Django → FastAPI 마이그레이션 진행 중 (Phase 1)
 
 ### 로컬 개발
 ```bash
-# FastAPI 서버 실행 (포트 8001)
+# Docker 하이브리드 (Django + FastAPI)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up web fastapi
+
+# 또는 단독 실행 (포트 8001)
 uv run uvicorn api.main:app --reload --port 8001
 
 # 브라우저에서 열기
