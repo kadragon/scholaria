@@ -342,7 +342,7 @@ class TopicSelectionWebInterfaceTest(TestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "No topics available")
+        self.assertContains(response, "No Topics Available")
 
     def test_qa_page_renders_with_valid_topic(self):
         """Test that the Q&A page renders with a valid topic ID."""

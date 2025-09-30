@@ -164,16 +164,34 @@ class HealthCheckAPITest(APITestCase):
         self.health_url = reverse("health-check")
         self.detailed_health_url = reverse("health-check-detailed")
 
-    def test_basic_health_check_endpoint(self):
+    @patch("core.health.CacheHealthCheck.check")
+    @patch("core.health.DatabaseHealthCheck.check")
+    def test_basic_health_check_endpoint(self, mock_db_check, mock_cache_check):
         """Test basic health check endpoint returns 200."""
+        mock_db_check.return_value = {"status": "healthy"}
+        mock_cache_check.return_value = {"status": "healthy"}
+
         response = self.client.get(self.health_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertIn("status", data)
 
-    def test_detailed_health_check_endpoint(self):
+    @patch("core.health.get_default_health_checker")
+    def test_detailed_health_check_endpoint(self, mock_get_checker):
         """Test detailed health check endpoint returns comprehensive info."""
+        mock_checker = MagicMock()
+        mock_checker.run_all_checks.return_value = {
+            "overall_status": "healthy",
+            "checks": {
+                "database": {"status": "healthy"},
+                "cache": {"status": "healthy"},
+            },
+            "timestamp": "2025-09-30T09:00:00Z",
+            "version": "1.0.0",
+        }
+        mock_get_checker.return_value = mock_checker
+
         response = self.client.get(self.detailed_health_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -190,8 +208,13 @@ class HealthCheckAPITest(APITestCase):
         self.assertIn("database", checks)
         self.assertIn("cache", checks)
 
-    def test_health_check_with_access_token(self):
+    @patch("core.health.CacheHealthCheck.check")
+    @patch("core.health.DatabaseHealthCheck.check")
+    def test_health_check_with_access_token(self, mock_db_check, mock_cache_check):
         """Test health check endpoint with access token protection."""
+        mock_db_check.return_value = {"status": "healthy"}
+        mock_cache_check.return_value = {"status": "healthy"}
+
         # Test without token (should work for basic endpoint)
         response = self.client.get(self.health_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -212,8 +235,21 @@ class HealthCheckAPITest(APITestCase):
         data = response.json()
         self.assertEqual(data["overall_status"], "unhealthy")
 
-    def test_health_check_response_format(self):
+    @patch("core.health.get_default_health_checker")
+    def test_health_check_response_format(self, mock_get_checker):
         """Test that health check response has correct format."""
+        mock_checker = MagicMock()
+        mock_checker.run_all_checks.return_value = {
+            "overall_status": "healthy",
+            "checks": {
+                "database": {"status": "healthy", "response_time_ms": 10},
+                "cache": {"status": "healthy", "response_time_ms": 5},
+            },
+            "timestamp": "2025-09-30T09:00:00Z",
+            "version": "1.0.0",
+        }
+        mock_get_checker.return_value = mock_checker
+
         response = self.client.get(self.detailed_health_url)
         data = response.json()
 

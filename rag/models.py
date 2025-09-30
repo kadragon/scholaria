@@ -125,7 +125,7 @@ class Context(models.Model):
                 # Create ContextItem instances for each chunk
                 for i, chunk_content in enumerate(chunks):
                     ContextItem.objects.create(
-                        title=f"{self.name} - Chunk {i+1}",
+                        title=f"{self.name} - Chunk {i + 1}",
                         content=chunk_content,
                         context=self,
                         # Important: No uploaded_file or file_path - we discard the file

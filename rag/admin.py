@@ -591,11 +591,11 @@ class ContextAdmin(admin.ModelAdmin):
         stats = self.get_chunk_statistics(obj)
         return (
             f'<div class="chunk-statistics">'
-            f'<strong>{stats["total_chunks"]} chunks</strong><br>'
-            f'Total characters: {stats["total_characters"]:,}<br>'
-            f'Average chunk size: {stats["avg_chunk_size"]} chars<br>'
-            f'Status: {stats["processing_status"]}'
-            f'</div>'
+            f"<strong>{stats['total_chunks']} chunks</strong><br>"
+            f"Total characters: {stats['total_characters']:,}<br>"
+            f"Average chunk size: {stats['avg_chunk_size']} chars<br>"
+            f"Status: {stats['processing_status']}"
+            f"</div>"
         )
 
 
