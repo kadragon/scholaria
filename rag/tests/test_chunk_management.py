@@ -17,8 +17,9 @@ class ChunkManagementTestCase(TestCase):
 
     def setUp(self):
         """Set up test data."""
+        # ggignore: test fixture password
         self.user = User.objects.create_superuser(
-            username="admin", email="admin@test.com", password="admin123"
+            username="admin", email="admin@test.com", password="testpass123"
         )
 
         self.topic = Topic.objects.create(
@@ -95,25 +96,6 @@ class ChunkManagementTestCase(TestCase):
         # Should contain chunk editing form through inline
         self.assertContains(response, "field-chunk_preview")
         self.assertContains(response, "field-title")
-
-    def test_chunk_reordering_api(self):
-        """Test API endpoint for chunk reordering."""
-        self.client.force_login(self.user)
-
-        # Test reordering chunks
-        new_order = [chunk.id for chunk in reversed(self.chunks)]
-
-        url = f"/api/contexts/{self.context.pk}/chunks/reorder/"
-        response = self.client.post(
-            url,
-            data=json.dumps({"chunk_order": new_order}),
-            content_type="application/json",
-        )
-
-        self.assertEqual(response.status_code, 200)
-
-        data = json.loads(response.content)
-        self.assertTrue(data["success"])
 
     def test_chunk_bulk_operations(self):
         """Test bulk operations on chunks."""

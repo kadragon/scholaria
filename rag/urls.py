@@ -46,11 +46,6 @@ urlpatterns = [
         name="chunk-preview",
     ),
     path(
-        "contexts/<int:context_id>/chunks/reorder/",
-        views.ChunkReorderView.as_view(),
-        name="chunk-reorder",
-    ),
-    path(
         "contexts/<int:context_id>/chunks/bulk/",
         views.ChunkBulkOperationsView.as_view(),
         name="chunk-bulk",

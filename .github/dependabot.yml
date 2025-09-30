@@ -20,8 +20,14 @@ updates:
       - "dependencies"
       - "python"
     ignore:
-      # Ignore major version updates for stability
-      - dependency-name: "*"
+      # Ignore major version updates only for critical framework dependencies
+      - dependency-name: "django"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "djangorestframework"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "celery"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "psycopg2-binary"
         update-types: ["version-update:semver-major"]
 
   # Docker dependencies

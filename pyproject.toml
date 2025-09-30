@@ -111,7 +111,8 @@ disallow_incomplete_defs = false
 
 [[tool.mypy.overrides]]
 module = "rag.views"
-ignore_errors = true
+# Partial type checking: explicit annotations added, Django ORM dynamics excluded
+disable_error_code = ["misc", "attr-defined", "assignment"]
 
 [[tool.mypy.overrides]]
 module = [

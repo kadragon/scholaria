@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import TemplateView
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -393,7 +393,7 @@ class QAInterfaceView(TemplateView):
 class HealthCheckView(APIView):
     """Simple health check endpoint for production monitoring."""
 
-    def get_permissions(self):
+    def get_permissions(self) -> list[Any]:
         """Return appropriate permissions based on environment."""
         from django.conf import settings
 
@@ -446,7 +446,7 @@ class HealthCheckView(APIView):
 class DetailedHealthCheckView(APIView):
     """Detailed health check endpoint with comprehensive system status."""
 
-    def get_permissions(self):
+    def get_permissions(self) -> list[Any]:
         """Return appropriate permissions based on environment."""
         from django.conf import settings
 
@@ -555,8 +555,12 @@ class ToggleFavoriteSerializer(Serializer):
     get=extend_schema(
         description="Get question history for a topic and session",
         parameters=[
-            {"name": "topic_id", "type": int, "location": "query"},
-            {"name": "session_id", "type": str, "location": "query"},
+            OpenApiParameter(
+                name="topic_id", type=int, location="query", required=True
+            ),
+            OpenApiParameter(
+                name="session_id", type=str, location="query", required=False
+            ),
         ],
     ),
     post=extend_schema(
@@ -627,7 +631,7 @@ class HistoryListCreateView(APIView):
 @extend_schema(
     description="Get favorited question history for a topic",
     parameters=[
-        {"name": "topic_id", "type": int, "location": "query"},
+        OpenApiParameter(name="topic_id", type=int, location="query", required=True),
     ],
 )
 class HistoryFavoritesView(APIView):
@@ -691,7 +695,7 @@ class ToggleFavoriteView(APIView):
 @extend_schema(
     description="Clear question history for a session",
     parameters=[
-        {"name": "session_id", "type": str, "location": "query"},
+        OpenApiParameter(name="session_id", type=str, location="query", required=True),
     ],
 )
 class ClearHistoryView(APIView):
@@ -849,60 +853,6 @@ class ChunkPreviewView(APIView):
             logger.error(f"Error getting chunk preview: {e}")
             return Response(
                 {"error": "Failed to get chunk preview"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-
-@extend_schema(
-    description="Reorder chunks in a context",
-    request={
-        "type": "object",
-        "properties": {
-            "chunk_order": {
-                "type": "array",
-                "items": {"type": "integer"},
-                "description": "Array of chunk IDs in new order",
-            }
-        },
-    },
-    responses={
-        200: {
-            "type": "object",
-            "properties": {
-                "success": {"type": "boolean"},
-                "message": {"type": "string"},
-            },
-        }
-    },
-)
-class ChunkReorderView(APIView):
-    """API view for chunk reordering."""
-
-    permission_classes = [IsAuthenticated]
-    throttle_classes = [AnonRateThrottle, UserRateThrottle]
-
-    def post(self, request: Request, context_id: int) -> Response:
-        """Reorder chunks in a context."""
-        get_object_or_404(Context, id=context_id)
-
-        try:
-            chunk_order = request.data.get("chunk_order", [])
-            if not chunk_order:
-                return Response(
-                    {"success": False, "error": "chunk_order is required"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # Update chunk ordering (would require adding order field to model)
-            # For now, just return success
-            return Response(
-                {"success": True, "message": f"Reordered {len(chunk_order)} chunks"}
-            )
-
-        except Exception as e:
-            logger.error(f"Error reordering chunks: {e}")
-            return Response(
-                {"success": False, "error": "Failed to reorder chunks"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

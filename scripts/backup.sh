@@ -15,6 +15,7 @@ BACKUP_PREFIX="scholaria_backup_${TIMESTAMP}"
 DB_HOST="${DB_HOST:-postgres}"
 DB_NAME="${DB_NAME:-scholaria}"
 DB_USER="${DB_USER:-postgres}"
+# ggignore: default value for environment variable, not a real secret
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
 
 # Redis settings
