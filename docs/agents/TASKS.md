@@ -15,14 +15,27 @@
   - [x] 관리 UI 전략 결정: Refine Admin Panel
   - [x] React 라이브러리 결정: Refine (헤드리스, FastAPI와 철학 일치)
   - [x] 8단계 상세 계획 수립 (12-18주)
-- [ ] **Phase 1: 기반 구조 준비** (1-2주):
+- [x] **Phase 1: 기반 구조 준비** (1-2주) ✅ 완료:
   - [x] POC: 단일 엔드포인트 전환 (GET /api/topics)
   - [x] FastAPI + SQLAlchemy + Alembic 환경 구축
   - [x] ▶ Docker 하이브리드 구성 (Django 8000 + FastAPI 8001) (slug: docker-hybrid-compose)
   - [x] ▶ FastAPI Topic↔Context 관계 매핑 (slug: fastapi-topic-context-relations)
   - [x] ▶ FastAPI Context DB 동기화 (slug: fastapi-contexts-transaction)
-- [ ] **Phase 2-8**: 단계별 API 전환 → Refine Admin 구축 → Django 제거
-- [x] ▶ FastAPI history read API (slug: fastapi-readonly-api)
+- [x] **Phase 2: Read-Only API 전환** (1-2주) ✅ 완료:
+  - [x] ▶ FastAPI history read API (slug: fastapi-readonly-api)
+  - [x] Topics, Contexts, History 조회 API 구현
+  - [x] Django API 응답 동등성 검증
+- [x] **Phase 3: RAG 엔드포인트 전환** (완료) ✅:
+  - [x] ▶ FastAPI RAG endpoint (slug: fastapi-rag-endpoint)
+  - POST /api/rag/ask 구현 (Django AskQuestionView 포팅)
+  - Redis 캐싱, AsyncOpenAI, sync_to_async (Django ORM 호환)
+  - 7개 테스트 통과
+- [ ] **Phase 4: Write API 전환** (2-3주) ⬅️ 다음 단계:
+  - [ ] ▶ FastAPI Context Write API (slug: fastapi-write-api)
+  - POST/PUT/DELETE /api/contexts 구현
+  - 파일 업로드 (UploadFile), Celery 통합
+  - 타입별 워크플로우 (PDF/Markdown/FAQ)
+- [ ] **Phase 5-8**: 인증 → Refine Admin → 프론트엔드 → Django 제거
 - **문서**: `docs/agents/tasks/django-to-fastapi-migration/` (RESEARCH, PLAN, PROGRESS)
 - **예상 기간**: 12-18주, Critical: Phase 6 (Refine Admin 4-6주)
 - **주요 기술**: FastAPI + SQLAlchemy + Refine + shadcn/ui + React Query

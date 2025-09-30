@@ -23,7 +23,16 @@ class Settings(BaseSettings):
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: str = os.getenv("DB_PORT", "5432")
 
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT: str = os.getenv("REDIS_PORT", "6379")
+    REDIS_DB: str = os.getenv("REDIS_DB", "0")
+
     database_url_override: str | None = Field(default=None, alias="DATABASE_URL")
+
+    @property
+    def redis_url(self) -> str:
+        """Redis connection URL."""
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
     def database_config(self) -> tuple[str, dict[str, Any]]:
         """Return (SQLAlchemy URL, connect_args) derived from environment."""
