@@ -60,5 +60,5 @@ TDD test suite for RAG models with comprehensive coverage.
   - EmbeddingService: `@patch("rag.retrieval.embeddings.openai.OpenAI")`
   - QdrantService: `@patch("rag.retrieval.qdrant.qdrant_client.QdrantClient")`
 - **Alternative Pattern**: Use `@patch.object(ServiceClass, 'method_name')` for simpler, more reliable mocking
-- **Embedding Dimensions**: Test embedding dimensions must match actual service configuration (text-embedding-3-small: 1536, text-embedding-3-large: 3072)
+- **Embedding Dimensions**: Test embedding dimensions must match actual service configuration (text-embedding-3-large: 3072)
 - **Operation ID Format**: Mock Qdrant responses must include `operation_id` attribute that returns string values

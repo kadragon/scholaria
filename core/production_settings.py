@@ -115,6 +115,9 @@ LOGGING = {
             "format": "{levelname} {message}",
             "style": "{",
         },
+        "json": {
+            "()": "core.logging.JSONFormatter",
+        },
     },
     "handlers": {
         "file": {
@@ -133,6 +136,22 @@ LOGGING = {
             "backupCount": 5,
             "formatter": "verbose",
         },
+        "json_file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "/app/logs/django_structured.log",
+            "maxBytes": 1024 * 1024 * 50,  # 50MB
+            "backupCount": 5,
+            "formatter": "json",
+        },
+        "performance_file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "/app/logs/performance.log",
+            "maxBytes": 1024 * 1024 * 50,  # 50MB
+            "backupCount": 5,
+            "formatter": "json",
+        },
         "mail_admins": {
             "level": "ERROR",
             "class": "django.utils.log.AdminEmailHandler",
@@ -145,28 +164,38 @@ LOGGING = {
         },
     },
     "root": {
-        "handlers": ["console", "file"],
+        "handlers": ["console", "file", "json_file"],
         "level": "INFO",
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "file", "error_file"],
+            "handlers": ["console", "file", "error_file", "json_file"],
             "level": "INFO",
             "propagate": False,
         },
         "django.request": {
-            "handlers": ["error_file", "mail_admins"],
+            "handlers": ["error_file", "mail_admins", "json_file"],
             "level": "ERROR",
             "propagate": False,
         },
         "rag": {
-            "handlers": ["console", "file"],
+            "handlers": ["console", "file", "json_file"],
             "level": "INFO",
             "propagate": False,
         },
         "celery": {
-            "handlers": ["console", "file"],
+            "handlers": ["console", "file", "json_file"],
             "level": "INFO",
+            "propagate": False,
+        },
+        "performance": {
+            "handlers": ["performance_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "error": {
+            "handlers": ["error_file", "json_file"],
+            "level": "ERROR",
             "propagate": False,
         },
     },

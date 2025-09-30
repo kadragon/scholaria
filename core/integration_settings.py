@@ -26,7 +26,8 @@ OPENAI_EMBEDDING_DIM = 3072  # Use production dimensions
 if not os.getenv("OPENAI_API_KEY"):
     raise ValueError(
         "OPENAI_API_KEY environment variable is required for integration tests. "
-        "Set it before running: OPENAI_API_KEY=your_key python manage.py test --settings=core.integration_settings"
+        "Set it before running: OPENAI_API_KEY=your_key python manage.py test "
+        "--settings=core.integration_settings"
     )
 
 # Use real API key from environment

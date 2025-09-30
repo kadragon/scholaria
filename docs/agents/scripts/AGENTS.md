@@ -20,4 +20,5 @@ Automation helpers (shell scripts, tooling wrappers) supporting Scholaria workfl
 
 ## Changelog
 
+- 2025-09-22: MVP completion - all automation scripts validated for production deployment
 - 2025-09-20: Removed Unstructured API health checks; script now assumes Docling dependency is installed via Python packages.

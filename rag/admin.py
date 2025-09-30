@@ -124,6 +124,11 @@ class ContextForm(ModelForm):
             if not self.instance.pk and "processing_status" not in self.data:
                 processing_field.initial = processing_field.initial or "PENDING"
 
+        # Make chunk_count not required for forms (it's auto-calculated)
+        chunk_count_field = self.fields.get("chunk_count")
+        if chunk_count_field is not None:
+            chunk_count_field.required = False
+
     def clean_uploaded_file(self) -> Any:
         """Validate uploaded file for PDF context types."""
         uploaded_file = self.cleaned_data.get("uploaded_file")
@@ -157,15 +162,24 @@ class ContextItemInline(admin.TabularInline):
 
     model = ContextItem
     extra = 0
-    fields = ["title", "content", "uploaded_file", "file_path"]
-    readonly_fields = ["file_path"]
+    fields = ["title", "content_preview", "content", "uploaded_file", "file_path"]
+    readonly_fields = ["file_path", "content_preview"]
     verbose_name = "Context Item (Chunk)"
     verbose_name_plural = "Context Items (Chunks)"
+    classes = ["chunk-editor"]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[ContextItem]:
         """Limit to show only recent items to avoid performance issues."""
         qs = super().get_queryset(request)
         return qs.order_by("-created_at")  # Remove slice to avoid filter issues
+
+    @admin.display(description="Content Preview")
+    def content_preview(self, obj: ContextItem) -> str:
+        """Show a preview of the content."""
+        if not obj.content:
+            return "No content"
+        preview = obj.content[:100] + "..." if len(obj.content) > 100 else obj.content
+        return preview
 
 
 class FAQQAInline(admin.TabularInline):
@@ -243,7 +257,12 @@ class ContextAdmin(admin.ModelAdmin):
     ]
     list_filter = ["context_type", "processing_status", "created_at", "updated_at"]
     search_fields = ["name", "description"]
-    readonly_fields = ["created_at", "updated_at", "chunk_count"]
+    readonly_fields = [
+        "created_at",
+        "updated_at",
+        "chunk_count",
+        "chunk_statistics_display",
+    ]
     actions = [
         "bulk_update_context_type",
         "bulk_update_processing_status",
@@ -520,6 +539,64 @@ class ContextAdmin(admin.ModelAdmin):
             "app_label": self.model._meta.app_label,
         }
         return render(request, "admin/add_qa_pair.html", template_context)
+
+    def get_chunk_preview(self, obj: Context) -> str:
+        """Get chunk preview for context admin display."""
+        if not obj or not obj.pk:
+            return "No chunks available"
+
+        chunks = obj.items.all()[:5]  # Limit to first 5 chunks
+        if not chunks:
+            return "No chunks found"
+
+        preview_items = []
+        for chunk in chunks:
+            content_preview = (
+                chunk.content[:100] + "..."
+                if len(chunk.content) > 100
+                else chunk.content
+            )
+            preview_items.append(f"{chunk.title}: {content_preview}")
+
+        return "\n".join(preview_items)
+
+    def get_chunk_statistics(self, obj: Context) -> dict[str, Any]:
+        """Get chunk statistics for context admin display."""
+        if not obj or not obj.pk:
+            return {
+                "total_chunks": 0,
+                "total_characters": 0,
+                "avg_chunk_size": 0,
+                "processing_status": obj.processing_status if obj else "PENDING",
+            }
+
+        chunks = obj.items.all()
+        total_chunks = chunks.count()
+        total_characters = sum(len(chunk.content) for chunk in chunks)
+        avg_chunk_size = total_characters // total_chunks if total_chunks > 0 else 0
+
+        return {
+            "total_chunks": total_chunks,
+            "total_characters": total_characters,
+            "avg_chunk_size": avg_chunk_size,
+            "processing_status": obj.processing_status,
+        }
+
+    @admin.display(description="Chunk Statistics")
+    def chunk_statistics_display(self, obj: Context) -> str:
+        """Display chunk statistics in admin interface."""
+        if not obj or not obj.pk:
+            return "No statistics available"
+
+        stats = self.get_chunk_statistics(obj)
+        return (
+            f'<div class="chunk-statistics">'
+            f"<strong>{stats['total_chunks']} chunks</strong><br>"
+            f"Total characters: {stats['total_characters']:,}<br>"
+            f"Average chunk size: {stats['avg_chunk_size']} chars<br>"
+            f"Status: {stats['processing_status']}"
+            f"</div>"
+        )
 
 
 class ContextItemForm(ModelForm):

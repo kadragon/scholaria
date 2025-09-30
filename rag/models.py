@@ -125,7 +125,7 @@ class Context(models.Model):
                 # Create ContextItem instances for each chunk
                 for i, chunk_content in enumerate(chunks):
                     ContextItem.objects.create(
-                        title=f"{self.name} - Chunk {i+1}",
+                        title=f"{self.name} - Chunk {i + 1}",
                         content=chunk_content,
                         context=self,
                         # Important: No uploaded_file or file_path - we discard the file
@@ -344,3 +344,37 @@ def context_item_post_delete(
 ) -> None:
     """Update chunk count when a context item is removed."""
     _refresh_context_chunk_count(instance)
+
+
+class QuestionHistory(models.Model):
+    """Model to store question and answer history for users."""
+
+    topic = models.ForeignKey(
+        Topic, on_delete=models.CASCADE, related_name="question_histories"
+    )
+    question = models.TextField(help_text="The question asked by the user")
+    answer = models.TextField(help_text="The answer provided by the system")
+    session_id = models.CharField(
+        max_length=255, help_text="Session identifier to group related questions"
+    )
+    is_favorited = models.BooleanField(
+        default=False, help_text="Whether this question is marked as favorite"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self) -> None:
+        if not self.topic_id:
+            raise ValidationError({"topic": "This field is required."})
+        if not self.question:
+            raise ValidationError({"question": "This field is required."})
+        if not self.answer:
+            raise ValidationError({"answer": "This field is required."})
+        if not self.session_id:
+            raise ValidationError({"session_id": "This field is required."})
+
+    def __str__(self) -> str:
+        return f"{self.question} ({self.topic.name})"
+
+    class Meta:
+        ordering = ["-created_at"]  # Newest first

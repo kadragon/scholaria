@@ -110,6 +110,11 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
 [[tool.mypy.overrides]]
+module = "rag.views"
+# Partial type checking: explicit annotations added, Django ORM dynamics excluded
+disable_error_code = ["misc", "attr-defined", "assignment"]
+
+[[tool.mypy.overrides]]
 module = [
     "celery.*",
     "qdrant_client.*",

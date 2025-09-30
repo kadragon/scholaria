@@ -15,7 +15,7 @@ Complete RAG pipeline: embedding → vector search → reranking → LLM generat
 ## Context
 
 ### Services
-1. **EmbeddingService**: OpenAI text-embedding-3-small
+1. **EmbeddingService**: OpenAI text-embedding-3-large (3072 dimensions)
 2. **QdrantService**: Vector search with topic filtering
 3. **RerankingService**: BGE reranker for relevance
 4. **RAGService**: Pipeline orchestration with GPT-4o-mini
@@ -34,7 +34,7 @@ Query → Embedding → Vector Search → Rerank → LLM → Answer
 - Error handling and graceful degradation
 
 ### Configuration
-- Vector dimension: 1536, Search limit: 10, Rerank top-k: 5
+- Vector dimension: 3072 (text-embedding-3-large), Search limit: 10, Rerank top-k: 5
 - GPT-4o-mini (temp: 0.3, max tokens: 1000)
 - Batch processing, vector caching, model loading optimization
 

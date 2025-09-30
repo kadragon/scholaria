@@ -60,7 +60,7 @@ class Command(BaseCommand):
         # Process in batches
         for i in range(0, total_items, batch_size):
             batch = context_items[i : i + batch_size]
-            self.stdout.write(f"Processing batch {i//batch_size + 1}...")
+            self.stdout.write(f"Processing batch {i // batch_size + 1}...")
 
             for context_item in batch:
                 try:
