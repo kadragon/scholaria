@@ -31,3 +31,5 @@ codex.toml
 
 # llamaindex_cache
 tmp/llamaindex_cache/
+
+.serena
