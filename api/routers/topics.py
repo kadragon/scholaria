@@ -1,0 +1,40 @@
+"""
+FastAPI router for Topic resource.
+
+POC implementation - GET /api/topics endpoint.
+"""
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from api.models.base import get_db
+from api.models.topic import Topic
+from api.schemas.topic import TopicOut
+
+router = APIRouter()
+
+
+@router.get("/topics", response_model=list[TopicOut])
+def list_topics(db: Session = Depends(get_db)) -> list[Topic]:
+    """
+    List all topics.
+
+    Equivalent to Django rag.views.TopicListView.
+    """
+    topics = db.query(Topic).order_by(Topic.name).all()
+    return topics
+
+
+@router.get("/topics/{topic_id}", response_model=TopicOut)
+def get_topic(topic_id: int, db: Session = Depends(get_db)) -> Topic:
+    """
+    Get a single topic by ID.
+
+    Equivalent to Django rag.views.TopicDetailView.
+    """
+    topic = db.query(Topic).filter(Topic.id == topic_id).first()
+    if not topic:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Topic not found")
+    return topic
