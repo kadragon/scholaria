@@ -101,8 +101,8 @@ class TopicOut(BaseModel):
 
 - [x] Phase 1.1: POC - Topics 엔드포인트
 - [x] Phase 1.2: Context/ContextItem 모델
-- [ ] Phase 1.3: ManyToMany 관계
-- [ ] Phase 1.4: Alembic 마이그레이션
+- [x] Phase 1.3: ManyToMany 관계
+- [x] Phase 1.4: Alembic 마이그레이션
 - [ ] Phase 1.5: Docker 하이브리드 구성
 
 자세한 내용: `docs/agents/tasks/django-to-fastapi-migration/`

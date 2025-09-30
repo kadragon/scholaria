@@ -1,17 +1,19 @@
-"""
-SQLAlchemy Topic model.
+"""SQLAlchemy Topic model mirroring Django ``rag.models.Topic``."""
 
-Equivalent to Django rag.models.Topic.
-POC version - simplified without relationships.
-"""
+from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
+from api.models.associations import topic_context_association
 from api.models.base import Base
+
+if TYPE_CHECKING:
+    from api.models.context import Context
 
 
 class Topic(Base):
@@ -26,6 +28,13 @@ class Topic(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+    contexts: Mapped[list[Context]] = relationship(
+        "Context",
+        secondary=topic_context_association,
+        back_populates="topics",
+        lazy="selectin",
+        order_by="Context.id",
     )
 
     def __repr__(self) -> str:

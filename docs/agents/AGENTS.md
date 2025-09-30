@@ -66,6 +66,11 @@ docker-compose up -d
 - **데이터베이스**: original_content, chunk_count, processing_status 필드 추가
 - **라이브러리 마이그레이션**: Unstructured → Docling으로 PDF 파싱 개선
 
+### FastAPI 마이그레이션 메모 (2025-09-30)
+- SQLAlchemy가 Django DB 테이블을 직접 재사용하며 Topic↔Context 다대다 조인 테이블은 `rag_topic_contexts` (BigAuto id + `topic_id`, `context_id`).
+- FastAPI POC 테스트(`api/tests/test_topics_poc.py`)는 로컬 PostgreSQL(5432) 접근이 필요하므로 샌드박스/CI에서는 연결 불가 시 실패함.
+- FastAPI Pydantic 스키마는 `settings.TIME_ZONE` 기준 ISO 문자열로 datetime을 직렬화하여 Django 응답 포맷과 일치.
+
 ### 프로덕션 기능
 - **모니터링**: 헬스 체크 엔드포인트, 구조화된 로깅, 성능 메트릭
 - **보안**: 파일 업로드 검증, 매직 바이트 체크, 크기 제한

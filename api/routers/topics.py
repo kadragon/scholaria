@@ -5,7 +5,7 @@ POC implementation - GET /api/topics endpoint.
 """
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from api.models.base import get_db
 from api.models.topic import Topic
@@ -21,7 +21,9 @@ def list_topics(db: Session = Depends(get_db)) -> list[Topic]:
 
     Equivalent to Django rag.views.TopicListView.
     """
-    topics = db.query(Topic).order_by(Topic.name).all()
+    topics = (
+        db.query(Topic).options(selectinload(Topic.contexts)).order_by(Topic.name).all()
+    )
     return topics
 
 
@@ -32,7 +34,12 @@ def get_topic(topic_id: int, db: Session = Depends(get_db)) -> Topic:
 
     Equivalent to Django rag.views.TopicDetailView.
     """
-    topic = db.query(Topic).filter(Topic.id == topic_id).first()
+    topic = (
+        db.query(Topic)
+        .options(selectinload(Topic.contexts))
+        .filter(Topic.id == topic_id)
+        .first()
+    )
     if not topic:
         from fastapi import HTTPException
 

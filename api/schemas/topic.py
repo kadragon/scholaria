@@ -4,7 +4,10 @@ Pydantic schemas for Topic resource.
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from api.schemas.context import ContextOut
+from api.schemas.utils import to_local_iso
 
 
 class TopicBase(BaseModel):
@@ -23,3 +26,8 @@ class TopicOut(TopicBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    contexts: list[ContextOut] = Field(default_factory=list)
+
+    @field_serializer("created_at", "updated_at")
+    def serialize_datetime(self, value: datetime) -> str:
+        return to_local_iso(value)

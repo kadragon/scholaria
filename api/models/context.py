@@ -5,12 +5,17 @@ Equivalent to Django rag.models.Context.
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
+from api.models.associations import topic_context_association
 from api.models.base import Base
+
+if TYPE_CHECKING:
+    from api.models.topic import Topic
 
 
 class Context(Base):
@@ -35,6 +40,13 @@ class Context(Base):
     # Relationship to ContextItem
     items: Mapped[list["ContextItem"]] = relationship(
         "ContextItem", back_populates="context", lazy="select"
+    )
+    topics: Mapped[list["Topic"]] = relationship(
+        "Topic",
+        secondary=topic_context_association,
+        back_populates="contexts",
+        lazy="selectin",
+        order_by="Topic.id",
     )
 
     def __repr__(self) -> str:

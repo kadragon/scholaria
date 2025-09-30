@@ -16,9 +16,10 @@
   - [x] React 라이브러리 결정: Refine (헤드리스, FastAPI와 철학 일치)
   - [x] 8단계 상세 계획 수립 (12-18주)
 - [ ] **Phase 1: 기반 구조 준비** (1-2주):
-  - [ ] POC: 단일 엔드포인트 전환 (GET /api/topics)
-  - [ ] FastAPI + SQLAlchemy + Alembic 환경 구축
+  - [x] POC: 단일 엔드포인트 전환 (GET /api/topics)
+  - [x] FastAPI + SQLAlchemy + Alembic 환경 구축
   - [ ] Docker 하이브리드 구성 (Django 8000 + FastAPI 8001)
+  - [x] ▶ FastAPI Topic↔Context 관계 매핑 (slug: fastapi-topic-context-relations)
 - [ ] **Phase 2-8**: 단계별 API 전환 → Refine Admin 구축 → Django 제거
 - **문서**: `docs/agents/tasks/django-to-fastapi-migration/` (RESEARCH, PLAN, PROGRESS)
 - **예상 기간**: 12-18주, Critical: Phase 6 (Refine Admin 4-6주)
