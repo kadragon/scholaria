@@ -11,7 +11,7 @@ import redis.asyncio as redis
 from api.config import settings
 
 
-async def get_redis() -> AsyncGenerator[redis.Redis, None]:
+async def get_redis() -> AsyncGenerator[redis.Redis]:
     """
     Get async Redis client.
 

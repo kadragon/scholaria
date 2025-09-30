@@ -16,6 +16,14 @@ class Settings(BaseSettings):
 
     DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
 
+    JWT_SECRET_KEY: str = os.getenv(
+        "JWT_SECRET_KEY", "your-secret-key-change-in-production"
+    )
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    JWT_ACCESS_TOKEN_EXPIRE_HOURS: int = int(
+        os.getenv("JWT_ACCESS_TOKEN_EXPIRE_HOURS", "24")
+    )
+
     DB_ENGINE: str = os.getenv("DB_ENGINE", "postgresql")
     DB_NAME: str = os.getenv("DB_NAME", "scholaria")
     DB_USER: str = os.getenv("DB_USER", "postgres")

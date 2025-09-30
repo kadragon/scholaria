@@ -55,14 +55,18 @@ Django 무게감 제거를 위해 FastAPI + React Admin Panel로 전환 진행 �
 | 2025-09-30 | ORM: SQLAlchemy 2.0 | 비동기 지원, 성숙도, Django ORM 호환 가능 |
 | 2025-09-30 | UI 프레임워크: shadcn/ui (권장) 또는 Material-UI | Refine에서 선택 가능, shadcn/ui는 Tailwind 기반으로 더 가볍고 모던함 |
 
+- [x] **Phase 4: Write API 전환 (완료)** ✅:
+  - ✅ `api/routers/contexts.py`: POST/PUT/PATCH/DELETE 엔드포인트
+  - ✅ `api/schemas/context.py`: ContextCreate, ContextUpdate, FAQQACreate
+  - ✅ 파일 업로드 처리 (PDF → 파싱 → 폐기)
+  - ✅ 16/16 테스트 통과
+  - ✅ ruff + mypy 통과
+  - 예상 vs 실제: 2-3주 예상 → **2시간** 완료
+  - 결정: Celery 통합 제거 (FastAPI에서 Django signal 미작동)
+
 ## Next Step
-**Phase 4 준비: Write API 전환**
-- POST /api/contexts (Context 생성, 파일 업로드)
-- PUT/DELETE /api/contexts/{id}
-- POST /api/contexts/{id}/qa (FAQ Q&A 추가)
-- 파일 업로드 처리 (PDF → 파싱 → 폐기)
-- Celery 통합 (비동기 작업 큐)
-- 예상 기간: 2-3주
+- Phase 5 Step 8: JWT 설정/환경 변수 정리 (환경 변수 템플릿 및 설정 동기화)
+- Phase 6 준비: Refine Admin 통합을 위한 인증 흐름 정리
 
 ### Phase 3 완료 요약
 - **전환 전략**: Option A (최소 변경) ✅ 성공

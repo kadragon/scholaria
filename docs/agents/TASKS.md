@@ -30,19 +30,28 @@
   - POST /api/rag/ask 구현 (Django AskQuestionView 포팅)
   - Redis 캐싱, AsyncOpenAI, sync_to_async (Django ORM 호환)
   - 7개 테스트 통과
-- [ ] **Phase 4: Write API 전환** (2-3주) ⬅️ 다음 단계:
-  - [ ] ▶ FastAPI Context Write API (slug: fastapi-write-api)
+- [x] **Phase 4: Write API 전환** (2-3주) ✅ **완료 (2시간)**:
+  - [x] ▶ FastAPI Context Write API (slug: fastapi-write-api)
   - POST/PUT/DELETE /api/contexts 구현
-  - 파일 업로드 (UploadFile), Celery 통합
-  - 타입별 워크플로우 (PDF/Markdown/FAQ)
-- [ ] **Phase 5-8**: 인증 → Refine Admin → 프론트엔드 → Django 제거
+  - 파일 업로드 (UploadFile), PDF/Markdown/FAQ 타입별 워크플로우
+  - 16/16 테스트 통과
+  - 결정: Celery 통합 제거 (FastAPI에서 Django signal 미작동)
+- [ ] **Phase 5-8**: 인증 → Refine Admin → 프론트엔드 → Django 제거 ⬅️ 다음 단계
+  - [x] ▶ FastAPI auth write protection (slug: fastapi-auth) — Step 7: apply JWT admin guard to write APIs
+  - [ ] ▶ FastAPI auth env sync (slug: fastapi-auth) — Step 8: expose JWT settings & env templates
 - **문서**: `docs/agents/tasks/django-to-fastapi-migration/` (RESEARCH, PLAN, PROGRESS)
 - **예상 기간**: 12-18주, Critical: Phase 6 (Refine Admin 4-6주)
 - **주요 기술**: FastAPI + SQLAlchemy + Refine + shadcn/ui + React Query
 
 ### 성능 검증 및 최적화
 
-- [ ] **실제 환경 성능 벤치마크**:
+- [x] **성능 테스트 인프라 검증** ✅ 완료:
+  - [x] `test_performance_benchmarks.py`: 6/6 테스트 통과
+  - [x] `test_golden_dataset.py`: 5/5 테스트 통과
+  - [x] PerformanceBenchmark 클래스 정상 동작 확인
+  - [x] GoldenDataset (24 test cases) 정상 동작 확인
+  - 결론: 성능 벤치마크 인프라 준비 완료, 실제 데이터 벤치마크는 프로덕션 배포 후 수행
+- [ ] **실제 환경 성능 벤치마크** (프로덕션 배포 후):
   - [ ] 테스트 쿼리의 80% 이상에서 관련 인용 반환 검증
   - [ ] 일반적인 쿼리에 대해 답변 지연시간 3초 미만 보장
   - [ ] 동시 사용자 부하 테스트 수행

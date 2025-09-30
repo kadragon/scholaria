@@ -46,6 +46,14 @@ uv run python manage.py validate_environment --check-services
 | `DEBUG` | No | `True` | Enable/disable debug mode |
 | `ALLOWED_HOSTS` | Production | `[]` | Comma-separated list of allowed hosts |
 
+### 🔐 Authentication (JWT)
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `JWT_SECRET_KEY` | Yes | Development key | JWT signing key - generate with `python -c 'import secrets; print(secrets.token_urlsafe(32))'` |
+| `JWT_ALGORITHM` | No | `HS256` | JWT signing algorithm |
+| `JWT_ACCESS_TOKEN_EXPIRE_HOURS` | No | `24` | JWT token expiration time in hours |
+
 ### 🤖 AI Configuration
 
 | Variable | Required | Default | Description |

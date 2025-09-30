@@ -39,7 +39,10 @@ class Context(Base):
 
     # Relationship to ContextItem
     items: Mapped[list["ContextItem"]] = relationship(
-        "ContextItem", back_populates="context", lazy="select"
+        "ContextItem",
+        back_populates="context",
+        lazy="select",
+        cascade="all, delete-orphan",
     )
     topics: Mapped[list["Topic"]] = relationship(
         "Topic",

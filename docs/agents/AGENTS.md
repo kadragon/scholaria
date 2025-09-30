@@ -68,6 +68,7 @@ docker-compose up -d
 
 ### FastAPI 마이그레이션 메모 (2025-09-30)
 - SQLAlchemy가 Django DB 테이블을 직접 재사용하며 Topic↔Context 다대다 조인 테이블은 `rag_topic_contexts` (BigAuto id + `topic_id`, `context_id`).
+- FastAPI Context Write 엔드포인트는 JWT 관리자 권한(`require_admin`)으로 보호되며, 테스트는 per-worker SQLite DB 분리로 병렬 실행 안정화.
 - FastAPI POC 테스트(`api/tests/test_topics_poc.py`)는 로컬 PostgreSQL(5432) 접근이 필요하므로 샌드박스/CI에서는 연결 불가 시 실패함.
 - FastAPI Pydantic 스키마는 `settings.TIME_ZONE` 기준 ISO 문자열로 datetime을 직렬화하여 Django 응답 포맷과 일치.
 - FastAPI SQLAlchemy 설정이 Django 테스트 DB와 자동으로 동기화되도록 `api.config.Settings.database_config()`가 Django `DATABASES` 값을 우선 사용하고, 테스트용 sqlite 파일은 `tmp/test.sqlite3`로 고정.

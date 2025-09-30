@@ -56,3 +56,27 @@ class ContextWithItemsOut(ContextOut):
     """Context output schema with items included."""
 
     items: list[ContextItemOut] = []
+
+
+class ContextCreate(BaseModel):
+    """Schema for creating a new Context."""
+
+    name: str
+    description: str
+    context_type: str
+    original_content: str | None = None
+
+
+class ContextUpdate(BaseModel):
+    """Schema for updating an existing Context (partial updates)."""
+
+    name: str | None = None
+    description: str | None = None
+    original_content: str | None = None
+
+
+class FAQQACreate(BaseModel):
+    """Schema for adding a Q&A pair to FAQ context."""
+
+    title: str
+    content: str

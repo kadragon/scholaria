@@ -20,6 +20,9 @@ def reset_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "DB_PASSWORD",
         "DB_HOST",
         "DB_PORT",
+        "JWT_SECRET_KEY",
+        "JWT_ALGORITHM",
+        "JWT_ACCESS_TOKEN_EXPIRE_HOURS",
     ):
         monkeypatch.delenv(key, raising=False)
 
@@ -49,4 +52,21 @@ def test_database_config_uses_sqlite_when_engine_is_sqlite(
         assert connect_args.get("check_same_thread") is False
 
     # Restore module to original configuration after override
+    importlib.reload(config_module)
+
+
+def test_jwt_settings_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Settings should expose JWT configuration sourced from env vars."""
+
+    monkeypatch.setenv("JWT_SECRET_KEY", "unit-test-secret")
+    monkeypatch.setenv("JWT_ALGORITHM", "HS384")
+    monkeypatch.setenv("JWT_ACCESS_TOKEN_EXPIRE_HOURS", "8")
+
+    module = importlib.reload(config_module)
+    settings = module.Settings()
+
+    assert settings.JWT_SECRET_KEY == "unit-test-secret"
+    assert settings.JWT_ALGORITHM == "HS384"
+    assert settings.JWT_ACCESS_TOKEN_EXPIRE_HOURS == 8
+
     importlib.reload(config_module)
