@@ -10,13 +10,13 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from api.auth.utils import pwd_context
 from api.main import app
 from api.models.base import Base, get_db
 from api.models.context import Context as SQLContext
 from api.models.context import ContextItem as SQLContextItem
 from api.models.topic import Topic as SQLTopic
 from api.models.user import User as SQLUser
-from api.auth.utils import pwd_context
 
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test_write.db"
 engine = create_engine(
