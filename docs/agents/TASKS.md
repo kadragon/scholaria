@@ -36,9 +36,15 @@
   - 파일 업로드 (UploadFile), PDF/Markdown/FAQ 타입별 워크플로우
   - 16/16 테스트 통과
   - 결정: Celery 통합 제거 (FastAPI에서 Django signal 미작동)
-- [ ] **Phase 5-8**: 인증 → Refine Admin → 프론트엔드 → Django 제거 ⬅️ 다음 단계
-  - [x] ▶ FastAPI auth write protection (slug: fastapi-auth) — Step 7: apply JWT admin guard to write APIs
-  - [ ] ▶ FastAPI auth env sync (slug: fastapi-auth) — Step 8: expose JWT settings & env templates
+- [x] **Phase 5: 인증 시스템** (1주) ✅ **완료**:
+  - [x] ▶ FastAPI JWT authentication (slug: fastapi-auth)
+  - Custom JWT 구현 (python-jose + passlib)
+  - Django auth_user 테이블 재사용 (SQLAlchemy 매핑)
+  - POST /api/auth/login, GET /api/auth/me 엔드포인트
+  - require_admin 의존성으로 Write API 보호
+  - 12/12 인증 테스트 통과
+  - JWT 환경변수 설정 노출 (.env.example, docs)
+- [ ] **Phase 6-8**: Refine Admin → 프론트엔드 → Django 제거 ⬅️ 다음 단계
 - **문서**: `docs/agents/tasks/django-to-fastapi-migration/` (RESEARCH, PLAN, PROGRESS)
 - **예상 기간**: 12-18주, Critical: Phase 6 (Refine Admin 4-6주)
 - **주요 기술**: FastAPI + SQLAlchemy + Refine + shadcn/ui + React Query
