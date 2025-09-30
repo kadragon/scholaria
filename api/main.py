@@ -15,6 +15,8 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
 from api.routers import auth, contexts, history, rag, topics  # noqa: E402
+from api.routers.admin import contexts_router as admin_contexts  # noqa: E402
+from api.routers.admin import topics_router as admin_topics  # noqa: E402
 
 app = FastAPI(
     title="Scholaria RAG API",
@@ -35,6 +37,10 @@ app.include_router(topics.router, prefix="/api", tags=["topics"])
 app.include_router(contexts.router, prefix="/api", tags=["contexts"])
 app.include_router(history.router, prefix="/api", tags=["history"])
 app.include_router(rag.router, prefix="/api", tags=["rag"])
+
+# Admin API routers
+app.include_router(admin_topics, prefix="/api/admin")
+app.include_router(admin_contexts, prefix="/api/admin")
 
 
 @app.get("/health")

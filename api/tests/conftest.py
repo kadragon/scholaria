@@ -2,13 +2,17 @@
 
 import os
 from pathlib import Path
+from typing import cast
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from api.auth.utils import pwd_context
 from api.main import app
 from api.models.base import Base, get_db
+from api.models.user import User as SQLUser
 
 WORKER_ID = os.environ.get("PYTEST_XDIST_WORKER")
 DB_FILENAME = f"test_api_{WORKER_ID}.db" if WORKER_ID else "test_api.db"
@@ -55,3 +59,29 @@ def db_session():
                 pass
         db.commit()
         db.close()
+
+
+@pytest.fixture(scope="function")
+def admin_headers(db_session):
+    """Create an admin user and return Authorization headers."""
+    client = TestClient(app)
+    password = "AdminPass123!"
+    admin = SQLUser(
+        username="admin",
+        email="admin@example.com",
+        password=pwd_context.hash(password),
+        is_active=True,
+        is_staff=True,
+        is_superuser=True,
+    )
+    db_session.add(admin)
+    db_session.commit()
+    db_session.refresh(admin)
+
+    response = client.post(
+        "/api/auth/login",
+        data={"username": cast(str, admin.username), "password": password},
+    )
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
