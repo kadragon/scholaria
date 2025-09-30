@@ -8,6 +8,22 @@
 
 ## 📋 현재 활성 태스크
 
+### Django → FastAPI 전환 (진행 중)
+
+- [x] **조사 & 계획 완료**:
+  - [x] 전환 동기 명확화: Django 무게감 제거
+  - [x] 관리 UI 전략 결정: Refine Admin Panel
+  - [x] React 라이브러리 결정: Refine (헤드리스, FastAPI와 철학 일치)
+  - [x] 8단계 상세 계획 수립 (12-18주)
+- [ ] **Phase 1: 기반 구조 준비** (1-2주):
+  - [ ] POC: 단일 엔드포인트 전환 (GET /api/topics)
+  - [ ] FastAPI + SQLAlchemy + Alembic 환경 구축
+  - [ ] Docker 하이브리드 구성 (Django 8000 + FastAPI 8001)
+- [ ] **Phase 2-8**: 단계별 API 전환 → Refine Admin 구축 → Django 제거
+- **문서**: `docs/agents/tasks/django-to-fastapi-migration/` (RESEARCH, PLAN, PROGRESS)
+- **예상 기간**: 12-18주, Critical: Phase 6 (Refine Admin 4-6주)
+- **주요 기술**: FastAPI + SQLAlchemy + Refine + shadcn/ui + React Query
+
 ### 성능 검증 및 최적화
 
 - [ ] **실제 환경 성능 벤치마크**:
