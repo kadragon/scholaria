@@ -1,129 +1,132 @@
-# Refine Admin Panel — Research
+# Research: Refine Admin Panel Implementation
 
 ## Goal
-Django Admin을 Refine (React) + FastAPI Admin API로 전환하여 헤드리스 아키텍처 구현
+Implement Refine-based admin panel to replace Django Admin, completing Phase 6 of Django→FastAPI migration.
 
 ## Scope
-- Django Admin 기능 분석 (CRUD, 대량 작업, 파일 업로드, 타입별 워크플로우)
-- FastAPI Admin API 설계 (권한, 스키마, 엔드포인트)
-- Refine 통합 전략 (Data Provider, Auth Provider)
+- FastAPI Admin API (Step 6.1): Complete CRUD + bulk operations endpoints
+- Refine Admin Panel (Step 6.2): React SPA with shadcn/ui
+- Docker & Nginx (Step 6.3): Production deployment integration
 
-## Related Files/Flows
+## Related Files & Flows
 
-### Django Admin 현황
-- **Admin 클래스**: `rag/admin.py` (TopicAdmin, ContextAdmin)
-- **대량 작업**: `bulk_assign_context`, `bulk_update_system_prompt`, `regenerate_embeddings`
-- **커스텀 뷰**: `add_qa_pair`, `bulk_assign_context_view`
-- **파일 업로드**: ContextAdmin에서 PDF 업로드 → Celery 비동기 처리
-- **타입별 폼**: Context 타입에 따라 동적 폼 필드 (PDF: file, FAQ: none, Markdown: original_content)
+### Existing Django Admin Features (to replicate)
+- **Topic Management**: `rag/admin.py:TopicAdmin`
+  - CRUD operations, multi-select contexts, bulk system prompt updates
+- **Context Management**: `rag/admin.py:ContextAdmin`
+  - Type-specific creation workflows (PDF/FAQ/Markdown)
+  - File upload with real-time processing status
+  - Inline Q&A editing (FAQ type)
+  - Chunk preview and statistics
+- **Bulk Operations**: Custom admin actions
+  - Bulk assign to context, move to context, regenerate embeddings
+  - Update processing status, context type, system prompt
 
-### 기존 FastAPI API
-- **Phase 2-4**: Topics/Contexts Read/Write API 이미 구현
-  - GET/POST/PUT/DELETE `/api/topics`, `/api/contexts`
-  - Phase 5: JWT 인증 (require_admin 의존성)
-- **부족한 기능**:
-  - 대량 작업 엔드포인트 없음
-  - Admin 전용 필드 노출 안 됨 (예: processing_status, chunk_count 상세)
-  - 파일 업로드 처리 상태 스트리밍 없음
+### FastAPI Admin API Status (Step 6.1)
+**Completed**:
+- ✅ `api/routers/admin/contexts.py`: Context CRUD with file upload
+- ✅ `api/routers/admin/topics.py`: Topic CRUD
+- ✅ `api/routers/admin/users.py`: User management
+- ✅ `api/schemas/admin.py`: Admin-specific Pydantic schemas
+- ✅ `api/dependencies/auth.py`: `require_admin` dependency
+- ✅ Tests: 16/16 passing in `api/tests/admin/`
+
+**Missing (to implement in Step 6.1)**:
+- [ ] Bulk operations endpoints:
+  - POST `/admin/contexts/bulk-assign-topic`
+  - POST `/admin/contexts/bulk-regenerate-embeddings`
+  - POST `/admin/topics/bulk-update-system-prompt`
+- [ ] Real-time processing status (SSE or WebSocket)
+- [ ] File upload progress tracking
+
+### Refine Stack Research
+
+**Core Libraries**:
+- `@refinedev/core`: Framework core with hooks (useTable, useForm, useShow)
+- `@refinedev/react-router-v7`: Routing integration
+- `@refinedev/simple-rest`: REST Data Provider
+- `@tanstack/react-query`: State management (built-in)
+
+**UI Framework Options**:
+1. **shadcn/ui** (recommended)
+   - Pros: Tailwind-based, modern, copy-paste components, full control
+   - Cons: More manual setup vs pre-built kits
+2. **Material-UI**
+   - Pros: Pre-built Refine integration (`@refinedev/mui`)
+   - Cons: Heavier, opinionated design
+
+**Decision**: shadcn/ui for consistency with modern FastAPI philosophy.
 
 ## Hypotheses
 
-### H1: FastAPI Admin API는 별도 라우터 vs. 기존 API 확장
-- **Option A (별도 라우터)**: `/api/admin/topics`, `/api/admin/contexts`
-  - 장점: 권한 분리 명확, 일반 API와 Admin API 독립적 버전 관리
-  - 단점: 중복 코드 가능성
-- **Option B (기존 API 확장)**: `/api/topics?admin=true` (query param)
-  - 장점: 코드 재사용
-  - 단점: 일반 API와 Admin API 혼재, 복잡도 증가
-- **결론**: **Option A 선택** (권한 분리 및 확장성)
-
-### H2: Refine Data Provider — REST vs. GraphQL
-- **REST**: Refine의 `@refinedev/simple-rest` 사용
-  - 장점: FastAPI와 완벽 호환, 간단한 설정
-  - 단점: N+1 쿼리 가능성 (관계 데이터 로드 시)
-- **GraphQL**: Strawberry GraphQL + Refine GraphQL Provider
-  - 장점: 유연한 쿼리, N+1 해결
-  - 단점: 추가 학습 곡선, FastAPI-SQLAlchemy 통합 복잡
-- **결론**: **REST 선택** (단순성 우선, 필요 시 후에 최적화)
-
-### H3: 파일 업로드 처리 상태 — 폴링 vs. SSE vs. WebSocket
-- **폴링**: 클라이언트가 주기적으로 상태 확인 (GET `/api/admin/contexts/{id}/status`)
-  - 장점: 구현 간단
-  - 단점: 불필요한 요청 증가
-- **SSE (Server-Sent Events)**: 서버가 상태 푸시 (EventSource API)
-  - 장점: 실시간 업데이트, HTTP 기반 (방화벽 문제 없음)
-  - 단점: 단방향 통신
-- **WebSocket**: 양방향 통신
-  - 장점: 실시간 양방향
-  - 단점: 복잡도 증가, FastAPI WebSocket 관리
-- **결론**: **SSE 선택** (실시간 + 단순성, PDF 업로드는 단방향만 필요)
+1. **H1**: Refine's `useTable` + `useForm` hooks can handle all Django Admin CRUD patterns
+2. **H2**: File upload with progress tracking achievable via `useForm` + axios progress events
+3. **H3**: Bulk operations implementable via custom mutations + selected row keys
+4. **H4**: Real-time processing status via polling (simpler than SSE/WebSocket for MVP)
 
 ## Evidence
 
-### Django Admin 기능 목록 (rag/admin.py 분석)
-```python
-# TopicAdmin
-- list_display: name, description, system_prompt, contexts_count
-- actions: bulk_update_system_prompt
-- inline: Context 다중 선택 (M2M)
+### H1: CRUD Pattern Coverage
+- Refine `useTable`: Sorting, filtering, pagination ✅
+- Refine `useForm`: Create/edit with validation ✅
+- Refine `useShow`: Detail views with related data ✅
+- Django Admin equivalents: `list_display`, `ModelAdmin`, `get_queryset` ✅
 
-# ContextAdmin
-- list_display: name, context_type, chunk_count, processing_status, created_at
-- actions: bulk_assign_context, regenerate_embeddings, bulk_update_processing_status
-- custom_views: add_qa_pair (FAQ 전용)
-- file_upload: PDF 업로드 → Celery task
-```
+### H2: File Upload
+- Example from Refine docs: `<input type="file" />` + `FormData` in `onFinish` ✅
+- Progress tracking: `axios.request({ onUploadProgress })` ✅
+- FastAPI `UploadFile` already implemented in `api/routers/admin/contexts.py` ✅
 
-### Refine 기본 구조
-```typescript
-// Data Provider Interface (REST)
-interface DataProvider {
-  getList: (resource, params) => Promise<{ data, total }>;
-  getOne: (resource, params) => Promise<{ data }>;
-  create: (resource, params) => Promise<{ data }>;
-  update: (resource, params) => Promise<{ data }>;
-  deleteOne: (resource, params) => Promise<{ data }>;
-  // Custom methods
-  custom?: (params) => Promise<any>;
-}
-```
-- **Refine REST 규약**:
-  - GET `/api/admin/topics` → `{ data: Topic[], total: number }`
-  - GET `/api/admin/topics/{id}` → `{ data: Topic }`
-  - POST `/api/admin/topics` → `{ data: Topic }`
-  - PUT `/api/admin/topics/{id}` → `{ data: Topic }`
-  - DELETE `/api/admin/topics/{id}` → `{ data: Topic }`
+### H3: Bulk Operations
+- Refine `useTable` provides `selectedRowKeys` state ✅
+- Custom mutation: `useCustomMutation` hook for bulk endpoints ✅
+- Django equivalent: Admin actions (`@admin.action`) ✅
 
-## Assumptions/Open Qs
+### H4: Processing Status
+- Polling: `useQuery` with `refetchInterval` (simple, reliable) ✅
+- SSE/WebSocket: More complex, defer to post-MVP optimization ✅
 
-### 가정
-1. **권한 모델 단순화**: 초기 구현은 `is_staff` 만 확인 (role 기반은 향후 확장)
-2. **Celery 유지**: PDF 처리는 여전히 Django Celery 사용 (FastAPI → Django ORM signal 제한)
-3. **점진적 전환**: Django Admin과 Refine Admin 병렬 운영 (Phase 6 기간 동안)
+## Assumptions & Open Questions
 
-### 열린 질문
-1. **Refine UI 프레임워크**: shadcn/ui vs. Material-UI vs. Ant Design?
-   - **추천**: shadcn/ui (Tailwind 기반, 커스터마이징 용이, 모던)
-2. **대량 작업 UX**: 선택 → 작업 버튼 → 확인 다이얼로그 (Django Admin과 동일)
-3. **청크 미리보기**: Drawer (슬라이드 패널) vs. Modal?
-   - **추천**: Drawer (컨텍스트 유지, 스크롤 가능)
+### Assumptions
+1. FastAPI Admin API is feature-complete for initial Refine integration
+2. shadcn/ui components sufficient for all Django Admin UI patterns
+3. React Query (built-in Refine) handles caching and optimistic updates
+4. Nginx can route `/admin` (SPA) and `/api` (FastAPI) correctly
+
+### Open Questions
+1. **Q1**: Do we need SSE for real-time processing status in MVP?
+   - **Decision**: No, use polling (3-5s interval) for simplicity. Revisit if UX suffers.
+2. **Q2**: How to handle Django Admin's inline Q&A editor (FAQ contexts)?
+   - **Research**: Use dynamic form fields with `useFieldArray` (react-hook-form compatible).
+3. **Q3**: Authentication flow for Refine SPA?
+   - **Research**: Refine `authProvider` + JWT stored in `localStorage` + refresh token strategy.
 
 ## Sub-agent Findings
-없음 (단일 에이전트로 충분)
+(None used for initial research; manual review of Refine docs and FastAPI code sufficient)
 
 ## Risks
 
 ### High
-- **개발 기간**: Phase 6 전체 4-6주 예상 (프론트엔드 리소스 필요)
-  - 완화: Phase 6.1 (FastAPI API) 먼저 완료, Phase 6.2 (Refine)는 병렬 진행 가능
+- **UX Parity**: Refine admin may not match Django Admin's polish out-of-box
+  - **Mitigation**: Iterative user testing with admin users (2+ testers)
+- **File Upload Reliability**: Large PDFs (>10MB) may timeout or fail
+  - **Mitigation**: Chunked upload or presigned URL strategy (post-MVP)
 
 ### Medium
-- **Celery 의존성**: FastAPI에서 Django signal 호출 불가 → PDF 처리는 Django Celery 유지
-  - 완화: FastAPI Admin API는 Context 생성만, 실제 처리는 Django Celery task 트리거
+- **Learning Curve**: Team unfamiliar with Refine and React Query
+  - **Mitigation**: POC with single resource (Topics) before full implementation
+- **Authentication Token Expiry**: JWT refresh logic needed
+  - **Mitigation**: Implement refresh token endpoint + interceptor
 
 ### Low
-- **Refine 학습 곡선**: React 기반, 새로운 프레임워크
-  - 완화: Refine은 헤드리스 설계로 학습 곡선 낮음 (공식 문서 우수)
+- **Browser Compatibility**: Modern browsers only (ES2020+)
+  - **Acceptable**: School admins use modern browsers
 
-## Next
-**PLAN.md 작성** → Phase 6.1 FastAPI Admin API 구현 계획 (Topics CRUD 우선)
+## Next Steps
+
+1. **Complete Step 6.1**: Implement missing bulk operation endpoints
+2. **POC Step 6.2**: Create minimal Refine app with Topics resource only
+3. **Validate POC**: Admin user testing for CRUD workflows
+4. **Full Implementation**: Add Contexts, Users, bulk operations
+5. **Docker Integration (Step 6.3)**: Nginx routing + production build

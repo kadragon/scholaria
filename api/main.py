@@ -15,6 +15,7 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
 from api.routers import auth, contexts, history, rag, topics  # noqa: E402
+from api.routers.admin import bulk_operations  # noqa: E402
 from api.routers.admin import contexts_router as admin_contexts  # noqa: E402
 from api.routers.admin import topics_router as admin_topics  # noqa: E402
 
@@ -41,6 +42,7 @@ app.include_router(rag.router, prefix="/api", tags=["rag"])
 # Admin API routers
 app.include_router(admin_topics, prefix="/api/admin")
 app.include_router(admin_contexts, prefix="/api/admin")
+app.include_router(bulk_operations.router, prefix="/api/admin")
 
 
 @app.get("/health")

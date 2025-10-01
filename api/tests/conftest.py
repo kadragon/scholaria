@@ -85,3 +85,9 @@ def admin_headers(db_session):
     assert response.status_code == 200
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture(scope="function")
+def client():
+    """Provide a TestClient for FastAPI app."""
+    return TestClient(app)

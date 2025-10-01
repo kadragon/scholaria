@@ -1,29 +1,31 @@
-# Refine Admin Panel — Progress
+# Progress: Refine Admin Panel
 
 ## Summary
-Django Admin → Refine + FastAPI Admin API 전환 (Phase 6.1 시작)
+Phase 6 Refine Admin Panel 구현 진행 중. Step 6.1 (FastAPI Bulk Operations API) 작업 시작.
 
 ## Goal & Approach
-- **Phase 6.1**: FastAPI Admin API 구현 (CRUD, 대량 작업, 파일 업로드)
-- **TDD**: 각 Admin API 테스트 우선 작성
-- **Refine 규약**: `{ data, total }` 형식, REST API 표준 준수
+- **Step 6.1**: FastAPI bulk operations 엔드포인트 구현 (TDD)
+- **Step 6.2**: Refine 기반 React 관리자 패널 구축
+- **Step 6.3**: Docker + Nginx 프로덕션 통합
 
 ## Completed Steps
-없음 (태스크 시작)
+- [x] Research 완료: Refine 스택 조사, 기존 Django Admin 기능 분석
+- [x] Plan 작성: 3단계 상세 계획 수립 (6.1/6.2/6.3)
+- [x] **Step 6.1 완료**: FastAPI Bulk Operations API 구현 ✅
+  - [x] Pydantic 스키마 추가 (BulkAssignContext, BulkRegenerateEmbeddings, BulkUpdateSystemPrompt)
+  - [x] 3개 bulk endpoints 구현 (assign-context-to-topic, regenerate-embeddings, update-system-prompt)
+  - [x] 10/10 테스트 통과 (TDD Red→Green 완료)
+  - [x] Ruff + mypy 검증 통과
+  - [x] Association table SQLite autoincrement 수정 (Integer PRIMARY KEY)
 
 ## Current Failures
-없음
+None (Step 6.1 Green 단계)
 
 ## Decision Log
-| 날짜 | 결정 | 근거 |
-|------|------|------|
-| 2025-10-01 | Admin API 별도 라우터 (`/api/admin`) | 권한 분리 명확, 일반 API와 독립적 버전 관리 |
-| 2025-10-01 | REST Data Provider (Refine) | FastAPI 완벽 호환, 단순성 우선 |
-| 2025-10-01 | SSE (처리 상태 스트리밍) | 실시간 업데이트 + 단순성, 단방향만 필요 |
-| 2025-10-01 | Celery 유지 (PDF 처리) | FastAPI에서 Django signal 제한, 기존 인프라 재사용 |
+- **2025-10-01**: Refine + shadcn/ui 선택 (Material-UI 대신 경량 + 커스터마이징 우선)
+- **2025-10-01**: Processing status polling 방식 채택 (SSE/WebSocket은 MVP 이후)
+- **2025-10-01**: Association table에 Integer PRIMARY KEY 사용 (SQLite autoincrement 지원)
+- **2025-10-01**: JWT 테스트 시 실제 로그인 플로우 사용 (토큰 페이로드에 user_id 필요)
 
 ## Next Step
-**Step 1: Admin 라우터 기반 구조** (1일)
-- `api/routers/admin/` 폴더 생성
-- Topics/Contexts Admin 라우터 파일 생성
-- `require_admin` 의존성 적용 확인
+Step 6.2 착수: Refine Admin Panel 프로젝트 초기화 및 POC (Topics 리소스)

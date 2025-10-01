@@ -45,3 +45,49 @@ class TopicListResponse(BaseModel):
 
     data: list[AdminTopicOut]
     total: int
+
+
+class BulkAssignContextRequest(BaseModel):
+    """Request schema for bulk assigning contexts to a topic."""
+
+    context_ids: list[int] = Field(
+        min_length=1, description="List of context IDs to assign"
+    )
+    topic_id: int = Field(description="Target topic ID")
+
+
+class BulkAssignContextResponse(BaseModel):
+    """Response schema for bulk assign operation."""
+
+    assigned_count: int
+    topic_id: int
+
+
+class BulkRegenerateEmbeddingsRequest(BaseModel):
+    """Request schema for bulk regenerating embeddings."""
+
+    context_ids: list[int] = Field(
+        min_length=1, description="List of context IDs to regenerate"
+    )
+
+
+class BulkRegenerateEmbeddingsResponse(BaseModel):
+    """Response schema for bulk regenerate embeddings operation."""
+
+    queued_count: int
+    task_ids: list[str]
+
+
+class BulkUpdateSystemPromptRequest(BaseModel):
+    """Request schema for bulk updating topic system prompts."""
+
+    topic_ids: list[int] = Field(
+        min_length=1, description="List of topic IDs to update"
+    )
+    system_prompt: str = Field(min_length=1, description="New system prompt")
+
+
+class BulkUpdateSystemPromptResponse(BaseModel):
+    """Response schema for bulk update system prompt operation."""
+
+    updated_count: int
