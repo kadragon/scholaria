@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from backend.models.base import get_db
 from backend.models.history import QuestionHistory
-from backend.schemas.history import QuestionHistoryOut
+from backend.schemas.history import FeedbackRequest, QuestionHistoryOut
 
 router = APIRouter()
 
@@ -31,3 +31,24 @@ def list_history(
 
     histories = query.order_by(QuestionHistory.created_at.desc()).all()
     return histories
+
+
+@router.patch("/history/{history_id}/feedback", response_model=QuestionHistoryOut)
+def update_feedback(
+    history_id: int,
+    request: FeedbackRequest,
+    db: Session = Depends(get_db),
+) -> QuestionHistory:
+    """Update feedback score for a question history record."""
+    history = db.query(QuestionHistory).filter(QuestionHistory.id == history_id).first()
+
+    if not history:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"History record with id {history_id} not found",
+        )
+
+    history.feedback_score = request.feedback_score
+    db.commit()
+    db.refresh(history)
+    return history
