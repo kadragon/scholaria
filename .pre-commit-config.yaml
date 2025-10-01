@@ -23,6 +23,13 @@ repos:
       - id: django-upgrade
         args: [--target-version, "5.0"]
 
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        files: ^admin-frontend/.*\.(ts|tsx|js|jsx|json|css)$
+        exclude: ^admin-frontend/(dist|node_modules)/
+
   - repo: local
     hooks:
       - id: mypy
@@ -34,3 +41,4 @@ repos:
 
   # Django tests removed from pre-push for faster workflow
   # Run manually when needed: uv run python manage.py test --settings=core.test_settings
+  # TypeScript/ESLint checks: Run in CI or manually with `cd admin-frontend && npm run build`
