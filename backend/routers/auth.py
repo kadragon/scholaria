@@ -6,7 +6,7 @@ from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from backend.auth.utils import create_access_token, verify_password
@@ -33,8 +33,7 @@ class UserOut(BaseModel):
     is_staff: bool
     is_superuser: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @router.post("/login", response_model=Token)
