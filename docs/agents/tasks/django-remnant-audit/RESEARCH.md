@@ -1,45 +1,63 @@
 # Research: Django Remnant Audit
 
 ## Goal
-- Identify any remaining Django-specific code, dependencies, or configuration after migration to FastAPI.
+FastAPI 전용 구성으로 전환된 후 프로젝트에 Django 관련 잔재물(설정, 의존성, 환경변수, 코드 참조)이 남아있는지 감사하고 제거 또는 FastAPI 등가물로 치환한다.
 
 ## Scope
-- Source tree (Python, frontend, scripts) for Django references.
-- Environment variables, configuration files, and docs.
-- Tooling (tests, scripts, Docker, CI).
+- **Configuration files**: `.env`, `docker-compose.yml`, `pyproject.toml`, `alembic.ini` 등
+- **Source code**: `backend/`, `scripts/`, `frontend/` 내 Django 참조
+- **Dependencies**: `pyproject.toml`, `uv.lock` 내 Django 패키지
+- **Documentation**: README, deployment guides, architecture docs
+- **Test fixtures**: pytest 구성, conftest.py
 
-## Related Files/Flows
-- backend configuration, env examples, docker compose files.
-- Tests invoking Django manage commands.
-- Deployment/docs referencing Django services.
+## Related Files
+- `pyproject.toml` - 의존성 정의
+- `uv.lock` - 잠금 파일
+- `backend/**/*.py` - 소스 코드
+- `scripts/**/*` - 스크립트
+- `docker-compose*.yml` - Docker 구성
+- `.env.example`, `.env.prod.example` - 환경변수 템플릿
+- `docs/**/*.md` - 문서
+- `backend/tests/conftest.py` - 테스트 픽스처
 
 ## Hypotheses
-- Django references may persist in environment variable names or docs.
-- Some scripts/tests might still call `python manage.py` or Django settings modules.
-- Docker configs could retain Django services or ports.
+1. `pyproject.toml`에 Django 관련 의존성이 남아있을 수 있음 (django, django-*, pytest-django 등)
+2. 환경변수 파일에 DJANGO_* 또는 Django 전용 설정이 남아있을 수 있음
+3. 코드베이스에 `django.` import나 `sync_to_async` 같은 Django ORM 호환 코드가 남아있을 수 있음
+4. Docker Compose에 Django 관련 서비스나 환경변수가 남아있을 수 있음
+5. 문서에 Django 참조가 남아있을 수 있음
 
 ## Evidence
-- [Resolved] `backend/retrieval/` modules (`rag.py`, `embeddings.py`, `cache.py`, `monitoring.py`, `qdrant.py`) imported `django.conf.settings`/`django.core.cache`; now rely on `backend.config.Settings`, SQLAlchemy sessions, and Redis/in-memory caches.
-- [Resolved] `backend/services/rag_service.py` comments referenced Django; service now fully decoupled and references SQLAlchemy-backed lookups.
-- [Resolved] `backend/config.py` attempted to derive DB config from Django settings; removed fallback and defined explicit FastAPI settings fields.
-- [Resolved] Dev tooling previously retained Django defaults (`Dockerfile.dev`, `docker-compose.dev.yml`, `scripts/docker/dev-entrypoint.sh` using `manage.py runserver`); now delegate to uvicorn/Async FastAPI workflows only.
-- [Resolved] Deployment script `scripts/deploy.sh` used Django management commands; rewritten to run Alembic migrations and manage FastAPI services.
-- Alembic environment still excludes `django_migrations` table for legacy schema compatibility (follow-up decision needed on table retirement).
-- [Resolved] Environment samples `.env.example` and `.env.prod.example` referenced Django engines/email backends; updated to FastAPI terminology and defaults.
-- [Resolved] Core documentation (`docs/ADMIN_GUIDE.md`, `docs/PRODUCTION_DOCKER.md`, `docs/CONTRIBUTING.md`, etc.) refreshed to describe FastAPI + Refine flows; legacy references archived or annotated.
-- Backend test suite retains skips referencing Django-era fixtures; need Postgres-backed strategy to replace them.
-- [Resolved] `docker-compose.dev.yml` no longer runs dual-stack Django/FastAPI; now only boots the FastAPI backend container with reload.
 
-## Assumptions / Open Questions
-- Need clarity on whether legacy Django DB tables (e.g., `django_migrations`) remain intentionally for historical data.
-- Determine if any deployment workflows still rely on Django for auth management before removing scripts.
-- Confirm target caching backend for RAG service (Redis vs. legacy Django cache).
+### ✅ Clean (Django 잔재물 없음)
+1. **pyproject.toml**: Django 의존성 완전히 제거됨 (django, pytest-django 등 없음)
+2. **uv.lock**: Django 관련 패키지 검색 결과 없음
+3. **환경변수**: `.env.example`에 DJANGO_ 접두사 없음, FastAPI 중심 구성
+4. **Docker Compose**: Django 서비스 없음, 기본 인프라만 존재 (postgres, redis, qdrant)
+5. **pytest.ini**: pytest-django 플러그인 참조 없음, 순수 pytest 구성
+6. **conftest.py**: Django fixture 없음, FastAPI TestClient + SQLAlchemy 기반
 
-## Sub-agent Findings
-- _N/A_
+### ⚠️ Requires Attention
+1. **asgiref.sync.sync_to_async** 사용:
+   - `backend/services/rag_service.py:114-137`에서 4회 사용
+   - Django ORM 호환을 위해 도입되었으나 FastAPI에서는 불필요
+   - asgiref는 pyproject.toml 명시적 의존성에 없음 (타 패키지의 전이 의존성으로 추정)
+   - FastAPI native async 패턴으로 전환 가능
+
+### 📋 Documentation Review Pending
+- README.md, DEPLOYMENT.md, ARCHITECTURE_DECISIONS.md 등 문서 내 Django 참조 여부 미확인
+
+## Assumptions
+- Phase 8 (Django 제거)가 완료되었다고 표시되어 있으나, 세부적인 잔재물 감사는 수행되지 않았을 수 있음
+- 일부 Django 호환 패턴(예: bcrypt → pbkdf2_sha256)이 전환되었으나 완전성을 검증할 필요가 있음
+
+## Open Questions
+- Celery와 같은 비동기 인프라가 Django에 특화되어 있었는지? (백로그 태스크 존재)
+- pytest 구성에서 Django 관련 플러그인이 완전히 제거되었는지?
 
 ## Risks
-- False positives if Django keyword used in historical notes only.
+- Low: 주로 정리 작업이므로 기능적 리스크는 낮음
+- Medium: 환경변수나 설정 변경 시 Docker 환경에서 런타임 오류 가능성
 
 ## Next
-- Inventory codebase for `django` mentions and collect evidence.
+Plan 단계로 진행하여 구체적인 탐색 계획 수립
