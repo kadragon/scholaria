@@ -12,7 +12,7 @@
 - [x] **청크 미리보기** ✅ (`docs/agents/tasks/chunk-preview-ui/`)
 - [x] **청크 편집** ✅ (`docs/agents/tasks/chunk-edit-feature/`)
 - [x] **청크 재정렬** ✅ (`docs/agents/tasks/chunk-reorder-ui/`)
-- [ ] **타입별 청킹 전략** - 파싱 로직 리팩터링
+- [x] **타입별 청킹 전략** ✅ (`docs/agents/tasks/chunking-strategy-refactor/`) - 전략 패턴 리팩터링
 
 ---
 
@@ -79,12 +79,13 @@ uv run alembic upgrade head
 ```
 
 ## 📊 Production Readiness
-- ✅ 100 tests passing | mypy strict | ruff clean
+- ✅ 108 tests passing | mypy strict | ruff clean
 - ✅ JWT auth + admin API
 - ✅ Docker + Nginx production config
 - ✅ FastAPI + SQLAlchemy + Refine + shadcn/ui
+- ✅ 전략 패턴 기반 인제스션 아키텍처
 
 ## 🎯 다음 우선순위
-1. **타입별 청킹 전략** - 파싱 로직 리팩터링
-2. **비동기 큐** - Celery 재도입 (embedding 재생성 등)
-3. **프로덕션 배포** - 실제 환경 테스트
+1. **비동기 큐** - Celery 재도입 (embedding 재생성 등)
+2. **프로덕션 배포** - 실제 환경 테스트
+3. **성능 벤치마크** - 실제 데이터로 검증
