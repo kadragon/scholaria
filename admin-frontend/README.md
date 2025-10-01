@@ -1,0 +1,99 @@
+# Scholaria Admin Frontend
+
+Refine-based admin panel for Scholaria RAG system.
+
+## Tech Stack
+
+- **Framework**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **Admin Framework**: Refine v4
+- **Router**: React Router v6
+- **Data Provider**: REST (FastAPI backend)
+- **Auth**: JWT (Bearer token)
+
+## Prerequisites
+
+- Node.js 18+
+- FastAPI backend running on `http://localhost:8001`
+- Admin user credentials
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Create .env file
+cp .env.example .env
+
+# Start dev server
+npm run dev
+
+# Open browser
+http://localhost:5173
+```
+
+## Build
+
+```bash
+npm run build
+# Output: dist/
+```
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VITE_API_URL` | `http://localhost:8001/api` | FastAPI backend URL |
+
+## Project Structure
+
+```
+admin-frontend/
+├── src/
+│   ├── pages/
+│   │   ├── topics/       # Topics CRUD
+│   │   └── login.tsx     # Login page
+│   ├── providers/
+│   │   ├── authProvider.ts    # JWT auth
+│   │   └── dataProvider.ts    # REST API client
+│   ├── App.tsx           # Refine setup + routes
+│   └── main.tsx
+├── .env.example
+└── package.json
+```
+
+## Features
+
+### Implemented (Step 6.2.1)
+- ✅ JWT authentication (login/logout)
+- ✅ Topics CRUD (List/Create/Edit)
+- ✅ Responsive layout with navigation
+- ✅ Production build
+
+### TODO (Step 6.2.2+)
+- [ ] shadcn/ui integration
+- [ ] Contexts CRUD with type-specific forms
+- [ ] File upload for PDF contexts
+- [ ] Bulk operations UI
+- [ ] Processing status polling
+- [ ] Users management
+
+## Testing
+
+Currently no E2E tests. Manual testing workflow:
+
+1. Start FastAPI backend (`uv run uvicorn api.main:app --reload --port 8001`)
+2. Start frontend (`npm run dev`)
+3. Login with admin credentials (email/password)
+4. Test Topics CRUD operations
+5. Verify API calls in Network tab
+
+## Known Issues
+
+- Refine v5 has breaking changes; this project uses v4 for React 18 compatibility
+- No TypeScript strict mode (Refine types have some any usage)
+
+## License
+
+Same as main Scholaria project.

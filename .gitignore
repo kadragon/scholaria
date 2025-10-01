@@ -33,3 +33,9 @@ codex.toml
 tmp/llamaindex_cache/
 
 .serena
+
+# Node.js (admin-frontend)
+admin-frontend/node_modules/
+admin-frontend/dist/
+admin-frontend/.vite/
+admin-frontend/.env.local

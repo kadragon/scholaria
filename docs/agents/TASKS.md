@@ -44,10 +44,29 @@
   - require_admin 의존성으로 Write API 보호
   - 12/12 인증 테스트 통과
   - JWT 환경변수 설정 노출 (.env.example, docs)
-- [ ] **Phase 6-8**: Refine Admin → 프론트엔드 → Django 제거 ⬅️ 다음 단계
+- [x] **Phase 6.1: FastAPI Admin API** ✅ **완료**:
+  - [x] Bulk operations 엔드포인트 (assign-context, regenerate-embeddings, update-system-prompt)
+  - [x] 10/10 테스트 통과
+- [ ] **Phase 6.2: Refine Admin Panel** ⬅️ **진행 중**:
+  - [ ] Vite + React 18 + TypeScript 프로젝트 생성
+  - [ ] Refine core + React Router v6 통합
+  - [ ] shadcn/ui 설정
+  - [ ] JWT 인증 provider 구현
+  - [ ] Topics 리소스 POC (List/Create/Edit)
+  - [ ] Contexts 리소스 (타입별 생성 폼)
+  - [ ] Bulk operations UI
+- [ ] **Phase 6.3**: Docker & Nginx 통합
+- [ ] **Phase 7**: 템플릿 → 프론트엔드 분리 (Optional)
+- [ ] **Phase 8**: Django 제거 + **프로젝트 구조 리팩토링**
+  - [ ] Django 코드 제거 (`core/`, `rag/` Django 레거시)
+  - [ ] **폴더 구조 재구성**: `api/` → `backend/`, `admin-frontend/` → `frontend/`
+  - [ ] Docker Compose 빌드 컨텍스트 정리
+  - [ ] 문서 업데이트 (README, DEPLOYMENT, ARCHITECTURE)
+  - [ ] 최종 테스트 (모든 테스트 FastAPI 환경에서 재실행)
 - **문서**: `docs/agents/tasks/django-to-fastapi-migration/` (RESEARCH, PLAN, PROGRESS)
 - **예상 기간**: 12-18주, Critical: Phase 6 (Refine Admin 4-6주)
 - **주요 기술**: FastAPI + SQLAlchemy + Refine + shadcn/ui + React Query
+- **현재 폴더 구조**: Option B (최소 변경) - Python 루트에 `admin-frontend/` 예외 유지, Phase 8에서 모노레포로 정리
 
 ### 성능 검증 및 최적화
 
