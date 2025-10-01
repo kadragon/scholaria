@@ -52,5 +52,15 @@ Django 레거시를 FastAPI 중심 모노레포로 전환 중
     - backend: 환경변수 정리 (JWT_SECRET_KEY, FASTAPI_ALLOWED_ORIGINS 추가)
   - [x] 서비스 구성: backend, postgres, redis, qdrant, frontend, nginx (optional)
 
+- [x] Step 5: Nginx 설정 업데이트
+  - [x] nginx/nginx.conf 재작성 (172 → 149 lines)
+  - [x] 제거: Django upstream (web:8000), /static/, /media/, Django health check, Django root proxy
+  - [x] 이름 변경: fastapi → backend (backend:8001), admin_frontend → frontend (frontend:80)
+  - [x] /health → backend (FastAPI)
+  - [x] /api/ → backend
+  - [x] /docs → backend (Swagger UI)
+  - [x] /admin/ → frontend (Refine Admin SPA)
+  - [x] / → redirect to /admin/
+
 ## Next Step
-Step 5: Nginx 설정 업데이트
+Step 6: 비즈니스 로직 테스트 이동 (Django 테스트 → FastAPI 테스트)
