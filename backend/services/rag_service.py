@@ -6,6 +6,7 @@ Async version of Django RAGService with Redis caching.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from typing import Any
@@ -93,8 +94,6 @@ class AsyncRAGService:
         Raises:
             ValueError: If query is None/empty or topic_ids is empty
         """
-        import asyncio
-
         if query is None or not query.strip():
             raise ValueError("Query cannot be None or empty")
 

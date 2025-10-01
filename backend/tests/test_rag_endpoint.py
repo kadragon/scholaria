@@ -31,10 +31,14 @@ def mock_redis():
         yield mock_redis_client
 
 
-def test_ask_question_success(mock_rag_service, mock_redis, monkeypatch):
-    """Test successful question answering."""
+@pytest.fixture(autouse=True)
+def auto_set_openai_key(monkeypatch):
+    """Automatically set OPENAI_API_KEY for all tests in this module."""
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
 
+
+def test_ask_question_success(mock_rag_service, mock_redis):
+    """Test successful question answering."""
     mock_rag_service.query.return_value = {
         "answer": "This is a test answer.",
         "sources": [
@@ -65,10 +69,8 @@ def test_ask_question_success(mock_rag_service, mock_redis, monkeypatch):
     assert data["citations"][0]["score"] == 0.95
 
 
-def test_ask_question_empty_question_fails(monkeypatch):
+def test_ask_question_empty_question_fails():
     """Test that empty question returns 422 validation error."""
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-
     response = client.post(
         "/api/rag/ask",
         json={
@@ -80,10 +82,8 @@ def test_ask_question_empty_question_fails(monkeypatch):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_ask_question_invalid_topic_id_fails(monkeypatch):
+def test_ask_question_invalid_topic_id_fails():
     """Test that invalid topic_id returns 422 validation error."""
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-
     response = client.post(
         "/api/rag/ask",
         json={
@@ -95,10 +95,8 @@ def test_ask_question_invalid_topic_id_fails(monkeypatch):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_ask_question_service_value_error(mock_rag_service, mock_redis, monkeypatch):
+def test_ask_question_service_value_error(mock_rag_service, mock_redis):
     """Test that ValueError from service returns 400."""
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-
     mock_rag_service.query.side_effect = ValueError("Invalid parameters")
 
     response = client.post(
@@ -113,12 +111,8 @@ def test_ask_question_service_value_error(mock_rag_service, mock_redis, monkeypa
     assert "Invalid request parameters" in response.json()["detail"]
 
 
-def test_ask_question_service_connection_error(
-    mock_rag_service, mock_redis, monkeypatch
-):
+def test_ask_question_service_connection_error(mock_rag_service, mock_redis):
     """Test that ConnectionError from service returns 503."""
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-
     mock_rag_service.query.side_effect = ConnectionError("Service unavailable")
 
     response = client.post(
@@ -133,10 +127,8 @@ def test_ask_question_service_connection_error(
     assert "Unable to connect" in response.json()["detail"]
 
 
-def test_ask_question_service_generic_error(mock_rag_service, mock_redis, monkeypatch):
+def test_ask_question_service_generic_error(mock_rag_service, mock_redis):
     """Test that generic Exception from service returns 500."""
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-
     mock_rag_service.query.side_effect = Exception("Unexpected error")
 
     response = client.post(
