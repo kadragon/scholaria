@@ -54,6 +54,7 @@ extend-exclude = [
     "migrations",
     ".venv",
     "venv",
+    "alembic/env.py",
 ]
 
 [tool.ruff.lint]
