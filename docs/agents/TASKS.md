@@ -105,7 +105,11 @@
     - [x] 4개 테스트 추가, 96/96 전체 통과
     - **문서**: `docs/agents/tasks/chunk-preview-ui/`
     - **브랜치**: `feature/chunk-preview-ui`
-  - [ ] 청크 레벨 편집 기능 추가
+  - [x] 청크 레벨 편집 기능 추가 ✅ 완료
+    - [x] Backend: `PATCH /contexts/{cid}/items/{iid}` API (content 수정 + embedding 재생성)
+    - [x] Frontend: 편집 모달 (shadcn Dialog + Textarea)
+    - [x] 4개 테스트 추가, 100/100 전체 통과
+    - **문서**: `docs/agents/tasks/chunk-edit-feature/`
   - [ ] 청크 재정렬 및 관리 도구 구현
   - [ ] 실시간 처리 상태 업데이트 추가
 

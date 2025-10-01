@@ -11,6 +11,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface ContextItem {
   id: number;
@@ -31,33 +41,75 @@ export const ContextShow = () => {
   const { list, edit } = useNavigation();
   const [items, setItems] = useState<ContextItem[]>([]);
   const [itemsLoading, setItemsLoading] = useState(true);
+  const [editingItem, setEditingItem] = useState<ContextItem | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const fetchItems = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/contexts/${id}/items`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch items:", error);
+    } finally {
+      setItemsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/contexts/${id}/items`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setItems(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch items:", error);
-      } finally {
-        setItemsLoading(false);
-      }
-    };
-
     if (id) {
       fetchItems();
     }
   }, [id]);
+
+  const handleEditClick = (item: ContextItem) => {
+    setEditingItem(item);
+    setEditContent(item.content);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingItem) return;
+
+    setSaving(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/contexts/${id}/items/${editingItem.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ content: editContent }),
+        },
+      );
+
+      if (response.ok) {
+        setEditDialogOpen(false);
+        setEditingItem(null);
+        setEditContent("");
+        fetchItems();
+      } else {
+        console.error("Failed to update item");
+      }
+    } catch (error) {
+      console.error("Error updating item:", error);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (isLoading) {
     return <div className="p-6">Loading...</div>;
@@ -125,6 +177,7 @@ export const ContextShow = () => {
                   <TableHead className="w-[200px]">Title</TableHead>
                   <TableHead>Content Preview</TableHead>
                   <TableHead className="w-[180px]">Created</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -139,6 +192,15 @@ export const ContextShow = () => {
                     <TableCell className="text-sm text-gray-500">
                       {new Date(item.created_at).toLocaleDateString()}
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditClick(item)}
+                      >
+                        편집
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -146,6 +208,41 @@ export const ContextShow = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>청크 편집</DialogTitle>
+            <DialogDescription>
+              청크 내용을 수정합니다. 저장 시 embedding이 재생성됩니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-content">내용</Label>
+              <Textarea
+                id="edit-content"
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                rows={10}
+                className="resize-y"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              disabled={saving}
+            >
+              취소
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? "저장 중..." : "저장"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
