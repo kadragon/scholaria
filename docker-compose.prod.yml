@@ -183,6 +183,58 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Celery Worker for Async Tasks
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: unless-stopped
+    command: celery -A backend.celery_app worker --loglevel=info
+    environment:
+      - DEBUG=False
+      - DB_ENGINE=postgresql
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-large}
+      - OPENAI_CHAT_MODEL=${OPENAI_CHAT_MODEL:-gpt-4o-mini}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A backend.celery_app inspect ping -d celery@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+    networks:
+      - scholaria-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Nginx Reverse Proxy (Optional - for production with SSL)
   nginx:
