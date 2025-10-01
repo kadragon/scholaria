@@ -80,6 +80,12 @@ uv run pytest
 - 결과: 86/86 테스트 통과, ruff/mypy 검증 완료, 외부 의존성 없는 FastAPI native async 패턴 적용.
 - 코드베이스에 Django 관련 import, 환경변수, 설정 없음 확인 완료.
 
+### RAG 엔드포인트 테스트 복원 (2025-10-01)
+- `backend/tests/test_rag_endpoint.py` 재활성화 - Django ORM 의존성을 SQLAlchemy mock으로 전환.
+- 6개 테스트 케이스 추가: 정상 요청/응답, Pydantic 검증 (빈 질문, 잘못된 topic_id), 예외 처리 (ValueError, ConnectionError, Exception).
+- 테스트 커버리지: 86 → 92 (+6), AsyncRAGService 전체를 mock하여 외부 의존성 차단.
+- Mock 전략으로 단위 테스트 수준 유지, 통합 테스트는 별도 관리.
+
 ### 프로덕션 기능
 - **모니터링**: 헬스 체크 엔드포인트, 구조화된 로깅, 성능 메트릭
 - **보안**: 파일 업로드 검증, 매직 바이트 체크, 크기 제한

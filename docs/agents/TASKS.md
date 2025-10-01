@@ -246,3 +246,12 @@
 - [x] asgiref.sync_to_async 제거 및 asyncio.to_thread로 전환
 - [x] 재발 방지: AGENTS.md 업데이트 완료
 - **문서**: `docs/agents/tasks/django-remnant-audit/` (RESEARCH, PLAN, PROGRESS)
+- **브랜치**: `refactor/remove-asgiref-dependency`
+
+### RAG 엔드포인트 테스트 복원 ✅ 완료
+
+- [x] test_rag_endpoint.py 재활성화 (Django ORM → SQLAlchemy mock)
+- [x] 6개 테스트 케이스 추가 (정상, 검증, 예외 처리)
+- [x] 테스트 커버리지: 86 → 92 (+6)
+- **문서**: `docs/agents/tasks/rag-endpoint-tests/` (RESEARCH, PLAN, PROGRESS, TASK_SUMMARY)
+- **브랜치**: `refactor/remove-asgiref-dependency`
