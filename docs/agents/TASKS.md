@@ -256,10 +256,33 @@
 
 ---
 
-### Pydantic Config Modernization (Backlog)
+### Pydantic Config Modernization ✅ 완료
 
-- [ ] `class Config` 대신 `ConfigDict`로 전환하여 Pydantic v2 경고 제거 (v3 대비)
-- [ ] 관련 모델/스키마 단위 테스트 재실행
+- [x] `class Config` 대신 `ConfigDict`로 전환하여 Pydantic v2 경고 제거 (v3 대비)
+- [x] 관련 모델/스키마 단위 테스트 재실행
+- **완료 날짜**: 2025-10-01
+- **PR**: #23
+
+### Schema Consistency Improvements (Backlog)
+
+- [ ] **Admin datetime serializer 추가** (Breaking Change):
+  - [ ] `AdminTopicOut`, `AdminContextOut`에 `@field_serializer` 적용
+  - [ ] `to_local_iso()` 사용하여 timezone-aware ISO 변환
+  - [ ] Frontend가 ISO string 처리 가능한지 먼저 확인
+  - [ ] API 응답 포맷 변경으로 frontend 수정 필요
+  - **우선순위**: 중 (점진적 개선)
+
+- [ ] **Schema 패턴 문서화**:
+  - [ ] `backend/schemas/README.md` 생성
+  - [ ] ConfigDict 사용 규칙 정리 (ORM 매핑, Field alias, Datetime serializer)
+  - [ ] 예시 코드 추가
+  - **우선순위**: 높 (가이드라인 필요)
+
+- [ ] **`populate_by_name` 패턴 검토**:
+  - [ ] alias 사용하는 스키마에 일관성 적용
+  - [ ] 현재는 `QuestionHistoryOut`만 사용 중
+  - [ ] 향후 확장 시 적용
+  - **우선순위**: 낮 (현재 불필요)
 
 ---
 
