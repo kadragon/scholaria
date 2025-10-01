@@ -21,14 +21,80 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
 interface ContextItem {
   id: number;
   title: string;
   content: string;
   context_id: number;
+  order_index: number;
   created_at: string;
   updated_at: string;
+}
+
+interface SortableRowProps {
+  item: ContextItem;
+  onEdit: (item: ContextItem) => void;
+}
+
+function SortableRow({ item, onEdit }: SortableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell>
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+          <GripVertical className="h-5 w-5 text-gray-400" />
+        </div>
+      </TableCell>
+      <TableCell>{item.id}</TableCell>
+      <TableCell className="font-medium">{item.title}</TableCell>
+      <TableCell className="truncate max-w-md">
+        {item.content.substring(0, 100)}
+        {item.content.length > 100 ? "..." : ""}
+      </TableCell>
+      <TableCell className="text-sm text-gray-500">
+        {new Date(item.created_at).toLocaleDateString()}
+      </TableCell>
+      <TableCell>
+        <Button variant="outline" size="sm" onClick={() => onEdit(item)}>
+          편집
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
 }
 
 export const ContextShow = () => {
@@ -39,12 +105,20 @@ export const ContextShow = () => {
   });
 
   const { list, edit } = useNavigation();
+  const { toast } = useToast();
   const [items, setItems] = useState<ContextItem[]>([]);
   const [itemsLoading, setItemsLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<ContextItem | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const fetchItems = async () => {
     try {
@@ -58,7 +132,10 @@ export const ContextShow = () => {
       );
       if (response.ok) {
         const data = await response.json();
-        setItems(data);
+        const sortedData = data.sort((a: ContextItem, b: ContextItem) =>
+          a.order_index - b.order_index
+        );
+        setItems(sortedData);
       }
     } catch (error) {
       console.error("Failed to fetch items:", error);
@@ -108,6 +185,64 @@ export const ContextShow = () => {
       console.error("Error updating item:", error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = items.findIndex((item) => item.id === active.id);
+    const newIndex = items.findIndex((item) => item.id === over.id);
+
+    const newItems = arrayMove(items, oldIndex, newIndex);
+    const previousItems = [...items];
+
+    setItems(newItems);
+
+    try {
+      const updates = newItems.map((item, index) => ({
+        id: item.id,
+        order_index: index,
+      }));
+
+      const updatePromises = updates
+        .filter((update, index) => update.order_index !== previousItems[index]?.order_index)
+        .map((update) =>
+          fetch(
+            `${import.meta.env.VITE_API_URL}/contexts/${id}/items/${update.id}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+              body: JSON.stringify({ order_index: update.order_index }),
+            }
+          )
+        );
+
+      const responses = await Promise.all(updatePromises);
+
+      if (responses.some((res) => !res.ok)) {
+        throw new Error("Failed to update some items");
+      }
+
+      toast({
+        title: "순서 변경 완료",
+        description: "청크 순서가 업데이트되었습니다.",
+      });
+    } catch (error) {
+      console.error("Error updating order:", error);
+      setItems(previousItems);
+      toast({
+        title: "순서 변경 실패",
+        description: "청크 순서 업데이트에 실패했습니다.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -170,41 +305,38 @@ export const ContextShow = () => {
           ) : items.length === 0 ? (
             <div className="text-gray-500">No chunks available</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">ID</TableHead>
-                  <TableHead className="w-[200px]">Title</TableHead>
-                  <TableHead>Content Preview</TableHead>
-                  <TableHead className="w-[180px]">Created</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.id}</TableCell>
-                    <TableCell className="font-medium">{item.title}</TableCell>
-                    <TableCell className="truncate max-w-md">
-                      {item.content.substring(0, 100)}
-                      {item.content.length > 100 ? "..." : ""}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-500">
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClick(item)}
-                      >
-                        편집
-                      </Button>
-                    </TableCell>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="w-[100px]">ID</TableHead>
+                    <TableHead className="w-[200px]">Title</TableHead>
+                    <TableHead>Content Preview</TableHead>
+                    <TableHead className="w-[180px]">Created</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <SortableContext
+                  items={items.map((item) => item.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <TableBody>
+                    {items.map((item) => (
+                      <SortableRow
+                        key={item.id}
+                        item={item}
+                        onEdit={handleEditClick}
+                      />
+                    ))}
+                  </TableBody>
+                </SortableContext>
+              </Table>
+            </DndContext>
           )}
         </CardContent>
       </Card>
