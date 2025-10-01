@@ -70,11 +70,13 @@
   - [x] Docker Compose 빌드 컨텍스트 정리 ✅
   - [x] 테스트 Django 의존성 제거 (bcrypt → pbkdf2_sha256, pytest-django/xdist 제거) ✅
   - [x] 핵심 테스트 검증 (auth 12/12, admin 31/31 통과) ✅
-  - [ ] 문서 업데이트 (README, DEPLOYMENT, ARCHITECTURE) (Optional)
+  - [x] 문서 업데이트 (README, DEPLOYMENT, ARCHITECTURE) ✅
+  - [x] Django 레거시 파일 정리 (media/, storage/, uploads/, tmp/) ✅
   - **결과**: Django 100% 제거 완료, FastAPI 전용 모노레포 구조 (backend/, frontend/)
   - **문서**:
     - `docs/agents/tasks/django-removal-and-refactoring/TASK_SUMMARY.md`
     - `docs/agents/tasks/final-fastapi-tests/TASK_SUMMARY.md`
+    - `docs/agents/tasks/docs-update-and-cleanup/TASK_SUMMARY.md`
 - **문서**: `docs/agents/tasks/django-to-fastapi-migration/` (RESEARCH, PLAN, PROGRESS)
 - **예상 기간**: 12-18주, Critical: Phase 6 (Refine Admin 4-6주)
 - **주요 기술**: FastAPI + SQLAlchemy + Refine + shadcn/ui + React Query
