@@ -102,21 +102,21 @@ Context 상세 페이지에서 ContextItem(청크) 목록을 미리보기와 함
 
 ## Status
 
-- [ ] Step 1: Backend test (404 case)
-- [ ] Step 2: Backend implementation (basic endpoint)
-- [ ] Step 3: Backend test (empty list)
-- [ ] Step 4: Backend implementation (empty list)
-- [ ] Step 5: Backend test (success case)
-- [ ] Step 6: Backend implementation (items query)
-- [ ] Step 7: Backend test (pagination)
-- [ ] Step 8: Backend implementation (skip/limit)
-- [ ] Step 9: Refactor backend
-- [ ] Step 10: Frontend routing
-- [ ] Step 11: Frontend show page
-- [ ] Step 12: Frontend API integration
-- [ ] Step 13: Frontend chunk list UI
-- [ ] Step 14: Frontend list update
-- [ ] Step 15: E2E testing
-- [ ] Step 16: Performance validation
-- [ ] Step 17: UI polish
-- [ ] Step 18: Documentation
+- [x] Step 1: Backend test (404 case) ✅
+- [x] Step 2: Backend implementation (basic endpoint) ✅
+- [x] Step 3: Backend test (empty list) ✅
+- [x] Step 4: Backend implementation (empty list) ✅
+- [x] Step 5: Backend test (success case) ✅
+- [x] Step 6: Backend implementation (items query) ✅
+- [x] Step 7: Backend test (pagination) ✅
+- [x] Step 8: Backend implementation (skip/limit) ✅
+- [x] Step 9: Refactor backend ✅
+- [x] Step 10: Frontend routing ✅
+- [x] Step 11: Frontend show page ✅
+- [x] Step 12: Frontend API integration ✅
+- [x] Step 13: Frontend chunk list UI ✅
+- [x] Step 14: Frontend list update ✅ (이미 존재)
+- [x] Step 15: E2E testing ✅ (96 tests passed)
+- [ ] Step 16: Performance validation (수동 - dev 서버 필요)
+- [x] Step 17: UI polish ✅
+- [x] Step 18: Documentation ✅
