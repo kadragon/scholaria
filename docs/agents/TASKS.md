@@ -54,7 +54,7 @@
   - [x] JWT 인증 provider 구현
   - [x] Topics 리소스 POC (List/Create/Edit)
   - [x] Contexts 리소스 (타입별 생성 폼: MARKDOWN/PDF/FAQ)
-  - [ ] Bulk operations UI (Phase 6.3에서 구현 예정)
+  - [x] Bulk operations UI ✅ **완료**
 - [x] **Phase 6.3**: Docker & Nginx 통합 ✅ **완료**
   - [x] ▶ Docker & Nginx integration (slug: docker-nginx-integration)
   - [x] FastAPI + admin-frontend 서비스 docker-compose.prod.yml 추가

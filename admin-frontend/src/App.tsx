@@ -13,6 +13,7 @@ import { ContextList } from "./pages/contexts/list";
 import { ContextCreate } from "./pages/contexts/create";
 import { ContextEdit } from "./pages/contexts/edit";
 import { LoginPage } from "./pages/login";
+import { Toaster } from "./components/ui/toaster";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -21,6 +22,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <h2>Scholaria Admin</h2>
       </nav>
       <main>{children}</main>
+      <Toaster />
     </div>
   );
 };

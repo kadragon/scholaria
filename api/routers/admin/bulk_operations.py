@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from api.dependencies.auth import require_admin
 from api.models.base import get_db
-from api.models.context import Context
+from api.models.context import Context, ContextItem
 from api.models.topic import Topic
 from api.models.user import User
 from api.schemas.admin import (
@@ -19,7 +19,6 @@ from api.schemas.admin import (
     BulkUpdateSystemPromptRequest,
     BulkUpdateSystemPromptResponse,
 )
-from core.celery import app as celery_app
 
 router = APIRouter(prefix="/bulk", tags=["admin-bulk"])
 
@@ -61,17 +60,14 @@ async def bulk_assign_context_to_topic(
     return BulkAssignContextResponse(assigned_count=len(contexts), topic_id=topic.id)
 
 
-@router.post(
-    "/regenerate-embeddings",
-    response_model=BulkRegenerateEmbeddingsResponse,
-    status_code=status.HTTP_202_ACCEPTED,
-)
 async def bulk_regenerate_embeddings(
     request: BulkRegenerateEmbeddingsRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> BulkRegenerateEmbeddingsResponse:
-    """Bulk regenerate embeddings for contexts (queues Celery tasks)."""
+    """Bulk regenerate embeddings for contexts (synchronous processing)."""
+    from api.services.ingestion import generate_context_item_embedding
+
     contexts = db.scalars(
         select(Context).where(Context.id.in_(request.context_ids))
     ).all()
@@ -82,21 +78,31 @@ async def bulk_regenerate_embeddings(
             detail="One or more context IDs not found",
         )
 
-    task_ids = []
+    processed_count = 0
     for context in contexts:
         context.processing_status = "PENDING"
+        db.commit()
 
-        task = celery_app.send_task(
-            "rag.tasks.regenerate_embeddings_for_context",
-            args=[context.id],
-        )
-        task_ids.append(str(task.id))
+        context_items = db.scalars(
+            select(ContextItem).where(ContextItem.context_id == context.id)
+        ).all()
 
-    db.commit()
+        for item in context_items:
+            try:
+                generate_context_item_embedding(db, item.id)
+                processed_count += 1
+            except Exception as e:
+                context.processing_status = "FAILED"
+                db.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to regenerate embeddings for context {context.id}: {e}",
+                ) from e
 
-    return BulkRegenerateEmbeddingsResponse(
-        queued_count=len(task_ids), task_ids=task_ids
-    )
+        context.processing_status = "COMPLETED"
+        db.commit()
+
+    return BulkRegenerateEmbeddingsResponse(queued_count=processed_count, task_ids=[])
 
 
 @router.post(

@@ -36,7 +36,7 @@ FastAPI + Refine Admin Panel을 Nginx를 통해 프로덕션 Docker 환경에 �
 - 40/40 테스트 통과
 
 ## Commit SHAs
-(To be added after commit)
+- e6892ab: [Behavioral] Phase 6.3: Docker & Nginx 통합
 
 ## Impact
 - 프로덕션 배포 준비 완료

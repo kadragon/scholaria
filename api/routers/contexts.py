@@ -2,8 +2,7 @@
 FastAPI router for Context resource.
 """
 
-import tempfile
-from pathlib import Path
+import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
@@ -17,6 +16,8 @@ from api.schemas.context import (
     ContextUpdate,
     FAQQACreate,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -111,34 +112,43 @@ def create_context(
 
 def _process_pdf_upload(context: Context, file: UploadFile, db: Session) -> None:
     """Process PDF file upload: parse → chunk → save."""
-    from rag.ingestion.chunkers import TextChunker
-    from rag.ingestion.parsers import PDFParser
+    from api.services.ingestion import (
+        delete_temp_file,
+        ingest_document,
+        save_uploaded_file,
+    )
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        tmp_file.write(file.file.read())
-        temp_path = tmp_file.name
+    file_content = file.file.read()
+    temp_path = save_uploaded_file(file_content, suffix=".pdf")
 
     try:
-        parser = PDFParser()
-        text = parser.parse_file(temp_path)
+        num_chunks = ingest_document(
+            db=db,
+            context_id=context.id,
+            file_path=str(temp_path),
+            title=context.name,
+            context_type="PDF",
+        )
 
-        chunker = TextChunker()
-        chunks = chunker.chunk_text(text)
+        text_content = None
+        if num_chunks > 0:
+            from rag.ingestion.parsers import PDFParser
 
-        for idx, chunk_text in enumerate(chunks):
-            chunk = ContextItem(
-                title=f"{context.name} - Chunk {idx + 1}",
-                content=chunk_text,
-                context_id=context.id,
-            )
-            db.add(chunk)
+            parser = PDFParser()
+            text_content = parser.parse_file(str(temp_path))
 
-        context.original_content = text
-        context.processing_status = "PROCESSING"
+        context.original_content = text_content
+        context.processing_status = "COMPLETED" if num_chunks > 0 else "FAILED"
         db.commit()
 
+    except Exception as e:
+        logger.error(f"PDF processing failed for context {context.id}: {e}")
+        context.processing_status = "FAILED"
+        db.commit()
+        raise
+
     finally:
-        Path(temp_path).unlink(missing_ok=True)
+        delete_temp_file(temp_path)
 
 
 @router.put(

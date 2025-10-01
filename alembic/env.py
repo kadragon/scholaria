@@ -14,6 +14,7 @@ from alembic.config import Config
 from api.config import settings
 from api.models import (
     associations,  # noqa: F401
+    history,  # noqa: F401
     topic,  # noqa: F401
 )
 from api.models import context as context_models  # noqa: F401
