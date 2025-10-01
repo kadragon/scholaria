@@ -280,11 +280,12 @@
   - [ ] API 응답 포맷 변경으로 frontend 수정 필요
   - **우선순위**: 중 (점진적 개선)
 
-- [ ] **Schema 패턴 문서화**:
-  - [ ] `backend/schemas/README.md` 생성
-  - [ ] ConfigDict 사용 규칙 정리 (ORM 매핑, Field alias, Datetime serializer)
-  - [ ] 예시 코드 추가
-  - **우선순위**: 높 (가이드라인 필요)
+- [x] **Schema 패턴 문서화**: ✅ 완료
+  - [x] `backend/schemas/README.md` 생성
+  - [x] ConfigDict 사용 규칙 정리 (ORM 매핑, Field alias, Datetime serializer)
+  - [x] 예시 코드 추가
+  - [x] docs/agents/AGENTS.md 업데이트
+  - **문서**: `docs/agents/tasks/schema-pattern-docs/TASK_SUMMARY.md`
 
 - [ ] **`populate_by_name` 패턴 검토**:
   - [ ] alias 사용하는 스키마에 일관성 적용
