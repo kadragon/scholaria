@@ -4,7 +4,6 @@ import importlib
 from pathlib import Path
 
 import pytest
-from django.test.utils import override_settings
 
 import backend.config as config_module
 
@@ -27,32 +26,24 @@ def reset_env(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(key, raising=False)
 
 
-@pytest.mark.skip(reason="Django dependency removed")
 def test_database_config_uses_sqlite_when_engine_is_sqlite(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """database_config should construct sqlite URL when DB_ENGINE indicates sqlite."""
-    monkeypatch.setenv("DB_ENGINE", "django.db.backends.sqlite3")
+
+    monkeypatch.setenv("DB_ENGINE", "sqlite3")
     sqlite_path = tmp_path / "test.sqlite3"
     monkeypatch.setenv("DB_NAME", str(sqlite_path))
 
-    with override_settings(
-        DATABASES={
-            "default": {
-                "ENGINE": "django.db.backends.sqlite3",
-                "NAME": str(sqlite_path),
-            }
-        }
-    ):
-        module = importlib.reload(config_module)
-        settings = module.Settings()
+    module = importlib.reload(config_module)
+    settings = module.Settings()
 
-        database_url, connect_args = settings.database_config()
+    database_url, connect_args = settings.database_config()
 
-        assert database_url == f"sqlite+pysqlite:///{sqlite_path}"
-        assert connect_args.get("check_same_thread") is False
+    expected = f"sqlite+pysqlite:///{sqlite_path}"
+    assert database_url == expected
+    assert connect_args.get("check_same_thread") is False
 
-    # Restore module to original configuration after override
     importlib.reload(config_module)
 
 
@@ -69,5 +60,19 @@ def test_jwt_settings_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.JWT_SECRET_KEY == "unit-test-secret"
     assert settings.JWT_ALGORITHM == "HS384"
     assert settings.JWT_ACCESS_TOKEN_EXPIRE_HOURS == 8
+
+    importlib.reload(config_module)
+
+
+def test_openai_defaults_available(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Defaults should provide sane OpenAI and RAG configuration without env."""
+
+    module = importlib.reload(config_module)
+    settings = module.Settings()
+
+    assert settings.OPENAI_EMBEDDING_MODEL == "text-embedding-3-large"
+    assert settings.OPENAI_CHAT_MODEL == "gpt-4o-mini"
+    assert settings.RAG_SEARCH_LIMIT == 10
+    assert settings.LLAMAINDEX_CACHE_ENABLED is False
 
     importlib.reload(config_module)

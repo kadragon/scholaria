@@ -13,7 +13,7 @@ Document container entrypoints that prepare local development environments.
 ## Context
 
 - `dev-entrypoint.sh` rehydrates the uv environment at `/opt/uv` if bind mounts replaced it.
-- Delegates to `uv run python manage.py runserver 0.0.0.0:8000` unless overridden by extra arguments.
+- Delegates to `uv run uvicorn backend.main:app --reload --host 0.0.0.0 --port 8001` unless overridden by extra arguments.
 
 ## Changelog
 

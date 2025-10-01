@@ -230,20 +230,36 @@
 
 ---
 
+### Django Remnant Audit (신규)
+
+- [ ] FastAPI-only 구성 검증: Django 관련 설정/의존성/환경변수 잔존 여부 확인
+- [ ] 불필요한 Django 자산 제거 또는 FastAPI 등가 설정으로 치환
+- [ ] 재발 방지: 문서 및 AGENTS.md 업데이트
+
+---
+
+### FastAPI Test Harness Alignment ✅ 완료
+
+- [x] FastAPI pytest가 필요한 테이블 접근을 위해 공용 SQLite 하네스 정비
+- [x] Django 의존 fixtures 제거 및 FastAPI 전용 mock/patch 적용
+- [x] CI/문서 업데이트로 통합 검증 흐름 정리
+
+---
+
 ## 🎯 Quick Start Commands
 
 ```bash
 # Run all quality checks
-uv run ruff check . && uv run mypy . && uv run python manage.py test --settings=core.test_settings
+uv run ruff check . && uv run mypy . && uv run pytest
 
 # Start development server
-uv run python manage.py runserver
+uv run uvicorn backend.main:app --reload
 
 # Start Docker services
-docker-compose up -d
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 # Apply migrations (if needed)
-uv run python manage.py migrate
+uv run alembic upgrade head
 ```
 
 ---

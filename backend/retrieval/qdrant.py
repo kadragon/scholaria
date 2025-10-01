@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING, Any
 
 import qdrant_client
-from django.conf import settings
-from django.core.cache import cache
 from qdrant_client.models import Distance, PointStruct, VectorParams
+from sqlalchemy import select
 
-from backend.models import ContextItem, Topic
+from backend.config import settings
+from backend.models import ContextItem
+from backend.models.associations import topic_context_association
+from backend.models.base import SessionLocal
 
 if TYPE_CHECKING:
     pass
@@ -28,6 +31,8 @@ class QdrantService:
         self.vector_size = getattr(
             settings, "OPENAI_EMBEDDING_DIM", 1536
         )  # OpenAI text-embedding-3-small dimension
+        self._context_cache: dict[str, tuple[float, list[int]]] = {}
+        self._context_cache_ttl = 300  # seconds
 
     def create_collection(self) -> bool:
         """
@@ -85,23 +90,21 @@ class QdrantService:
             raise ValueError("Embedding cannot be empty")
 
         # Verify context item exists
-        try:
-            context_item = ContextItem.objects.select_related("context").get(
-                id=context_item_id
-            )
-        except ContextItem.DoesNotExist:
-            raise ValueError(
-                f"ContextItem with ID {context_item_id} does not exist"
-            ) from None
+        with SessionLocal() as session:
+            context_item = session.get(ContextItem, context_item_id)
+            if context_item is None:
+                raise ValueError(
+                    f"ContextItem with ID {context_item_id} does not exist"
+                )
 
-        # Prepare payload with metadata
-        payload = {
-            "context_item_id": context_item_id,
-            "title": context_item.title,
-            "content": context_item.content,
-            "context_id": context_item.context_id,
-            "context_type": context_item.context.context_type,
-        }
+            context = context_item.context
+            payload = {
+                "context_item_id": context_item_id,
+                "title": context_item.title,
+                "content": context_item.content,
+                "context_id": context_item.context_id,
+                "context_type": context.context_type if context else "",
+            }
 
         if metadata:
             payload.update(metadata)
@@ -127,24 +130,24 @@ class QdrantService:
         """
         # Create cache key from sorted topic IDs for consistent caching
         cache_key = f"topic_contexts:{'_'.join(map(str, sorted(topic_ids)))}"
+        now = time.time()
 
-        # Try to get from cache first (5 minute TTL)
-        context_ids = cache.get(cache_key)
-        if context_ids is not None:
-            return context_ids
+        cached = self._context_cache.get(cache_key)
+        if cached and now - cached[0] < self._context_cache_ttl:
+            return cached[1]
 
-        # Query database with optimized select_related/prefetch_related
-        context_ids = list(
-            Topic.objects.filter(id__in=topic_ids)
-            .values_list("contexts__id", flat=True)
+        stmt = (
+            select(topic_context_association.c.context_id)
+            .where(topic_context_association.c.topic_id.in_(topic_ids))
             .distinct()
         )
 
-        # Filter out None values (topics without contexts)
-        context_ids = [cid for cid in context_ids if cid is not None]
+        with SessionLocal() as session:
+            context_ids = [
+                ctx_id for ctx_id in session.execute(stmt).scalars() if ctx_id
+            ]
 
-        # Cache the result for 5 minutes
-        cache.set(cache_key, context_ids, 300)
+        self._context_cache[cache_key] = (now, context_ids)
 
         return context_ids
 

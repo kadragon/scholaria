@@ -18,7 +18,7 @@ Edit your `.env` file and update these critical variables:
 
 ```bash
 # Generate a new secret key
-python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+python -c 'import secrets; print(secrets.token_urlsafe(50))'
 
 # Get OpenAI API key from https://platform.openai.com/api-keys
 OPENAI_API_KEY=your_actual_api_key_here
@@ -29,11 +29,10 @@ DB_PASSWORD=your_secure_password_here
 
 ### 3. Validate Configuration
 ```bash
-# Check configuration
-uv run python manage.py validate_environment
-
-# Check with service connectivity
-uv run python manage.py validate_environment --check-services
+# Run diagnostics
+uv run ruff check .
+uv run mypy .
+uv run pytest backend/tests -q
 ```
 
 ## Environment Variables Reference
@@ -42,7 +41,7 @@ uv run python manage.py validate_environment --check-services
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `SECRET_KEY` | Yes | Development key | Django secret key - generate new for production |
+| `SECRET_KEY` | Yes | Development key | Application secret used for cryptographic signing |
 | `DEBUG` | No | `True` | Enable/disable debug mode |
 | `ALLOWED_HOSTS` | Production | `[]` | Comma-separated list of allowed hosts |
 
@@ -69,7 +68,7 @@ uv run python manage.py validate_environment --check-services
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DB_ENGINE` | No | `django.db.backends.postgresql` | Database engine |
+| `DB_ENGINE` | No | `postgresql` | Database engine |
 | `DB_NAME` | No | `scholaria` | Database name |
 | `DB_USER` | No | `postgres` | Database username |
 | `DB_PASSWORD` | Production | `postgres` | Database password |
@@ -170,10 +169,9 @@ SECURE_PROXY_SSL_HEADER=HTTP_X_FORWARDED_PROTO,https
 ### 📋 Environment Validation
 ```bash
 # Validate configuration before deployment
-uv run python manage.py validate_environment --check-services
-
-# Check for security issues
-uv run python manage.py check --deploy
+uv run ruff check .
+uv run mypy .
+uv run pytest backend/tests -q
 ```
 
 ## Troubleshooting
@@ -200,11 +198,8 @@ Solution: Ensure Redis server is running on the configured URL.
 
 ### Environment Validation Command
 ```bash
-# Basic validation
-uv run python manage.py validate_environment
-
-# Full validation with service checks
-uv run python manage.py validate_environment --check-services
+# Combined validation (lint + type + tests)
+uv run ruff check . && uv run mypy . && uv run pytest backend/tests -q
 ```
 
 This command will check:

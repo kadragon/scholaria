@@ -5,26 +5,32 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from django.conf import settings
-
 try:
     from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
 except Exception:  # pragma: no cover - optional dependency guard
     SimpleKVStore = None  # type: ignore[misc,assignment]
+
+from backend.config import settings
 
 
 class EmbeddingCache:
     """Simple on-disk cache for embeddings using LlamaIndex storage primitives."""
 
     def __init__(self) -> None:
-        self._enabled = bool(getattr(settings, "LLAMAINDEX_CACHE_ENABLED", False))
+        self._enabled = bool(settings.LLAMAINDEX_CACHE_ENABLED)
         self._persist_path: Path | None = None
         self._store: SimpleKVStore | None = None
 
         if self._enabled and SimpleKVStore is not None:
             cache_dir = Path(settings.LLAMAINDEX_CACHE_DIR)
             cache_dir.mkdir(parents=True, exist_ok=True)
-            self._persist_path = cache_dir / "embedding_cache.json"
+            namespace = settings.LLAMAINDEX_CACHE_NAMESPACE
+            filename = (
+                f"{namespace}_embedding_cache.json"
+                if namespace
+                else "embedding_cache.json"
+            )
+            self._persist_path = cache_dir / filename
 
             if self._persist_path.exists():
                 self._store = SimpleKVStore.from_persist_path(str(self._persist_path))

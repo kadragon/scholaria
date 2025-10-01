@@ -8,6 +8,8 @@ This document captures the key architectural decisions made during the developme
 
 ## ADR-001: Django as Web Framework
 
+> **Status (2025-10-01): Superseded.** Backend migrated to FastAPI + SQLAlchemy; see ADR-009 for the current stack rationale.
+
 **Status**: Accepted
 **Date**: 2024-09-20
 **Context**: Need a robust web framework for building the RAG system with admin interface, API endpoints, and database management.
@@ -317,7 +319,7 @@ Adopted strict TDD methodology with "Red → Green → Refactor" cycle and "Tidy
 
 ```bash
 # Quality pipeline
-uv run ruff check . && uv run mypy . && uv run python manage.py test --settings=core.test_settings
+uv run ruff check . && uv run mypy . && uv run pytest
 ```
 
 ### Consequences

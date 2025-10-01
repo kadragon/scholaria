@@ -8,3 +8,4 @@
 | 2025-09-30 | 2025/Q3 | docker-hybrid-compose | Docker 하이브리드 구성 (Django 8000 + FastAPI 8001) | summary | `uv run pytest rag/tests/test_docker_fastapi_service.py api/tests/test_topics_poc.py -q` |
 | 2025-09-30 | 2025/Q3 | fastapi-contexts-transaction | FastAPI Context DB 동기화 | summary | `uv run pytest api/tests/test_config.py api/tests/test_contexts.py api/tests/test_topics_poc.py -q` |
 | 2025-09-30 | 2025/Q3 | fastapi-readonly-api | FastAPI Read-Only History API | summary | `uv run pytest api/tests/test_history_read.py api/tests/test_topics_poc.py -q` |
+| 2025-10-01 | 2025/Q4 | fastapi-test-harness-alignment | FastAPI Test Harness Alignment | summary | `uv run pytest backend/tests -q` |

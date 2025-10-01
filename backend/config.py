@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus
@@ -14,31 +13,40 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application settings sourced from environment variables."""
 
-    DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
+    DEBUG: bool = Field(default=True)
 
-    JWT_SECRET_KEY: str = os.getenv(
-        "JWT_SECRET_KEY", "your-secret-key-change-in-production"
+    JWT_SECRET_KEY: str = Field(default="your-secret-key-change-in-production")
+    JWT_ALGORITHM: str = Field(default="HS256")
+    JWT_ACCESS_TOKEN_EXPIRE_HOURS: int = Field(default=24)
+
+    DB_ENGINE: str = Field(default="postgresql")
+    DB_NAME: str = Field(default="scholaria")
+    DB_USER: str = Field(default="postgres")
+    DB_PASSWORD: str = Field(default="postgres")
+    DB_HOST: str = Field(default="localhost")
+    DB_PORT: str = Field(default="5432")
+
+    REDIS_HOST: str = Field(default="localhost")
+    REDIS_PORT: str = Field(default="6379")
+    REDIS_DB: str = Field(default="0")
+
+    FASTAPI_ALLOWED_ORIGINS: str = Field(
+        default="http://localhost:8000,http://localhost:3000,http://localhost:5173"
     )
-    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
-    JWT_ACCESS_TOKEN_EXPIRE_HOURS: int = int(
-        os.getenv("JWT_ACCESS_TOKEN_EXPIRE_HOURS", "24")
-    )
 
-    DB_ENGINE: str = os.getenv("DB_ENGINE", "postgresql")
-    DB_NAME: str = os.getenv("DB_NAME", "scholaria")
-    DB_USER: str = os.getenv("DB_USER", "postgres")
-    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "postgres")
-    DB_HOST: str = os.getenv("DB_HOST", "localhost")
-    DB_PORT: str = os.getenv("DB_PORT", "5432")
+    OPENAI_API_KEY: str | None = Field(default=None)
+    OPENAI_EMBEDDING_MODEL: str = Field(default="text-embedding-3-large")
+    OPENAI_EMBEDDING_DIM: int = Field(default=3072)
+    OPENAI_CHAT_MODEL: str = Field(default="gpt-4o-mini")
+    OPENAI_CHAT_TEMPERATURE: float = Field(default=0.3)
+    OPENAI_CHAT_MAX_TOKENS: int = Field(default=1000)
 
-    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
-    REDIS_PORT: str = os.getenv("REDIS_PORT", "6379")
-    REDIS_DB: str = os.getenv("REDIS_DB", "0")
+    RAG_SEARCH_LIMIT: int = Field(default=10)
+    RAG_RERANK_TOP_K: int = Field(default=5)
 
-    FASTAPI_ALLOWED_ORIGINS: str = os.getenv(
-        "FASTAPI_ALLOWED_ORIGINS",
-        "http://localhost:8000,http://localhost:3000,http://localhost:5173",
-    )
+    LLAMAINDEX_CACHE_ENABLED: bool = Field(default=False)
+    LLAMAINDEX_CACHE_DIR: str = Field(default="storage/llamaindex_cache")
+    LLAMAINDEX_CACHE_NAMESPACE: str = Field(default="scholaria-default")
 
     database_url_override: str | None = Field(default=None, alias="DATABASE_URL")
 
@@ -95,7 +103,7 @@ class Settings(BaseSettings):
     def _active_db_config(self) -> dict[str, Any]:
         """Resolve database config from Django settings when available."""
 
-        db_config: dict[str, Any] = {
+        return {
             "ENGINE": self.DB_ENGINE,
             "NAME": self.DB_NAME,
             "USER": self.DB_USER,
@@ -103,27 +111,6 @@ class Settings(BaseSettings):
             "HOST": self.DB_HOST,
             "PORT": self.DB_PORT,
         }
-
-        try:
-            from django.conf import settings as django_settings
-
-            if django_settings.configured and "default" in django_settings.DATABASES:
-                django_db = django_settings.DATABASES["default"]
-                db_config.update(  # prioritize Django test/runtime settings
-                    {
-                        "ENGINE": django_db.get("ENGINE", db_config["ENGINE"]),
-                        "NAME": django_db.get("NAME", db_config["NAME"]),
-                        "USER": django_db.get("USER", db_config["USER"]),
-                        "PASSWORD": django_db.get("PASSWORD", db_config["PASSWORD"]),
-                        "HOST": django_db.get("HOST", db_config["HOST"]),
-                        "PORT": django_db.get("PORT", db_config["PORT"]),
-                    }
-                )
-        except Exception:
-            # Django not installed/configured; fall back to environment values
-            pass
-
-        return db_config
 
 
 settings = Settings()

@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import openai
-from django.conf import settings
+
+from backend.config import settings
 
 from .cache import EmbeddingCache
 from .monitoring import OpenAIUsageMonitor
@@ -16,10 +17,8 @@ class EmbeddingService:
     """Service for generating embeddings using OpenAI API."""
 
     def __init__(self) -> None:
-        self.client = openai.OpenAI(api_key=getattr(settings, "OPENAI_API_KEY", None))
-        self.model = getattr(
-            settings, "OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"
-        )
+        self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.model = settings.OPENAI_EMBEDDING_MODEL
         self.cache = EmbeddingCache()
         self.monitor = OpenAIUsageMonitor()
 

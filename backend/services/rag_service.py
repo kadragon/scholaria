@@ -117,7 +117,7 @@ class AsyncRAGService:
             self.embedding_service.generate_embedding
         )(query)
 
-        # Step 2: Search for similar context items in Qdrant (has Django ORM calls)
+        # Step 2: Search for similar context items in Qdrant (SQLAlchemy-backed lookups)
         search_results = await sync_to_async(self.qdrant_service.search_similar)(
             query_embedding=query_embedding, topic_ids=topic_ids, limit=limit
         )

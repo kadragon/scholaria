@@ -6,7 +6,7 @@ This guide covers the production deployment of Scholaria using Docker Compose wi
 
 The production deployment consists of:
 
-- **Web Application**: Django application served via Gunicorn
+- **Backend Application**: FastAPI application served via Uvicorn workers
 - **Celery Worker**: Background task processing for document ingestion
 - **Celery Beat**: Scheduled task management
 - **PostgreSQL**: Primary database with optimized settings
@@ -51,7 +51,7 @@ chmod +x scripts/deploy.sh
 - `docker-compose.prod.yml` - Production service definitions
 - `Dockerfile.prod` - Multi-stage production build
 - `.env.prod` - Production environment variables
-- `core/production_settings.py` - Django production settings
+- `backend/config.py` - FastAPI settings module (env-driven)
 - `nginx/nginx.conf` - Nginx reverse proxy configuration
 
 ### Support Scripts
@@ -64,7 +64,7 @@ chmod +x scripts/deploy.sh
 ### Required Variables
 
 ```bash
-SECRET_KEY=your-super-secret-django-key
+SECRET_KEY=your-application-secret-key
 ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
 POSTGRES_DB=scholaria_prod
 POSTGRES_USER=scholaria_user
@@ -130,7 +130,7 @@ USE_X_FORWARDED_PORT=True
 - **User Permissions**: Non-root container execution
 - **Input Validation**: File type and size restrictions
 - **Rate Limiting**: API endpoint throttling
-- **CSRF Protection**: Django CSRF middleware enabled
+- **CORS & Security**: FastAPI CORS middleware configured via `FASTAPI_ALLOWED_ORIGINS`
 
 ### Network Security
 
@@ -142,7 +142,7 @@ USE_X_FORWARDED_PORT=True
 ### Data Security
 
 - **Database Encryption**: SCRAM-SHA-256 authentication
-- **Password Hashing**: Django secure password hashing
+- **Password Hashing**: JWT secrets and hashing handled via `backend/auth/utils.py`
 - **Session Security**: Secure cookie settings
 - **Audit Logging**: Comprehensive application logging
 

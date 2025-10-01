@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Generator
-from contextlib import contextmanager
 from datetime import datetime
+from threading import Lock
 from typing import Any
-
-from django.core.cache import cache
 
 
 class OpenAIUsageMonitor:
@@ -14,51 +11,34 @@ class OpenAIUsageMonitor:
 
     def __init__(self) -> None:
         """Initialize the usage monitor."""
-        self.cache_prefix = "openai_usage"
+        self._lock = Lock()
+        self._reset()
+
+    def _reset(self) -> None:
+        self._metrics: dict[str, Any] = {
+            "embeddings": {"calls": 0, "tokens": 0, "models": {}},
+            "chat_completions": {
+                "calls": 0,
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+                "models": {},
+            },
+            "requests": {},
+        }
 
     def reset_metrics(self) -> None:
         """Reset all usage metrics."""
-        cache.delete(f"{self.cache_prefix}:embeddings")
-        cache.delete(f"{self.cache_prefix}:chat_completions")
-        cache.delete(f"{self.cache_prefix}:requests")
-
-    @contextmanager
-    def _cache_lock(self, key: str, timeout: int = 5) -> Generator[None]:
-        """Simple cache-based locking mechanism."""
-        lock_key = f"{key}:lock"
-        acquired = False
-        start_time = time.time()
-
-        try:
-            # Try to acquire lock
-            while time.time() - start_time < timeout:
-                if cache.add(lock_key, True, timeout):
-                    acquired = True
-                    break
-                time.sleep(0.01)  # Small delay before retry
-
-            if not acquired:
-                # If we can't get the lock, proceed anyway (graceful degradation)
-                pass
-
-            yield
-        finally:
-            if acquired:
-                cache.delete(lock_key)
+        with self._lock:
+            self._reset()
 
     def track_embedding_usage(self, tokens: int, model: str) -> None:
         """Track embedding API usage."""
-        with self._cache_lock(f"{self.cache_prefix}:embeddings"):
-            metrics = cache.get(
-                f"{self.cache_prefix}:embeddings",
-                {"calls": 0, "tokens": 0, "models": {}},
-            )
-
+        with self._lock:
+            metrics = self._metrics["embeddings"]
             metrics["calls"] += 1
             metrics["tokens"] += tokens
             metrics["models"][model] = metrics["models"].get(model, 0) + 1
-
-            cache.set(f"{self.cache_prefix}:embeddings", metrics, 3600)  # 1 hour
 
     def track_chat_completion_usage(
         self, prompt_tokens: int, completion_tokens: int, model: str
@@ -66,45 +46,31 @@ class OpenAIUsageMonitor:
         """Track chat completion API usage."""
         total_tokens = prompt_tokens + completion_tokens
 
-        with self._cache_lock(f"{self.cache_prefix}:chat_completions"):
-            metrics = cache.get(
-                f"{self.cache_prefix}:chat_completions",
-                {
-                    "calls": 0,
-                    "prompt_tokens": 0,
-                    "completion_tokens": 0,
-                    "total_tokens": 0,
-                    "models": {},
-                },
-            )
-
+        with self._lock:
+            metrics = self._metrics["chat_completions"]
             metrics["calls"] += 1
             metrics["prompt_tokens"] += prompt_tokens
             metrics["completion_tokens"] += completion_tokens
             metrics["total_tokens"] += total_tokens
             metrics["models"][model] = metrics["models"].get(model, 0) + 1
 
-            cache.set(f"{self.cache_prefix}:chat_completions", metrics, 3600)  # 1 hour
-
     def track_request_timestamp(self, api_type: str) -> None:
         """Track request timestamps for rate limiting detection."""
         current_time = time.time()
 
-        with self._cache_lock(f"{self.cache_prefix}:requests:{api_type}"):
-            # Get existing timestamps (keep only last hour)
+        with self._lock:
             cutoff_time = current_time - 3600  # 1 hour ago
-            timestamps = cache.get(f"{self.cache_prefix}:requests:{api_type}", [])
-
-            # Filter out old timestamps and add new one
-            timestamps = [ts for ts in timestamps if ts > cutoff_time]
-            timestamps.append(current_time)
-
-            cache.set(f"{self.cache_prefix}:requests:{api_type}", timestamps, 3600)
+            requests = self._metrics["requests"].setdefault(api_type, [])
+            requests[:] = [ts for ts in requests if ts > cutoff_time]
+            requests.append(current_time)
 
     def get_metrics(self) -> dict[str, Any]:
         """Get current usage metrics."""
-        embeddings = cache.get(f"{self.cache_prefix}:embeddings", {})
-        chat_completions = cache.get(f"{self.cache_prefix}:chat_completions", {})
+        with self._lock:
+            embeddings = self._metrics["embeddings"].copy()
+            embeddings["models"] = embeddings["models"].copy()
+            chat_completions = self._metrics["chat_completions"].copy()
+            chat_completions["models"] = chat_completions["models"].copy()
 
         return {
             "embeddings": embeddings,
@@ -213,41 +179,35 @@ class OpenAIUsageMonitor:
 
     def check_rate_limits(self) -> bool:
         """Check if we're approaching rate limits."""
-        # Check recent request patterns
         current_time = time.time()
+        one_minute_ago = current_time - 60
 
-        # Check embeddings rate (3000 RPM for text-embedding-3-small)
-        embedding_timestamps = cache.get(f"{self.cache_prefix}:requests:embeddings", [])
-        recent_embeddings = [
-            ts
-            for ts in embedding_timestamps
-            if ts > current_time - 60  # last minute
-        ]
+        with self._lock:
+            embedding_requests = [
+                ts
+                for ts in self._metrics["requests"].get("embeddings", [])
+                if ts > one_minute_ago
+            ]
+            chat_requests = [
+                ts
+                for ts in self._metrics["requests"].get("chat_completions", [])
+                if ts > one_minute_ago
+            ]
 
-        if len(recent_embeddings) > 2500:  # 80% of limit
+        if len(embedding_requests) > 2500:  # 80% of limit
             return True
 
-        # Check chat completions rate (10000 RPM for gpt-4o-mini)
-        chat_timestamps = cache.get(
-            f"{self.cache_prefix}:requests:chat_completions", []
-        )
-        recent_chat = [
-            ts
-            for ts in chat_timestamps
-            if ts > current_time - 60  # last minute
-        ]
-
-        if len(recent_chat) > 8000:  # 80% of limit
+        if len(chat_requests) > 8000:  # 80% of limit
             return True
 
         return False
 
     def get_recent_request_count(self, api_type: str, minutes: int = 1) -> int:
         """Get count of recent requests for an API type."""
-        current_time = time.time()
-        cutoff_time = current_time - (minutes * 60)
+        cutoff_time = time.time() - (minutes * 60)
 
-        timestamps = cache.get(f"{self.cache_prefix}:requests:{api_type}", [])
-        recent_timestamps = [ts for ts in timestamps if ts > cutoff_time]
+        with self._lock:
+            timestamps = self._metrics["requests"].get(api_type, [])
+            recent = [ts for ts in timestamps if ts > cutoff_time]
 
-        return len(recent_timestamps)
+        return len(recent)

@@ -55,37 +55,23 @@ deploy() {
     log_info "Pulling latest images..."
     docker-compose -f docker-compose.prod.yml pull
 
-    # Build application image
-    log_info "Building application image..."
-    docker-compose -f docker-compose.prod.yml build --no-cache web
+    # Build application images
+    log_info "Building application images..."
+    docker-compose -f docker-compose.prod.yml build --no-cache backend frontend
 
     # Start infrastructure services first
     log_info "Starting infrastructure services..."
-    docker-compose -f docker-compose.prod.yml up -d postgres redis qdrant minio
+    docker-compose -f docker-compose.prod.yml up -d postgres redis qdrant
 
     # Wait for services to be ready
     log_info "Waiting for services to be ready..."
     sleep 30
 
-    # Run database migrations
+    # Run database migrations via Alembic
     log_info "Running database migrations..."
-    docker-compose -f docker-compose.prod.yml run --rm web python manage.py migrate --noinput
+    docker-compose -f docker-compose.prod.yml run --rm backend uv run alembic upgrade head
 
-    # Collect static files
-    log_info "Collecting static files..."
-    docker-compose -f docker-compose.prod.yml run --rm web python manage.py collectstatic --noinput
-
-    # Create superuser if it doesn't exist
-    log_info "Ensuring superuser exists..."
-    docker-compose -f docker-compose.prod.yml run --rm web python manage.py shell -c "
-from django.contrib.auth import get_user_model
-User = get_user_model()
-if not User.objects.filter(is_superuser=True).exists():
-    User.objects.create_superuser('admin', 'admin@scholaria.local', 'changeme123')
-    print('Superuser created: admin / changeme123')
-else:
-    print('Superuser already exists')
-"
+    log_info "Seed initial admin users via API if required (see docs/DEPLOYMENT.md)."
 
     # Start all services
     log_info "Starting all services..."
@@ -114,17 +100,14 @@ update() {
     # Pull latest images
     docker-compose -f docker-compose.prod.yml pull
 
-    # Rebuild application
-    docker-compose -f docker-compose.prod.yml build --no-cache web
+    # Rebuild application images
+    docker-compose -f docker-compose.prod.yml build --no-cache backend frontend
 
-    # Run migrations
-    docker-compose -f docker-compose.prod.yml run --rm web python manage.py migrate --noinput
-
-    # Collect static files
-    docker-compose -f docker-compose.prod.yml run --rm web python manage.py collectstatic --noinput
+    # Run database migrations
+    docker-compose -f docker-compose.prod.yml run --rm backend uv run alembic upgrade head
 
     # Restart services with zero downtime
-    docker-compose -f docker-compose.prod.yml up -d --force-recreate web celery-worker celery-beat
+    docker-compose -f docker-compose.prod.yml up -d --force-recreate backend frontend nginx
 
     log_info "Update completed successfully!"
 }
@@ -145,14 +128,14 @@ backup() {
 # Show logs
 logs() {
     log_info "Showing application logs..."
-    docker-compose -f docker-compose.prod.yml logs -f web celery-worker
+    docker-compose -f docker-compose.prod.yml logs -f backend frontend nginx
 }
 
 # Health check
 health() {
     log_info "Checking service health..."
 
-    services=("web" "celery-worker" "postgres" "redis" "qdrant" "minio")
+    services=("backend" "frontend" "postgres" "redis" "qdrant" "nginx")
 
     for service in "${services[@]}"; do
         if docker-compose -f docker-compose.prod.yml ps $service | grep -q "Up"; then

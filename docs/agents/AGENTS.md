@@ -16,7 +16,7 @@ MVP-완료된 학교 통합 RAG 시스템 - 문서 컨텍스트 기반 Q&A 플�
 ## Context
 
 ### 아키텍처 (Production Ready)
-- **Backend**: Django 5.0+ + DRF + Admin Interface
+- **Backend**: FastAPI + SQLAlchemy + AsyncOpenAI services
 - **Vector DB**: Qdrant (임베딩 검색)
 - **Storage**: 파일 업로드 → 파싱 → 청킹 → 폐기 워크플로우 (MinIO 의존성 제거)
 - **Cache**: Redis (Celery 백엔드)
@@ -26,19 +26,17 @@ MVP-완료된 학교 통합 RAG 시스템 - 문서 컨텍스트 기반 Q&A 플�
 ### 핵심 워크플로우
 ```bash
 # 전체 품질 검사
-uv run ruff check . && uv run ruff format . && uv run mypy . && uv run python manage.py test --settings=core.test_settings
+uv run ruff check . && uv run ruff format . && uv run mypy . && uv run pytest
 
-# 개발 서버 실행
-uv run python manage.py runserver
+# 개발 서버 실행 (FastAPI + Refine)
+uv run uvicorn backend.main:app --reload
+cd frontend && pnpm dev
 
-# Docker 서비스 시작
-docker-compose up -d
+# Docker 서비스 시작 (dev overlay)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
-# 빠른 테스트 (248개, 1-2분)
-./scripts/test-fast.sh
-
-# 느린 테스트 (33개, 통합/성능/마이그레이션)
-./scripts/test-slow.sh
+# 통합 테스트
+uv run pytest
 ```
 
 ## Changelog
@@ -56,7 +54,7 @@ docker-compose up -d
   - Markdown: 직접 편집 → 섹션별 스마트 청킹
 - **검색 엔진**: 완전한 RAG 파이프라인 (임베딩 → 벡터 검색 → 리랭킹 → LLM)
 - **API**: REST 엔드포인트, OpenAPI 문서화, 속도 제한
-- **관리 인터페이스**: Django Admin 커스터마이징, 대량 작업, 타입별 워크플로우
+- **관리 인터페이스**: Refine 기반 관리자 UI (JWT 인증, bulk operations, 타입별 워크플로우)
 - **웹 UI**: 토픽 선택, Q&A 인터페이스, 질문 히스토리
 
 ### 아키텍처 개선사항
@@ -66,14 +64,13 @@ docker-compose up -d
 - **데이터베이스**: original_content, chunk_count, processing_status 필드 추가
 - **라이브러리 마이그레이션**: Unstructured → Docling으로 PDF 파싱 개선
 
-### FastAPI 마이그레이션 메모 (2025-09-30)
-- SQLAlchemy가 Django DB 테이블을 직접 재사용하며 Topic↔Context 다대다 조인 테이블은 `rag_topic_contexts` (BigAuto id + `topic_id`, `context_id`).
-- FastAPI Context Write 엔드포인트는 JWT 관리자 권한(`require_admin`)으로 보호되며, 테스트는 per-worker SQLite DB 분리로 병렬 실행 안정화.
-- FastAPI POC 테스트(`api/tests/test_topics_poc.py`)는 로컬 PostgreSQL(5432) 접근이 필요하므로 샌드박스/CI에서는 연결 불가 시 실패함.
-- FastAPI Pydantic 스키마는 `settings.TIME_ZONE` 기준 ISO 문자열로 datetime을 직렬화하여 Django 응답 포맷과 일치.
-- FastAPI SQLAlchemy 설정이 Django 테스트 DB와 자동으로 동기화되도록 `api.config.Settings.database_config()`가 Django `DATABASES` 값을 우선 사용하고, 테스트용 sqlite 파일은 `tmp/test.sqlite3`로 고정.
-- 개발 Docker Compose (`docker-compose.dev.yml`)에 `fastapi` 서비스가 추가되어 `docker compose -f docker-compose.yml -f docker-compose.dev.yml up web fastapi` 명령으로 Django(8000)와 FastAPI(8001)를 동시에 기동 가능.
-- FastAPI에 `/api/history` read-only 엔드포인트가 추가되어 토픽/세션별 질문 히스토리를 반환하며, SQLAlchemy `QuestionHistory` 모델과 공유 sqlite 테스트 DB를 사용.
+### FastAPI 운영 메모 (2025-10-01)
+- SQLAlchemy 모델이 PostgreSQL 스키마를 직접 관리하며 Alembic이 이관 후 마이그레이션을 담당.
+- `backend/services/rag_service.AsyncRAGService`는 Redis 캐시와 Qdrant를 사용하며 모든 의존성은 FastAPI 설정(`backend.config.Settings`)에서 로드.
+- 테스트는 기본적으로 `uv run pytest backend/tests -q` 명령으로 실행하며, pytest 픽스처가 워커별 SQLite 파일을 자동 부트스트랩한다. Postgres 연동이 필요한 시나리오에서는 `docker-compose.dev.yml` 오버레이로 데이터베이스를 기동한다.
+- 개별 테스트 모듈에서 FastAPI `get_db` 의존성을 다시 오버라이드하면 공용 스키마가 손상되므로 반드시 `backend/tests/conftest.py` 제공 픽스처를 사용한다.
+- 개발 Docker Compose는 FastAPI 단일 서비스(`backend`)를 기동하며 Django 컨테이너는 제거됨.
+- 관리자 UI는 `frontend/` (Refine) 프로젝트로 제공되며 JWT 토큰을 localStorage에 저장해 API 요청에 첨부.
 
 ### 프로덕션 기능
 - **모니터링**: 헬스 체크 엔드포인트, 구조화된 로깅, 성능 메트릭

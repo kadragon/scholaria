@@ -5,6 +5,7 @@ Ensures CORS origins are configurable via environment variables.
 """
 
 import os
+from importlib import reload
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -64,13 +65,18 @@ def test_fastapi_cors_env_var_integration() -> None:
     test_origins = "https://admin.example.com,https://app.example.com"
 
     with patch.dict(os.environ, {"FASTAPI_ALLOWED_ORIGINS": test_origins}):
-        import sys
+        from backend import config as config_module
 
-        for module_name in ["api.main", "api.config"]:
-            if module_name in sys.modules:
-                del sys.modules[module_name]
+        reload(config_module)
 
-        from backend.main import app
+        from backend import main as main_module
+        from backend.models.base import get_db
+        from backend.tests import conftest as test_conftest
+
+        reload(main_module)
+
+        app = main_module.app
+        app.dependency_overrides[get_db] = test_conftest.override_get_db
 
         client = TestClient(app)
         response = client.options(
