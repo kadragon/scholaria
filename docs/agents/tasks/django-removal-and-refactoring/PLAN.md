@@ -260,6 +260,7 @@ scholaria/
 - [x] Step 1: Celery → FastAPI 서비스 (api/services/ingestion.py 생성, 6/6 테스트 통과)
 - [x] Step 2: Django 코드 제거 (core/, rag/, manage.py, templates/ 삭제, 20개 패키지 제거)
 - [x] Step 3: 폴더 구조 재구성 (api → backend, admin-frontend → frontend)
+- [x] Step 4: Docker 구성 업데이트 (Dockerfile.backend/frontend, docker-compose.prod.yml)
 - [ ] Step 4: Docker 구성 업데이트
 - [ ] Step 5: Nginx 설정 업데이트
 - [ ] Step 6: 비즈니스 로직 테스트 이동

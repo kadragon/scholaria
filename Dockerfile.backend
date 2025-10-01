@@ -1,4 +1,4 @@
-# Multi-stage production Dockerfile for Scholaria RAG System
+# Multi-stage production Dockerfile for Scholaria Backend (FastAPI)
 FROM python:3.13-slim as builder
 
 # Install system dependencies for building
@@ -43,26 +43,28 @@ COPY --from=builder /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy application code
-COPY --chown=scholaria:scholaria . .
+COPY --chown=scholaria:scholaria backend/ /app/backend/
+COPY --chown=scholaria:scholaria alembic/ /app/alembic/
+COPY --chown=scholaria:scholaria alembic.ini /app/
+COPY --chown=scholaria:scholaria pyproject.toml /app/
 
 # Create necessary directories
-RUN mkdir -p staticfiles media uploads logs && \
+RUN mkdir -p uploads logs && \
     chown -R scholaria:scholaria /app
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV DJANGO_SETTINGS_MODULE=core.settings
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8001
 
 # Switch to non-root user
 USER scholaria
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/health/ || exit 1
+    CMD curl -f http://localhost:8001/health || exit 1
 
 # Default command
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "sync", "--timeout", "60", "--keep-alive", "5", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload", "core.wsgi:application"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "4"]

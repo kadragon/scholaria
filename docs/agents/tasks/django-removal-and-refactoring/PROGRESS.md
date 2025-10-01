@@ -40,5 +40,17 @@ Django 레거시를 FastAPI 중심 모노레포로 전환 중
   - [x] `pyproject.toml` 업데이트 (packages: [backend], isort: [backend], testpaths: [backend/tests])
   - [x] 검증: `from backend.main import app` ✅, `backend/tests/test_ingestion_service.py` 6/6 ✅
 
+- [x] Step 4: Docker 구성 업데이트
+  - [x] `git mv Dockerfile.prod → Dockerfile.backend`
+  - [x] `git mv Dockerfile.admin → Dockerfile.frontend`
+  - [x] Dockerfile.backend: FastAPI 전용 (backend/, alembic/ 복사, uvicorn 실행, 포트 8001)
+  - [x] Dockerfile.frontend: admin-frontend → frontend 경로 변경
+  - [x] docker-compose.prod.yml 재작성:
+    - 제거: web, celery-worker, celery-beat (Django 서비스)
+    - 이름 변경: fastapi → backend, admin-frontend → frontend
+    - build.context: . (루트), dockerfile: Dockerfile.backend/frontend
+    - backend: 환경변수 정리 (JWT_SECRET_KEY, FASTAPI_ALLOWED_ORIGINS 추가)
+  - [x] 서비스 구성: backend, postgres, redis, qdrant, frontend, nginx (optional)
+
 ## Next Step
-Step 4: Docker 구성 업데이트 (docker-compose.prod.yml, Dockerfile.backend, Dockerfile.frontend)
+Step 5: Nginx 설정 업데이트
