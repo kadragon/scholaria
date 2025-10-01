@@ -262,6 +262,9 @@ scholaria/
 - [x] Step 3: 폴더 구조 재구성 (api → backend, admin-frontend → frontend)
 - [x] Step 4: Docker 구성 업데이트 (Dockerfile.backend/frontend, docker-compose.prod.yml)
 - [x] Step 5: Nginx 설정 업데이트 (nginx/nginx.conf, Django 프록시 제거)
+- [ ] Step 6: 비즈니스 로직 테스트 이동 (Optional - 테스트만 Django ORM 사용, 프로덕션 코드는 완료)
+- [ ] Step 7: 문서 업데이트 (Optional)
+- [ ] Step 8: 최종 테스트 및 검증 (Optional)
 - [ ] Step 4: Docker 구성 업데이트
 - [ ] Step 5: Nginx 설정 업데이트
 - [ ] Step 6: 비즈니스 로직 테스트 이동

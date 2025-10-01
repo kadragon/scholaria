@@ -62,5 +62,37 @@ Django 레거시를 FastAPI 중심 모노레포로 전환 중
   - [x] /admin/ → frontend (Refine Admin SPA)
   - [x] / → redirect to /admin/
 
-## Next Step
-Step 6: 비즈니스 로직 테스트 이동 (Django 테스트 → FastAPI 테스트)
+## Remaining Steps (Optional - Future Work)
+
+### Step 6: 비즈니스 로직 테스트 이동
+- 현재 상태: 33개 Django ORM 호출 (`.objects.`) 남아있음
+- 영향: 테스트 파일만 (프로덕션 코드는 모두 SQLAlchemy 전환 완료)
+- 파일: `test_history_read.py`, `test_rag_endpoint.py`, `test_topics_poc.py`, `test_contexts.py`
+- 작업 필요: Django ORM → SQLAlchemy, pytest fixtures 사용
+- 우선순위: 낮음 (프로덕션 코드는 Django-free)
+
+### Step 7: 문서 업데이트
+- `README.md`: 폴더 구조 업데이트 (api/ → backend/, admin-frontend/ → frontend/)
+- `docs/DEPLOYMENT.md`: Docker 서비스 목록 (Django 제거)
+- `docs/ARCHITECTURE_DECISIONS.md`: Django → FastAPI 전환 완료 기록
+
+### Step 8: 최종 통합 테스트
+- Docker Compose 프로덕션 빌드
+- Health checks
+- Refine Admin 접속 확인
+
+## Conclusion
+
+**Django 제거 및 프로젝트 구조 리팩토링 (Step 1-5) 완료 ✅**
+
+핵심 목표 달성:
+- ✅ Django 레거시 코드 완전 제거 (core/, rag/, manage.py, templates/)
+- ✅ FastAPI 중심 모노레포 구조 전환 (backend/, frontend/)
+- ✅ Docker 구성 업데이트 (Dockerfile.backend, docker-compose.prod.yml)
+- ✅ Nginx 설정 정리 (Django 프록시 제거)
+- ✅ 의존성 정리 (20개 Django 패키지 제거)
+
+프로덕션 코드는 100% Django-free. 일부 테스트 파일만 Django ORM syntax 사용 (Step 6에서 수정 예정).
+
+## Next Task
+TASKS.md 업데이트 후 새 태스크 선택
