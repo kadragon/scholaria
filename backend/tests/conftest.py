@@ -92,3 +92,25 @@ def admin_headers(db_session):
 def client():
     """Provide a TestClient for FastAPI app."""
     return TestClient(app)
+
+
+@pytest.fixture(scope="function")
+def redis_client():
+    """Provide Redis client for integration tests."""
+    import redis
+
+    from backend.config import settings
+
+    client = redis.from_url(
+        settings.redis_url,
+        encoding="utf-8",
+        decode_responses=True,
+    )
+    try:
+        # Verify Redis is available
+        client.ping()
+        yield client
+    except redis.ConnectionError:
+        pytest.skip("Redis not available for integration tests")
+    finally:
+        client.close()

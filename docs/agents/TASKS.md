@@ -45,7 +45,7 @@
 
 ### 비동기 인프라 복원
 - [x] **Celery/비동기 큐 재도입** ✅ (`docs/agents/tasks/celery-async-queue/`) - 임베딩 재생성 비동기화
-- [ ] Redis 공유 캐시 (수평 확장 지원)
+- [x] **Redis 공유 캐시** ✅ (`docs/agents/tasks/redis-shared-cache/`) - 수평 확장 지원
 
 ### 성능 검증 및 최적화
 - [ ] **실제 환경 성능 벤치마크** (프로덕션 배포 후):
@@ -79,7 +79,7 @@ uv run alembic upgrade head
 ```
 
 ## 📊 Production Readiness
-- ✅ 110 tests passing | mypy strict | ruff clean
+- ✅ 122 tests passing | mypy strict | ruff clean
 - ✅ JWT auth + admin API
 - ✅ Docker + Nginx production config
 - ✅ FastAPI + SQLAlchemy + Refine + shadcn/ui

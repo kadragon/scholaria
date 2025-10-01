@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     RAG_SEARCH_LIMIT: int = Field(default=10)
     RAG_RERANK_TOP_K: int = Field(default=5)
 
+    REDIS_EMBEDDING_CACHE_ENABLED: bool = Field(default=True)
+    REDIS_EMBEDDING_CACHE_TTL_DAYS: int = Field(default=30)
+    REDIS_EMBEDDING_CACHE_PREFIX: str = Field(default="embedding_cache")
+
     LLAMAINDEX_CACHE_ENABLED: bool = Field(default=False)
     LLAMAINDEX_CACHE_DIR: str = Field(default="storage/llamaindex_cache")
     LLAMAINDEX_CACHE_NAMESPACE: str = Field(default="scholaria-default")

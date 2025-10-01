@@ -96,6 +96,16 @@ uv run pytest
 - 테스트 커버리지: 86 → 92 (+6), AsyncRAGService 전체를 mock하여 외부 의존성 차단.
 - Mock 전략으로 단위 테스트 수준 유지, 통합 테스트는 별도 관리.
 
+### Redis 공유 캐시 (2025-10-01)
+- **임베딩 캐시**: 파일 기반 → Redis 전환으로 수평 확장 지원
+  - 키 포맷: `embedding_cache:{namespace}:{sha256(model::text)}`
+  - TTL: 30일 (설정 가능, `REDIS_EMBEDDING_CACHE_TTL_DAYS`)
+  - Graceful fallback: Redis 연결 실패 시 자동으로 캐시 비활성화
+- **Redis 설정**: AOF persistence + `allkeys-lru` eviction policy
+- **테스트 전략**: 유닛 테스트 (mock) + 통합 테스트 (Redis 컨테이너), 122 tests pass
+- **마이그레이션**: 기존 파일 캐시 (`storage/llamaindex_cache/`) 사용 중단, 설정 시 deprecation 경고
+- **성능**: 여러 FastAPI/Celery 워커 간 캐시 공유로 OpenAI API 호출 감소 (캐시 적중 시)
+
 ### 프로덕션 기능
 - **모니터링**: 헬스 체크 엔드포인트, 구조화된 로깅, 성능 메트릭
 - **보안**: 파일 업로드 검증, 매직 바이트 체크, 크기 제한
