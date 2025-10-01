@@ -3,9 +3,7 @@
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
-from django.conf import settings
-
-_LOCAL_ZONE = ZoneInfo(settings.TIME_ZONE)
+_LOCAL_ZONE = ZoneInfo("UTC")
 
 
 def to_local_iso(dt: datetime) -> str:

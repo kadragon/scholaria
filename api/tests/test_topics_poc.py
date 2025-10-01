@@ -77,7 +77,7 @@ def test_list_topics_with_data(client):
     """Test listing topics returns data from Django database."""
     from django.db import transaction
 
-    from rag.models import Context, Topic
+    from api.models import Context, Topic
 
     # Create test data using Django ORM with explicit transaction
     with transaction.atomic():
@@ -126,7 +126,7 @@ def test_get_topic_by_id(client):
     """Test getting a single topic by ID."""
     from django.db import transaction
 
-    from rag.models import Context, Topic
+    from api.models import Context, Topic
 
     # Create test data with explicit transaction
     with transaction.atomic():
@@ -176,7 +176,7 @@ def test_topics_response_matches_django(client):
     from django.db import transaction
     from django.urls import reverse
 
-    from rag.models import Context, Topic
+    from api.models import Context, Topic
 
     django_client = APIClient()
 
@@ -216,7 +216,7 @@ def test_topic_detail_response_matches_django(client):
     from django.db import transaction
     from django.urls import reverse
 
-    from rag.models import Context, Topic
+    from api.models import Context, Topic
 
     django_client = APIClient()
 

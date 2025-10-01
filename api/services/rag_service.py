@@ -13,10 +13,10 @@ from typing import Any
 import redis.asyncio as redis
 from openai import AsyncOpenAI
 
-from rag.retrieval.embeddings import EmbeddingService
-from rag.retrieval.monitoring import OpenAIUsageMonitor
-from rag.retrieval.qdrant import QdrantService
-from rag.retrieval.reranking import RerankingService
+from api.retrieval.embeddings import EmbeddingService
+from api.retrieval.monitoring import OpenAIUsageMonitor
+from api.retrieval.qdrant import QdrantService
+from api.retrieval.reranking import RerankingService
 
 
 class AsyncRAGService:

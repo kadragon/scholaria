@@ -18,14 +18,19 @@ Django 레거시를 FastAPI 중심 모노레포로 전환 중
   - [x] `api/tests/test_ingestion_service.py` (6/6 테스트 통과)
 
 ## Current Failures
-- Django fixture → SQLAlchemy 세션 불일치 (test_contexts.py 3/16 실패)
-  - Mitigation: Step 2에서 Django 제거 시 해결 예정 (FastAPI-only 테스트로 전환)
+없음
 
-## Decision Log
-| 날짜 | 결정 | 근거 |
-|------|------|------|
-| 2025-10-01 | Celery 유지 (Django 의존성 제거 버전) | 백그라운드 작업(임베딩 재생성)에 필요, FastAPI와 호환 가능 |
-| 2025-10-01 | 폴더 구조: backend/, frontend/ | 모노레포 표준 컨벤션, Docker 빌드 컨텍스트 명확화 |
+- [x] Step 2: Django 코드 제거
+  - [x] `rag/ingestion/`, `rag/retrieval/` → `api/ingestion/`, `api/retrieval/` 복사
+  - [x] `from rag.` imports → `from api.` 전역 변경
+  - [x] `core/`, `rag/`, `manage.py`, `templates/`, `static/`, `staticfiles/` 삭제
+  - [x] `pyproject.toml` Django 의존성 제거 (django, djangorestframework, drf-spectacular, gunicorn 등)
+  - [x] `pyproject.toml` 설정 업데이트 (packages, isort, mypy, pytest)
+  - [x] `api/main.py` Django setup 제거
+  - [x] `api/schemas/utils.py` Django settings 제거 (TIME_ZONE → UTC)
+  - [x] `api/models/__init__.py` exports 추가 (Context, ContextItem, Topic, QuestionHistory)
+  - [x] `uv lock` 재생성 (Django 패키지 20개 제거)
+  - [x] 검증: `api/tests/test_ingestion_service.py` 6/6 통과
 
 ## Next Step
-Step 1: Celery 작업을 FastAPI 서비스로 이동 (`api/services/ingestion.py` 생성)
+Step 3: 폴더 구조 재구성 (`api/` → `backend/`, `admin-frontend/` → `frontend/`)

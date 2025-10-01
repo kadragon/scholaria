@@ -16,7 +16,7 @@ def test_history_list_by_topic_and_session(client: TestClient) -> None:
     """FastAPI should return history entries filtered by topic and session."""
     from django.db import transaction as django_txn
 
-    from rag.models import QuestionHistory, Topic
+    from api.models import QuestionHistory, Topic
 
     with django_txn.atomic():
         topic = Topic.objects.create(name="History Topic", description="Desc")

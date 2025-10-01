@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.cache import cache
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
-from rag.models import ContextItem, Topic
+from api.models import ContextItem, Topic
 
 if TYPE_CHECKING:
     pass

@@ -132,7 +132,7 @@ def _process_pdf_upload(context: Context, file: UploadFile, db: Session) -> None
 
         text_content = None
         if num_chunks > 0:
-            from rag.ingestion.parsers import PDFParser
+            from api.ingestion.parsers import PDFParser
 
             parser = PDFParser()
             text_content = parser.parse_file(str(temp_path))

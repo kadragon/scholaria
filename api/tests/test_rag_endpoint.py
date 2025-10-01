@@ -25,7 +25,7 @@ def test_rag_ask_success(client):
     """
     from django.db import transaction
 
-    from rag.models import Context, ContextItem, Topic
+    from api.models import Context, ContextItem, Topic
 
     with transaction.atomic():
         context = Context.objects.create(
@@ -122,7 +122,7 @@ def test_rag_ask_no_results(client):
     """
     from django.db import transaction
 
-    from rag.models import Topic
+    from api.models import Topic
 
     with transaction.atomic():
         topic = Topic.objects.create(
@@ -159,7 +159,7 @@ def test_rag_ask_caching(client):
 
     from django.db import transaction
 
-    from rag.models import Context, ContextItem, Topic
+    from api.models import Context, ContextItem, Topic
 
     with transaction.atomic():
         context = Context.objects.create(

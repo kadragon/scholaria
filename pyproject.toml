@@ -8,33 +8,6 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "django>=5.0.0",
-    "djangorestframework>=3.14.0",
-    "celery>=5.3.0",
-    "django-celery-beat>=2.5.0",
-    "redis[hiredis]>=5.0.0",
-    "psycopg[binary]>=3.1.0",
-    "qdrant-client>=1.6.0",
-    "openai>=1.0.0",
-    "docling>=1.0.0",
-    "llama-index>=0.9.0",
-    "sentence-transformers>=2.2.0",
-    "minio>=7.1.0",
-    "python-dotenv>=1.0.0",
-    "pytest>=7.4.0",
-    "pytest-django>=4.8.0",
-    "pytest-celery>=0.0.0",
-    "pytest-xdist>=3.0.0",
-    "factory-boy>=3.3.0",
-    "ruff>=0.1.0",
-    "pre-commit>=3.0.0",
-    "mypy>=1.8.0",
-    "django-stubs>=4.2.0",
-    "djangorestframework-stubs>=3.14.0",
-    "types-redis>=4.6.0",
-    "types-requests>=2.31.0",
-    "drf-spectacular>=0.28.0",
-    "gunicorn>=21.0.0",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
     "sqlalchemy>=2.0.0",
@@ -44,6 +17,26 @@ dependencies = [
     "python-multipart>=0.0.20",
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
+    "celery>=5.3.0",
+    "redis[hiredis]>=5.0.0",
+    "psycopg[binary]>=3.1.0",
+    "qdrant-client>=1.6.0",
+    "openai>=1.0.0",
+    "docling>=1.0.0",
+    "llama-index>=0.9.0",
+    "sentence-transformers>=2.2.0",
+    "python-dotenv>=1.0.0",
+    "pytest>=7.4.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-celery>=0.0.0",
+    "pytest-anyio>=0.0.0",
+    "httpx>=0.27.0",
+    "factory-boy>=3.3.0",
+    "ruff>=0.1.0",
+    "pre-commit>=3.0.0",
+    "mypy>=1.8.0",
+    "types-redis>=4.6.0",
+    "types-requests>=2.31.0",
 ]
 
 [build-system]
@@ -51,7 +44,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["core", "rag"]
+packages = ["api"]
 
 # Ruff configuration
 [tool.ruff]
@@ -81,7 +74,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["core", "rag"]
+known-first-party = ["api"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.ruff.lint.pyupgrade]
@@ -102,11 +95,8 @@ no_implicit_optional = true
 strict_optional = true
 warn_unreachable = true
 
-# Django-specific settings
-plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
-
-[tool.django-stubs]
-django_settings_module = "core.settings"
+# FastAPI-specific settings
+# No plugins needed for FastAPI
 
 # Per-module mypy settings
 [[tool.mypy.overrides]]
@@ -117,11 +107,6 @@ ignore_errors = true
 module = "*.tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
-
-[[tool.mypy.overrides]]
-module = "rag.views"
-# Partial type checking: explicit annotations added, Django ORM dynamics excluded
-disable_error_code = ["misc", "attr-defined", "assignment"]
 
 [[tool.mypy.overrides]]
 module = [
@@ -136,33 +121,25 @@ ignore_missing_imports = true
 
 # Pytest configuration
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "core.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-testpaths = ["rag/tests", "core/tests"]
+testpaths = ["api/tests"]
 addopts = [
     "-n=auto",
     "--tb=short",
     "--strict-markers",
     "--disable-warnings",
-    "--reuse-db",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
-    "migration: marks tests as migration-related tests",
     "performance: marks tests as performance benchmarks",
     "golden: marks tests as golden dataset validation",
 ]
 env = [
-    "DB_ENGINE=django.db.backends.sqlite3",
-    "DB_NAME=tmp/test.sqlite3",
+    "DB_ENGINE=postgresql",
+    "DB_NAME=test_scholaria",
     "QDRANT_COLLECTION_NAME=context_items",
     "OPENAI_EMBEDDING_DIM=4",
-]
-
-[dependency-groups]
-dev = [
-    "django-migration-testcase>=0.0.15",
 ]

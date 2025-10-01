@@ -26,7 +26,7 @@ def test_list_contexts_with_data(client):
     """Test listing contexts returns data from Django database."""
     from django.db import transaction
 
-    from rag.models import Context
+    from api.models import Context
 
     # Create test data with explicit transaction
     with transaction.atomic():
@@ -60,7 +60,7 @@ def test_get_context_by_id(client):
     """Test getting a single context by ID."""
     from django.db import transaction
 
-    from rag.models import Context
+    from api.models import Context
 
     # Create test data
     with transaction.atomic():

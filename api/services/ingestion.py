@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def _get_chunker(context_type: str) -> object | None:
     """Import chunker dynamically to avoid circular imports."""
-    from rag.ingestion import chunkers as chunkers_module
+    from api.ingestion import chunkers as chunkers_module
 
     CHUNKER_MAP = {
         "PDF": chunkers_module.PDFChunker(chunk_size=1000, overlap=150),
@@ -27,7 +27,7 @@ def _get_chunker(context_type: str) -> object | None:
 
 def _get_parser(context_type: str) -> object | None:
     """Import parser dynamically to avoid circular imports."""
-    from rag.ingestion.parsers import FAQParser, MarkdownParser, PDFParser
+    from api.ingestion.parsers import FAQParser, MarkdownParser, PDFParser
 
     PARSER_MAP = {
         "PDF": PDFParser(),
@@ -208,8 +208,8 @@ def generate_context_item_embedding(db: Session, context_item_id: int) -> bool:
         return False
 
     try:
-        from rag.retrieval.embeddings import EmbeddingService
-        from rag.retrieval.qdrant import QdrantService
+        from api.retrieval.embeddings import EmbeddingService
+        from api.retrieval.qdrant import QdrantService
 
         embedding_service = EmbeddingService()
         qdrant_service = QdrantService()

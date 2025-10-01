@@ -1,24 +1,17 @@
 """
 FastAPI application entry point.
 
-POC implementation for Django to FastAPI migration.
+Pure FastAPI implementation (Django removed).
 """
 
-import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-import django
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
-django.setup()
-
-from fastapi import FastAPI  # noqa: E402
-from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
-
-from api.config import settings  # noqa: E402
-from api.routers import auth, contexts, history, rag, topics  # noqa: E402
-from api.routers.admin import bulk_operations  # noqa: E402
-from api.routers.admin import contexts_router as admin_contexts  # noqa: E402
-from api.routers.admin import topics_router as admin_topics  # noqa: E402
+from api.config import settings
+from api.routers import auth, contexts, history, rag, topics
+from api.routers.admin import bulk_operations
+from api.routers.admin import contexts_router as admin_contexts
+from api.routers.admin import topics_router as admin_topics
 
 app = FastAPI(
     title="Scholaria RAG API",
