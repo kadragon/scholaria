@@ -71,9 +71,11 @@ uv run pytest backend/tests -q
 | `DB_ENGINE` | No | `postgresql` | Database engine |
 | `DB_NAME` | No | `scholaria` | Database name |
 | `DB_USER` | No | `postgres` | Database username |
-| `DB_PASSWORD` | Production | `postgres` | Database password |
+| `DB_PASSWORD` | Production | _none_ | Database password (must be provided) |
 | `DB_HOST` | No | `localhost` | Database host |
 | `DB_PORT` | No | `5432` | Database port |
+
+> **Note:** The application does not ship with a default PostgreSQL password. Set `DB_PASSWORD` (or `DATABASE_URL`) explicitly in every environment.
 
 ### 🔍 Vector Database (Qdrant)
 

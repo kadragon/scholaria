@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     DB_ENGINE: str = Field(default="postgresql")
     DB_NAME: str = Field(default="scholaria")
     DB_USER: str = Field(default="postgres")
-    DB_PASSWORD: str = Field(default="postgres")
+    DB_PASSWORD: str = Field(default="")
     DB_HOST: str = Field(default="localhost")
     DB_PORT: str = Field(default="5432")
 
@@ -85,12 +85,15 @@ class Settings(BaseSettings):
             return f"sqlite+pysqlite:///{db_path}", {"check_same_thread": False}
 
         user = quote_plus(str(db_config.get("USER", self.DB_USER)))
-        password = quote_plus(str(db_config.get("PASSWORD", self.DB_PASSWORD)))
+        raw_password = db_config.get("PASSWORD", self.DB_PASSWORD)
+        password_value = "" if raw_password is None else str(raw_password)
+        password = quote_plus(password_value) if password_value else ""
         host = str(db_config.get("HOST", self.DB_HOST))
         port = str(db_config.get("PORT", self.DB_PORT))
         db_name = str(db_config.get("NAME", self.DB_NAME))
+        credentials = f"{user}:{password}@" if password else f"{user}@"
         return (
-            f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}",
+            f"postgresql+psycopg://{credentials}{host}:{port}/{db_name}",
             {},
         )
 

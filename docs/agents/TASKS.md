@@ -230,6 +230,16 @@
 
 ---
 
+### Async Infrastructure Restoration (Backlog)
+
+- [ ] ▶ (slug: async-infra-restoration) 문서 수집·임베딩 재생성 등 장기 작업을 Celery 또는 동등한 비동기 큐로 복구해 FastAPI 요청 차단을 제거하고, 작업 재시도/모니터링 파이프라인을 복원한다.
+- [ ] ▶ (slug: redis-shared-cache) 캐싱·모니터링·속도 제한을 Redis 등 공유 스토어로 되돌리고, 멀티프로세스 및 수평 확장 시나리오에서 일관성 검증을 실시한다.
+- [ ] ▶ (slug: async-infra-hardening-tests) 비동기 큐와 공유 캐시 재도입 후 통합/부하 테스트 및 관측성 점검을 확장하고, 운영 가이드와 문서를 업데이트한다.
+
+### Credential Hygiene (Backlog)
+
+- [x] ▶ (slug: secure-db-password-config) Settings에서 DB 비밀번호 하드코드 기본값을 제거하고 테스트/문서를 갱신해 비밀 스캐너 경고를 해소한다. (docs/agents/tasks/secure-db-password-config)
+
 ### Django Remnant Audit (신규)
 
 - [ ] FastAPI-only 구성 검증: Django 관련 설정/의존성/환경변수 잔존 여부 확인

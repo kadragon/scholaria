@@ -70,6 +70,8 @@ uv run pytest
 - 테스트는 기본적으로 `uv run pytest backend/tests -q` 명령으로 실행하며, pytest 픽스처가 워커별 SQLite 파일을 자동 부트스트랩한다. Postgres 연동이 필요한 시나리오에서는 `docker-compose.dev.yml` 오버레이로 데이터베이스를 기동한다.
 - 개별 테스트 모듈에서 FastAPI `get_db` 의존성을 다시 오버라이드하면 공용 스키마가 손상되므로 반드시 `backend/tests/conftest.py` 제공 픽스처를 사용한다.
 - 개발 Docker Compose는 FastAPI 단일 서비스(`backend`)를 기동하며 Django 컨테이너는 제거됨.
+- 데이터베이스 비밀번호는 반드시 환경 변수로 지정해야 하며, 설정에서 기본값을 제공하지 않는다. 미지정 시 URL은 비밀번호 없이 구성된다.
+
 - 관리자 UI는 `frontend/` (Refine) 프로젝트로 제공되며 JWT 토큰을 localStorage에 저장해 API 요청에 첨부.
 
 ### 프로덕션 기능

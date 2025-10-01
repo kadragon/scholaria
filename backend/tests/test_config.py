@@ -47,6 +47,41 @@ def test_database_config_uses_sqlite_when_engine_is_sqlite(
     importlib.reload(config_module)
 
 
+def test_database_config_omits_password_when_not_set(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """PostgreSQL URL should omit password when env var is absent."""
+
+    module = importlib.reload(config_module)
+    settings = module.Settings()
+
+    database_url, _ = settings.database_config()
+
+    assert database_url == "postgresql+psycopg://postgres@localhost:5432/scholaria"
+
+    importlib.reload(config_module)
+
+
+def test_database_config_includes_encoded_password(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """PostgreSQL URL should percent-encode password when provided."""
+
+    monkeypatch.setenv("DB_PASSWORD", "p@ss word")
+
+    module = importlib.reload(config_module)
+    settings = module.Settings()
+
+    database_url, _ = settings.database_config()
+
+    assert (
+        database_url
+        == "postgresql+psycopg://postgres:p%40ss+word@localhost:5432/scholaria"
+    )
+
+    importlib.reload(config_module)
+
+
 def test_jwt_settings_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     """Settings should expose JWT configuration sourced from env vars."""
 
