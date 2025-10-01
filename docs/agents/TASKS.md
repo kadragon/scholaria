@@ -99,7 +99,12 @@
 ### 관리 인터페이스 개선
 
 - [ ] **향상된 청크 관리**:
-  - [ ] 콘텐츠 미리보기가 포함된 청크 시각화 개선
+  - [x] 콘텐츠 미리보기가 포함된 청크 시각화 개선 ✅ 완료
+    - [x] Backend: `GET /contexts/{id}/items` API (pagination)
+    - [x] Frontend: Context show 페이지 + 청크 테이블
+    - [x] 4개 테스트 추가, 96/96 전체 통과
+    - **문서**: `docs/agents/tasks/chunk-preview-ui/`
+    - **브랜치**: `feature/chunk-preview-ui`
   - [ ] 청크 레벨 편집 기능 추가
   - [ ] 청크 재정렬 및 관리 도구 구현
   - [ ] 실시간 처리 상태 업데이트 추가

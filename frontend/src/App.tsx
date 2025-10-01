@@ -12,6 +12,7 @@ import { TopicEdit } from "./pages/topics/edit";
 import { ContextList } from "./pages/contexts/list";
 import { ContextCreate } from "./pages/contexts/create";
 import { ContextEdit } from "./pages/contexts/edit";
+import { ContextShow } from "./pages/contexts/show";
 import { LoginPage } from "./pages/login";
 import { Toaster } from "./components/ui/toaster";
 
@@ -48,6 +49,7 @@ function App() {
             list: "/contexts",
             create: "/contexts/create",
             edit: "/contexts/edit/:id",
+            show: "/contexts/show/:id",
           },
         ]}
       >
@@ -74,6 +76,7 @@ function App() {
               <Route index element={<ContextList />} />
               <Route path="create" element={<ContextCreate />} />
               <Route path="edit/:id" element={<ContextEdit />} />
+              <Route path="show/:id" element={<ContextShow />} />
             </Route>
           </Route>
           <Route
