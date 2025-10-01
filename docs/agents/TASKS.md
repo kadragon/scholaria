@@ -8,9 +8,89 @@
 
 ## 📋 현재 활성 태스크
 
+### Django → FastAPI 전환 (진행 중)
+
+- [x] **조사 & 계획 완료**:
+  - [x] 전환 동기 명확화: Django 무게감 제거
+  - [x] 관리 UI 전략 결정: Refine Admin Panel
+  - [x] React 라이브러리 결정: Refine (헤드리스, FastAPI와 철학 일치)
+  - [x] 8단계 상세 계획 수립 (12-18주)
+- [x] **Phase 1: 기반 구조 준비** (1-2주) ✅ 완료:
+  - [x] POC: 단일 엔드포인트 전환 (GET /api/topics)
+  - [x] FastAPI + SQLAlchemy + Alembic 환경 구축
+  - [x] ▶ Docker 하이브리드 구성 (Django 8000 + FastAPI 8001) (slug: docker-hybrid-compose)
+  - [x] ▶ FastAPI Topic↔Context 관계 매핑 (slug: fastapi-topic-context-relations)
+  - [x] ▶ FastAPI Context DB 동기화 (slug: fastapi-contexts-transaction)
+- [x] **Phase 2: Read-Only API 전환** (1-2주) ✅ 완료:
+  - [x] ▶ FastAPI history read API (slug: fastapi-readonly-api)
+  - [x] Topics, Contexts, History 조회 API 구현
+  - [x] Django API 응답 동등성 검증
+- [x] **Phase 3: RAG 엔드포인트 전환** (완료) ✅:
+  - [x] ▶ FastAPI RAG endpoint (slug: fastapi-rag-endpoint)
+  - POST /api/rag/ask 구현 (Django AskQuestionView 포팅)
+  - Redis 캐싱, AsyncOpenAI, sync_to_async (Django ORM 호환)
+  - 7개 테스트 통과
+- [x] **Phase 4: Write API 전환** (2-3주) ✅ **완료 (2시간)**:
+  - [x] ▶ FastAPI Context Write API (slug: fastapi-write-api)
+  - POST/PUT/DELETE /api/contexts 구현
+  - 파일 업로드 (UploadFile), PDF/Markdown/FAQ 타입별 워크플로우
+  - 16/16 테스트 통과
+  - 결정: Celery 통합 제거 (FastAPI에서 Django signal 미작동)
+- [x] **Phase 5: 인증 시스템** (1주) ✅ **완료**:
+  - [x] ▶ FastAPI JWT authentication (slug: fastapi-auth)
+  - Custom JWT 구현 (python-jose + passlib)
+  - Django auth_user 테이블 재사용 (SQLAlchemy 매핑)
+  - POST /api/auth/login, GET /api/auth/me 엔드포인트
+  - require_admin 의존성으로 Write API 보호
+  - 12/12 인증 테스트 통과
+  - JWT 환경변수 설정 노출 (.env.example, docs)
+- [x] **Phase 6.1: FastAPI Admin API** ✅ **완료**:
+  - [x] Bulk operations 엔드포인트 (assign-context, regenerate-embeddings, update-system-prompt)
+  - [x] 10/10 테스트 통과
+- [x] **Phase 6.2: Refine Admin Panel** ✅ **완료**:
+  - [x] Vite + React 18 + TypeScript 프로젝트 생성
+  - [x] Refine core + React Router v6 통합
+  - [x] shadcn/ui 설정 (Tailwind v3 + 10 components)
+  - [x] JWT 인증 provider 구현
+  - [x] Topics 리소스 POC (List/Create/Edit)
+  - [x] Contexts 리소스 (타입별 생성 폼: MARKDOWN/PDF/FAQ)
+  - [x] Bulk operations UI ✅ **완료**
+- [x] **Phase 6.3**: Docker & Nginx 통합 ✅ **완료**
+  - [x] ▶ Docker & Nginx integration (slug: docker-nginx-integration)
+  - [x] FastAPI + admin-frontend 서비스 docker-compose.prod.yml 추가
+  - [x] Nginx 리버스 프록시 설정 (/api → fastapi:8001, /admin → admin-frontend:80)
+  - [x] CORS 환경 변수 설정 (FASTAPI_ALLOWED_ORIGINS)
+  - [x] Vite base path 설정 (/admin/)
+  - [x] 프로덕션 빌드 설정 (VITE_API_URL=/api, VITE_BASE_PATH=/admin/)
+  - [x] 40/40 테스트 통과
+- [ ] **Phase 7**: 템플릿 → 프론트엔드 분리 (Optional)
+- [x] **Phase 8**: Django 제거 + **프로젝트 구조 리팩토링** ✅ **완료**
+  - [x] Django 코드 제거 (`core/`, `rag/` Django 레거시) ✅
+  - [x] **폴더 구조 재구성**: `api/` → `backend/`, `admin-frontend/` → `frontend/` ✅
+  - [x] Docker Compose 빌드 컨텍스트 정리 ✅
+  - [x] 테스트 Django 의존성 제거 (bcrypt → pbkdf2_sha256, pytest-django/xdist 제거) ✅
+  - [x] 핵심 테스트 검증 (auth 12/12, admin 31/31 통과) ✅
+  - [x] 문서 업데이트 (README, DEPLOYMENT, ARCHITECTURE) ✅
+  - [x] Django 레거시 파일 정리 (media/, storage/, uploads/, tmp/) ✅
+  - **결과**: Django 100% 제거 완료, FastAPI 전용 모노레포 구조 (backend/, frontend/)
+  - **문서**:
+    - `docs/agents/tasks/django-removal-and-refactoring/TASK_SUMMARY.md`
+    - `docs/agents/tasks/final-fastapi-tests/TASK_SUMMARY.md`
+    - `docs/agents/tasks/docs-update-and-cleanup/TASK_SUMMARY.md`
+- **문서**: `docs/agents/tasks/django-to-fastapi-migration/` (RESEARCH, PLAN, PROGRESS)
+- **예상 기간**: 12-18주, Critical: Phase 6 (Refine Admin 4-6주)
+- **주요 기술**: FastAPI + SQLAlchemy + Refine + shadcn/ui + React Query
+- **현재 폴더 구조**: Option B (최소 변경) - Python 루트에 `admin-frontend/` 예외 유지, Phase 8에서 모노레포로 정리
+
 ### 성능 검증 및 최적화
 
-- [ ] **실제 환경 성능 벤치마크**:
+- [x] **성능 테스트 인프라 검증** ✅ 완료:
+  - [x] `test_performance_benchmarks.py`: 6/6 테스트 통과
+  - [x] `test_golden_dataset.py`: 5/5 테스트 통과
+  - [x] PerformanceBenchmark 클래스 정상 동작 확인
+  - [x] GoldenDataset (24 test cases) 정상 동작 확인
+  - 결론: 성능 벤치마크 인프라 준비 완료, 실제 데이터 벤치마크는 프로덕션 배포 후 수행
+- [ ] **실제 환경 성능 벤치마크** (프로덕션 배포 후):
   - [ ] 테스트 쿼리의 80% 이상에서 관련 인용 반환 검증
   - [ ] 일반적인 쿼리에 대해 답변 지연시간 3초 미만 보장
   - [ ] 동시 사용자 부하 테스트 수행
@@ -150,20 +230,53 @@
 
 ---
 
+### Async Infrastructure Restoration (Backlog)
+
+- [ ] ▶ (slug: async-infra-restoration) 문서 수집·임베딩 재생성 등 장기 작업을 Celery 또는 동등한 비동기 큐로 복구해 FastAPI 요청 차단을 제거하고, 작업 재시도/모니터링 파이프라인을 복원한다.
+- [ ] ▶ (slug: redis-shared-cache) 캐싱·모니터링·속도 제한을 Redis 등 공유 스토어로 되돌리고, 멀티프로세스 및 수평 확장 시나리오에서 일관성 검증을 실시한다.
+- [ ] ▶ (slug: async-infra-hardening-tests) 비동기 큐와 공유 캐시 재도입 후 통합/부하 테스트 및 관측성 점검을 확장하고, 운영 가이드와 문서를 업데이트한다.
+
+### Credential Hygiene (Backlog)
+
+- [x] ▶ (slug: secure-db-password-config) Settings에서 DB 비밀번호 하드코드 기본값을 제거하고 테스트/문서를 갱신해 비밀 스캐너 경고를 해소한다. (docs/agents/tasks/secure-db-password-config)
+
+### Django Remnant Audit (신규)
+
+- [ ] FastAPI-only 구성 검증: Django 관련 설정/의존성/환경변수 잔존 여부 확인
+- [ ] 불필요한 Django 자산 제거 또는 FastAPI 등가 설정으로 치환
+- [ ] 재발 방지: 문서 및 AGENTS.md 업데이트
+
+---
+
+### FastAPI Test Harness Alignment ✅ 완료
+
+- [x] FastAPI pytest가 필요한 테이블 접근을 위해 공용 SQLite 하네스 정비
+- [x] Django 의존 fixtures 제거 및 FastAPI 전용 mock/patch 적용
+- [x] CI/문서 업데이트로 통합 검증 흐름 정리
+
+---
+
+### Pydantic Config Modernization (Backlog)
+
+- [ ] `class Config` 대신 `ConfigDict`로 전환하여 Pydantic v2 경고 제거 (v3 대비)
+- [ ] 관련 모델/스키마 단위 테스트 재실행
+
+---
+
 ## 🎯 Quick Start Commands
 
 ```bash
 # Run all quality checks
-uv run ruff check . && uv run mypy . && uv run python manage.py test --settings=core.test_settings
+uv run ruff check . && uv run mypy . && uv run pytest
 
 # Start development server
-uv run python manage.py runserver
+uv run uvicorn backend.main:app --reload
 
 # Start Docker services
-docker-compose up -d
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 # Apply migrations (if needed)
-uv run python manage.py migrate
+uv run alembic upgrade head
 ```
 
 ---

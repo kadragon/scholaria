@@ -15,11 +15,11 @@ Docker Compose integration testing for containerized RAG services.
 
 ### Services
 - PostgreSQL (port 5432), Redis (6379), Qdrant (6333-6334)
-- MinIO (9000-9001); Docling runs in-process within the Django container (no external service)
+- MinIO (9000-9001); Docling runs in-process within the FastAPI backend container (no external service)
 
 ### Development Setup
-- `docker-compose.dev.yml` extends the base compose file to run the Django `web` container locally.
-- `Dockerfile.dev` serves autoreloading `manage.py runserver` with a mounted project volume for hot reloading.
+- `docker-compose.dev.yml` extends the base compose file to run the FastAPI `backend` container with live reload.
+- `Dockerfile.dev` serves autoreloading `uvicorn backend.main:app` with a mounted project volume for hot reloading.
 
 ### Test Coverage
 - Service connectivity, data persistence, cross-service consistency
@@ -36,5 +36,5 @@ Docker Compose integration testing for containerized RAG services.
 ### Validation Results
 - All core services run together in Docker Compose (PostgreSQL, Redis, Qdrant, MinIO)
 - Data flows correctly between PostgreSQL and Qdrant
-- Django cache integrates with Redis
+- FastAPI Redis dependency integrates with Redis
 - Production deployment ready

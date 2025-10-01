@@ -1,0 +1,3 @@
+Summary | Goal & Approach | Completed Steps | Current Failures | Decision Log | Next Step
+--- | --- | --- | --- | --- | ---
+Started Phase 1 follow-up task to surface Topic↔Context relations via FastAPI read endpoints. | Mirror DRF behaviour by mapping SQLAlchemy ManyToMany and updating schemas/routers under TDD. | 1) Added topic-context nesting assertions in `api/tests/test_topics_poc.py`. 2) Added SQLAlchemy association + relationship/schema updates. 3) Validated via pytest with live PostgreSQL. | 없음 (pytest 성공). | 2025-09-30: Proceed with SQLAlchemy association-only change (no Alembic) to keep scope small. | 필요 시 컨텍스트 API에도 역참조 노출 여부 검토.

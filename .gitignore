@@ -11,12 +11,15 @@ wheels/
 
 # uv lock file - committed for reproducible builds
 
-# Django
+# Django (legacy - removed)
 db.sqlite3
 *.log
 local_settings.py
 staticfiles/
 uploads/
+media/
+storage/
+tmp/
 
 # Environment variables
 .env
@@ -29,7 +32,15 @@ codex.toml
 # mypy_cache
 .mypy_cache/
 
-# llamaindex_cache
-tmp/llamaindex_cache/
+# Test artifacts
+test_*.db
+*.db
+.coverage
 
 .serena
+
+# Node.js (admin-frontend)
+admin-frontend/node_modules/
+admin-frontend/dist/
+admin-frontend/.vite/
+admin-frontend/.env.local

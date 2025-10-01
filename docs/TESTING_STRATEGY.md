@@ -8,49 +8,49 @@ Scholaria follows **Test-Driven Development (TDD)** with the **Red → Green →
 
 ### Core Testing Stack
 
-- **Django TestCase**: Primary test framework leveraging Django's built-in testing capabilities
-- **Pytest**: Enhanced test discovery and fixtures (`pytest>=7.4.0`, `pytest-django>=4.8.0`)
-- **Factory Boy**: Test data generation (`factory-boy>=3.3.0`)
+- **Pytest**: Primary test runner with fixture-driven architecture (`pytest>=8.0.0`)
+- **FastAPI TestClient**: HTTP-level integration tests
+- **Factory Boy**: Test data factories (`factory-boy>=3.3.0`)
 - **Pytest Extensions**:
-  - `pytest-celery` for asynchronous task testing
-  - `pytest-xdist` for parallel test execution
+  - `pytest-anyio` for async endpoint testing
+  - `pytest-celery` for ingestion worker simulations
+  - `pytest-xdist` for parallel execution (opt-in)
 
 ### Test Configuration
 
-Tests use optimized settings via `core.test_settings.py`:
+Tests rely on pytest fixtures in `backend/tests/conftest.py`:
 
-- **Database**: In-memory SQLite (`:memory:`) for speed
-- **Migrations**: Disabled via `DisableMigrations` class
-- **Password Hashing**: Fast MD5 for test performance
-- **Caching**: Local LlamaIndex cache enabled
-- **Rate Limiting**: Disabled for testing
-- **Email Backend**: In-memory backend
+- **Database**: Per-worker SQLite database file automatically bootstrapped via SQLAlchemy metadata
+- **Dependency Overrides**: FastAPI `get_db` / Redis clients mocked for deterministic runs
+- **Password Hashing**: Passlib contexts reused to validate existing hashes
+- **Caching / External Calls**: OpenAI, Docling, and Redis interactions patched within tests
+- **Environment Overrides**: Tests patch `FASTAPI_ALLOWED_ORIGINS`, JWT secrets, etc., as needed
 
 ## Testing Categories
 
 ### 1. Unit Tests
 
 **Purpose**: Test individual components in isolation
-**Location**: `rag/tests/test_*.py`
+**Location**: `backend/tests/test_*.py`
 **Examples**:
-- `test_models.py` - Model behavior and validation
-- `test_parsers.py` - Document parsing logic
-- `test_chunkers.py` - Text chunking algorithms
+- `test_config.py` - Settings and dependency resolution
+- `test_contexts_write.py` - Context CRUD workflows
+- `test_auth.py` - JWT authentication helpers
 
 ### 2. Integration Tests
 
 **Purpose**: Test component interactions
 **Examples**:
-- `test_ingestion.py` - Full ingestion pipeline
-- `test_retrieval.py` - Search and retrieval workflow
-- `test_celery_integration.py` - Asynchronous task processing
+- `test_contexts_write.py` - Ingestion pipeline interactions
+- `admin/test_bulk_operations.py` - Admin API bulk workflows
+- `test_app_cors.py` - CORS configuration
 
 ### 3. End-to-End Tests
 
 **Purpose**: Test complete user workflows
 **Examples**:
-- `test_e2e_integration.py` - Full question-answer cycle
-- `test_api_documentation.py` - API endpoint validation
+- `test_rag_endpoint.py` - RAG answer generation stack
+- `test_history_read.py` - Topic history retrieval
 
 ### 4. Documentation Tests
 
@@ -80,45 +80,45 @@ Tests use optimized settings via `core.test_settings.py`:
 ### 1. Red Phase
 ```bash
 # Write failing test first
-uv run python manage.py test rag.tests.test_new_feature --settings=core.test_settings
+uv run pytest backend/tests/test_new_feature.py
 ```
 
 ### 2. Green Phase
 ```bash
 # Implement minimal code to pass
-uv run python manage.py test rag.tests.test_new_feature --settings=core.test_settings
+uv run pytest backend/tests/test_new_feature.py
 ```
 
 ### 3. Refactor Phase
 ```bash
 # Run full test suite after refactoring
-uv run python manage.py test --settings=core.test_settings
+uv run pytest backend/tests -q
 ```
 
 ## Test Commands
 
 ### Basic Test Execution
 ```bash
-# Run all tests
-uv run python manage.py test --settings=core.test_settings
+# Run all backend tests
+uv run pytest backend/tests -q
 
 # Run specific test module
-uv run python manage.py test rag.tests.test_ingestion --settings=core.test_settings
+uv run pytest backend/tests/test_contexts_write.py
 
 # Run specific test class
-uv run python manage.py test rag.tests.test_ingestion.PDFParserTest --settings=core.test_settings
+uv run pytest backend/tests/admin/test_bulk_operations.py::TestBulkRegenerateEmbeddings
 
 # Run specific test method
-uv run python manage.py test rag.tests.test_ingestion.PDFParserTest.test_parse_pdf_file_success --settings=core.test_settings
+uv run pytest backend/tests/test_contexts_write.py::TestCreateContext::test_create_pdf_context_with_file
 ```
 
 ### Pytest Integration
 ```bash
-# Run with pytest for enhanced output
-uv run pytest rag/tests/test_ingestion.py -v
+# Run with verbose output
+uv run pytest backend/tests/test_contexts_write.py -v
 
 # Run with parallel execution
-uv run pytest rag/tests/ -n auto
+uv run pytest backend/tests -n auto
 
 # Run specific test pattern
 uv run pytest -k "test_parse" -v
@@ -127,7 +127,7 @@ uv run pytest -k "test_parse" -v
 ### Quality Assurance Pipeline
 ```bash
 # Complete quality check sequence
-uv run ruff check . && uv run mypy . && uv run python manage.py test --settings=core.test_settings
+uv run ruff check . && uv run mypy . && uv run pytest
 ```
 
 ## Test Organization Principles
@@ -180,10 +180,10 @@ class ComponentTest(TestCase):
 ### Test Failures
 ```bash
 # Run with verbose output for debugging
-uv run python manage.py test rag.tests.test_ingestion --settings=core.test_settings --verbosity=2
+uv run pytest backend/tests/test_contexts_write.py --verbosity=2
 
 # Debug specific test with pdb
-uv run python manage.py test rag.tests.test_ingestion.PDFParserTest.test_parse_pdf_file_success --settings=core.test_settings --pdb
+uv run pytest backend/tests/test_contexts_write.py::TestCreateContext::test_create_markdown_context --pdb
 ```
 
 ### Common Issues

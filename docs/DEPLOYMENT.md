@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide provides comprehensive instructions for deploying the **Scholaria RAG System** in production environments.
+This guide provides comprehensive instructions for deploying the **Scholaria RAG System** (FastAPI) in production environments.
 
 ## Prerequisites
 
@@ -28,155 +28,184 @@ uv sync
 
 ### 2. Environment Configuration
 
-Create a `.env` file in the project root:
+Create a `.env` file from the production example:
 
 ```bash
-# Copy the example environment file
-cp .env.example .env
+# Copy the production environment template
+cp .env.prod.example .env.prod
 
 # Edit with your production values
-nano .env
+nano .env.prod
 ```
 
-### 3. Start Services
+### 3. Start Services (Production)
 
 ```bash
-# Start all services
-docker-compose up -d
+# Build and start all services
+docker compose -f docker-compose.prod.yml up -d --build
 
 # Check service status
-docker-compose ps
+docker compose -f docker-compose.prod.yml ps
 ```
 
 ### 4. Initialize Database
 
 ```bash
 # Run database migrations
-uv run python manage.py migrate
+docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
 
-# Create admin user
-uv run python manage.py createsuperuser
+# Create admin user (interactive Python shell)
+docker compose -f docker-compose.prod.yml exec backend python -c "
+from backend.models.user import User
+from backend.auth.utils import pwd_context
+from backend.models.base import SessionLocal
 
-# Load initial data (optional)
-uv run python manage.py loaddata fixtures/initial_topics.json
+db = SessionLocal()
+admin = User(
+    username='admin',
+    email='admin@example.com',
+    password=pwd_context.hash('your-secure-password'),
+    is_active=True,
+    is_staff=True,
+    is_superuser=True
+)
+db.add(admin)
+db.commit()
+print('Admin user created')
+"
 ```
 
 ### 5. Verify Deployment
 
 ```bash
 # Check service health
-curl http://localhost:8000/api/topics/
+curl http://localhost/health
 
-# Access admin interface
-open http://localhost:8000/admin/
+# Check API endpoints
+curl http://localhost/api/topics/
 
-# View API documentation
-open http://localhost:8000/api/docs/
+# Access API documentation
+open http://localhost/docs
+
+# Access admin panel
+open http://localhost/admin
 ```
 
 ## Production Setup
 
-Review infrastructure prerequisites, configure secrets, and plan monitoring before promoting Scholaria to production.
+### Docker Compose Services
 
-## Docker Compose
+The `docker-compose.prod.yml` provides a complete production setup:
 
-The included `docker-compose.yml` provides a complete production setup:
-
-### Services
+**Core Services**:
+- **backend**: FastAPI application (uvicorn)
+- **admin-frontend**: Refine Admin Panel (nginx-served static files)
+- **nginx**: Reverse proxy & load balancer
 - **PostgreSQL 16**: Primary database
 - **Redis 7**: Cache and Celery broker
 - **Qdrant**: Vector database for embeddings
-- **MinIO**: S3-compatible object storage
-- **Django Web (dev override)**: Optional container from `docker-compose.dev.yml` for running the app in Docker during local testing.
 
-### Volumes
+**Volumes**:
 - `postgres_data`: Database persistence
 - `redis_data`: Cache persistence
 - `qdrant_data`: Vector database storage
-- `minio_data`: File storage
 
-### Local Development (Docker)
+### Architecture
 
-Use the development override file to run the Django web container alongside the backing services for parity with production.
-
-```bash
-# Build and start the full stack with the dev web container
-WEB_PORT=8000 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
-
-# Apply database migrations inside the container
-docker compose -f docker-compose.yml -f docker-compose.dev.yml exec web uv run python manage.py migrate
-
-# Tail the Django logs
-docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f web
 ```
+Internet → Nginx (80/443) → FastAPI Backend (8001)
+                         → Admin Frontend (static files)
 
-- Set `WEB_PORT` when 8000 is in use on the host (for example `WEB_PORT=18000`).
-- The `scripts/docker/dev-entrypoint.sh` helper bootstraps uv dependencies at `/opt/uv` before launching `manage.py runserver`.
-- Stop the stack when finished: `docker compose -f docker-compose.yml -f docker-compose.dev.yml down`.
-
-## Production Considerations
-
-1. **Reverse Proxy**: Use **Nginx** or **Apache** as a reverse proxy
-2. **SSL/TLS**: Configure HTTPS with Let's Encrypt or commercial certificates
-3. **Domain**: Set up proper domain and DNS configuration
-4. **Firewall**: Restrict access to internal services (Redis, PostgreSQL, etc.)
-5. **Backups**: Implement regular database and file storage backups
+FastAPI → PostgreSQL (5432)
+       → Redis (6379)
+       → Qdrant (6333)
+       → OpenAI API
+```
 
 ## Environment Variables
 
-### Required Variables
+### Required Variables (JWT & Auth)
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `SECRET_KEY` | Django secret key | `your-long-random-secret-key` |
-| `OPENAI_API_KEY` | OpenAI API key for embeddings/chat | `sk-...` |
-| `DB_PASSWORD` | PostgreSQL password | `secure-password` |
-| `MINIO_ACCESS_KEY` | MinIO access key | `minioadmin` |
-| `MINIO_SECRET_KEY` | MinIO secret key | `secure-secret` |
+```bash
+# JWT Configuration (REQUIRED)
+JWT_SECRET_KEY=your-very-long-random-secret-key-here
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_HOURS=24
+```
 
-### Optional Variables
+**Generate a secure JWT secret**:
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DEBUG` | Enable debug mode | `False` |
-| `DB_HOST` | Database host | `localhost` |
-| `DB_PORT` | Database port | `5432` |
-| `DB_NAME` | Database name | `scholaria` |
-| `DB_USER` | Database user | `postgres` |
-| `REDIS_HOST` | Redis host | `localhost` |
-| `REDIS_PORT` | Redis port | `6379` |
-| `REDIS_URL` | Complete Redis URL | `redis://localhost:6379/0` |
-| `QDRANT_HOST` | Qdrant host | `localhost` |
-| `QDRANT_PORT` | Qdrant port | `6333` |
-| `QDRANT_COLLECTION_NAME` | Vector collection name | `scholaria_documents` |
-| `MINIO_ENDPOINT` | MinIO endpoint | `localhost:9000` |
-| `MINIO_BUCKET_NAME` | Storage bucket name | `scholaria-docs` |
-| `MINIO_SECURE` | Use HTTPS for MinIO | `False` |
-| `OPENAI_EMBEDDING_MODEL` | Embedding model | `text-embedding-3-large` |
-| `OPENAI_CHAT_MODEL` | Chat model | `gpt-4o-mini` |
-| `OPENAI_EMBEDDING_DIM` | Embedding dimensions | `3072` |
-| `OPENAI_CHAT_TEMPERATURE` | Chat temperature | `0.3` |
-| `OPENAI_CHAT_MAX_TOKENS` | Max response tokens | `1000` |
-| `LLAMAINDEX_CACHE_ENABLED` | Enable embedding cache | `true` |
-| `LLAMAINDEX_CACHE_DIR` | Cache directory | `storage/llamaindex_cache` |
-| `RAG_SEARCH_LIMIT` | Search result limit | `10` |
-| `RAG_RERANK_TOP_K` | Reranking top-k | `5` |
-| `FILE_VALIDATION_MAX_SIZE` | Max file size (bytes) | `10485760` |
+### Database Configuration
 
-Docling-powered PDF parsing runs entirely in-process, so no external service or
-environment variables are required for document conversion.
+```bash
+# Database
+DATABASE_URL=postgresql://postgres:secure-password@postgres:5432/scholaria
+DB_ENGINE=postgresql
+DB_NAME=scholaria
+DB_USER=postgres
+DB_PASSWORD=your-secure-database-password
+DB_HOST=postgres
+DB_PORT=5432
+```
 
-### Example .env File
+### OpenAI Configuration
+
+```bash
+# OpenAI API
+OPENAI_API_KEY=sk-your-openai-api-key-here
+OPENAI_EMBEDDING_MODEL=text-embedding-3-large
+OPENAI_CHAT_MODEL=gpt-4o-mini
+OPENAI_EMBEDDING_DIM=3072
+OPENAI_CHAT_TEMPERATURE=0.3
+OPENAI_CHAT_MAX_TOKENS=1000
+```
+
+### Service URLs
+
+```bash
+# Redis
+REDIS_URL=redis://redis:6379/0
+
+# Qdrant
+QDRANT_URL=http://qdrant:6333
+QDRANT_COLLECTION_NAME=context_items
+```
+
+### CORS Configuration (Production)
+
+```bash
+# Frontend domains that can access the API
+FASTAPI_ALLOWED_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com
+```
+
+### Optional Performance Tuning
+
+```bash
+# RAG Search Parameters
+RAG_SEARCH_LIMIT=15
+RAG_RERANK_TOP_K=7
+
+# File Upload
+FILE_VALIDATION_MAX_SIZE=10485760  # 10MB
+```
+
+### Example Production .env File
 
 ```bash
 # Production Configuration
 DEBUG=False
-SECRET_KEY=your-very-long-random-secret-key-here
+
+# JWT (REQUIRED)
+JWT_SECRET_KEY=your-generated-secret-key-here
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_HOURS=24
 
 # Database
-DB_PASSWORD=your-secure-database-password
-DB_HOST=postgres
-DB_PORT=5432
+DATABASE_URL=postgresql://postgres:secure-db-password@postgres:5432/scholaria
+DB_PASSWORD=secure-db-password
 
 # Redis
 REDIS_URL=redis://redis:6379/0
@@ -185,101 +214,109 @@ REDIS_URL=redis://redis:6379/0
 OPENAI_API_KEY=sk-your-openai-api-key-here
 OPENAI_EMBEDDING_MODEL=text-embedding-3-large
 OPENAI_CHAT_MODEL=gpt-4o-mini
+OPENAI_EMBEDDING_DIM=3072
 
 # Qdrant
-QDRANT_HOST=qdrant
-QDRANT_PORT=6333
+QDRANT_URL=http://qdrant:6333
+QDRANT_COLLECTION_NAME=context_items
 
-# MinIO
-MINIO_ENDPOINT=minio:9000
-MINIO_ACCESS_KEY=your-minio-access-key
-MINIO_SECRET_KEY=your-minio-secret-key
-MINIO_SECURE=False
+# CORS (add your production domains)
+FASTAPI_ALLOWED_ORIGINS=https://yourdomain.com
 
 # Performance
-LLAMAINDEX_CACHE_ENABLED=true
 RAG_SEARCH_LIMIT=15
 RAG_RERANK_TOP_K=7
 ```
 
-## Database Setup
+## Database Management
 
-### Initial Migration
+### Migrations
 
 ```bash
-# Create and apply migrations
-uv run python manage.py makemigrations
-uv run python manage.py migrate
+# Create new migration
+docker compose -f docker-compose.prod.yml exec backend alembic revision --autogenerate -m "description"
 
-# Create superuser for admin access
-uv run python manage.py createsuperuser
+# Apply migrations
+docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
+
+# Rollback last migration
+docker compose -f docker-compose.prod.yml exec backend alembic downgrade -1
+
+# View migration history
+docker compose -f docker-compose.prod.yml exec backend alembic history
 ```
 
 ### Database Backup
 
 ```bash
-# Backup database
-docker exec scholaria_postgres_1 pg_dump -U postgres scholaria > backup.sql
+# Automated backup script (included)
+./scripts/backup.sh
 
-# Restore database
-docker exec -i scholaria_postgres_1 psql -U postgres scholaria < backup.sql
-```
+# Manual backup
+docker compose -f docker-compose.prod.yml exec postgres pg_dump -U postgres scholaria > backup_$(date +%Y%m%d).sql
 
-### Collection Reset (Development)
-
-```bash
-# Reset Qdrant collection (if needed)
-./scripts/qdrant-reset.sh
+# Restore from backup
+docker compose -f docker-compose.prod.yml exec -i postgres psql -U postgres scholaria < backup.sql
 ```
 
 ## Security
 
 ### Essential Security Measures
 
-1. **SECRET_KEY**: Generate a strong, unique Django secret key
+1. **JWT Secret Key**: Generate and store securely
    ```bash
-   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+   # Never use default values in production!
+   python -c "import secrets; print(secrets.token_urlsafe(32))"
    ```
 
 2. **Database Security**:
-   - Use strong passwords for database accounts
-   - Restrict database access to application hosts only
+   - Use strong passwords (minimum 20 characters)
+   - Restrict database access to application only
    - Enable SSL connections in production
 
 3. **API Keys**:
-   - Store OpenAI API keys securely
-   - Use environment variables, never commit to code
-   - Rotate keys regularly
+   - Store OpenAI API keys in environment variables only
+   - Never commit secrets to version control
+   - Rotate keys regularly (quarterly recommended)
 
 4. **Network Security**:
    - Use HTTPS for all external traffic
-   - Implement proper firewall rules
-   - Restrict internal service access
+   - Configure firewall to restrict internal service access
+   - Only expose nginx port (80/443) externally
 
-5. **File Upload Security**:
-   - File validation enabled by default
-   - Maximum file size limits enforced
-   - Malicious file detection active
+5. **CORS Configuration**:
+   - Set `FASTAPI_ALLOWED_ORIGINS` to your specific domains
+   - Never use `*` (allow all) in production
 
 ### SSL/TLS Configuration
 
-For production, configure SSL/TLS termination:
+Configure SSL in nginx (example with Let's Encrypt):
 
 ```nginx
-# Nginx configuration example
+# nginx/nginx.conf
 server {
-    listen 443 ssl;
-    server_name your-domain.com;
+    listen 443 ssl http2;
+    server_name yourdomain.com;
 
-    ssl_certificate /path/to/certificate.crt;
-    ssl_certificate_key /path/to/private.key;
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
 
-    location / {
-        proxy_pass http://localhost:8000;
+    location /api/ {
+        proxy_pass http://backend:8001;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /docs {
+        proxy_pass http://backend:8001;
+    }
+
+    location /admin/ {
+        proxy_pass http://admin-frontend:80/;
     }
 }
 ```
@@ -290,46 +327,37 @@ server {
 
 ```bash
 # Check all services
-docker-compose ps
+docker compose -f docker-compose.prod.yml ps
 
-# View service logs
-docker-compose logs -f
+# View logs
+docker compose -f docker-compose.prod.yml logs -f
 
 # Check specific service
-docker-compose logs postgres
-docker-compose logs redis
-docker-compose logs qdrant
-docker-compose logs minio
+docker compose -f docker-compose.prod.yml logs backend
+docker compose -f docker-compose.prod.yml logs postgres
 ```
 
 ### Application Health
 
 ```bash
-# Check API health
-curl http://localhost:8000/api/topics/
+# FastAPI health endpoint
+curl http://localhost/health
 
-# Check admin interface
-curl http://localhost:8000/admin/login/
+# API endpoints
+curl http://localhost/api/topics/
 
 # Check database connection
-uv run python manage.py dbshell --command "SELECT 1;"
+docker compose -f docker-compose.prod.yml exec backend python -c "from backend.models.base import SessionLocal; db = SessionLocal(); print('DB OK')"
 ```
 
-### Log Monitoring
+### Performance Metrics
 
-Important log locations:
-- **Django logs**: Application stdout/stderr
-- **PostgreSQL logs**: Container logs
-- **Redis logs**: Container logs
-- **Qdrant logs**: Container logs
-
-### Performance Monitoring
-
-Monitor these metrics:
+Monitor these key metrics:
 - **Response time**: API endpoints < 3 seconds
-- **Memory usage**: Keep under 80% of available RAM
-- **Disk usage**: Monitor volume growth
-- **Database connections**: Monitor connection pool usage
+- **Memory usage**: Backend container < 2GB
+- **Disk usage**: Monitor postgres_data volume growth
+- **Database connections**: PostgreSQL connection pool usage
+- **Vector search**: Qdrant query latency
 
 ## Troubleshooting
 
@@ -341,103 +369,66 @@ Monitor these metrics:
 # Check Docker status
 docker system info
 
-# Check compose file syntax
-docker-compose config
+# Validate compose file
+docker compose -f docker-compose.prod.yml config
 
-# Check logs for errors
-docker-compose logs
+# Check logs
+docker compose -f docker-compose.prod.yml logs
 ```
 
-#### 2. Database Connection Errors
+#### 2. JWT Authentication Errors
+
+```bash
+# Verify JWT_SECRET_KEY is set
+docker compose -f docker-compose.prod.yml exec backend env | grep JWT
+
+# Test login endpoint
+curl -X POST http://localhost/api/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=your-password"
+```
+
+#### 3. Database Connection Errors
 
 ```bash
 # Check PostgreSQL status
-docker-compose exec postgres pg_isready
+docker compose -f docker-compose.prod.yml exec postgres pg_isready
 
 # Test connection
-docker-compose exec postgres psql -U postgres -d scholaria -c "SELECT 1;"
-
-# Check environment variables
-echo $DB_HOST $DB_PORT $DB_USER
+docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -d scholaria -c "SELECT 1;"
 ```
 
-#### 3. OpenAI API Issues
+#### 4. CORS Errors
+
+```bash
+# Check CORS configuration
+docker compose -f docker-compose.prod.yml exec backend env | grep CORS
+
+# Update FASTAPI_ALLOWED_ORIGINS in .env.prod
+```
+
+#### 5. OpenAI API Issues
 
 ```bash
 # Test API key
 curl -H "Authorization: Bearer $OPENAI_API_KEY" https://api.openai.com/v1/models
 
 # Check rate limits in logs
-docker-compose logs | grep "rate limit"
-```
-
-#### 4. Qdrant Connection Issues
-
-```bash
-# Check Qdrant status
-curl http://localhost:6333/health
-
-# List collections
-curl http://localhost:6333/collections
-```
-
-#### 5. MinIO Access Issues
-
-```bash
-# Check MinIO health
-curl http://localhost:9000/minio/health/ready
-
-# Access MinIO console
-open http://localhost:9001
+docker compose -f docker-compose.prod.yml logs backend | grep "rate limit"
 ```
 
 ### Recovery Procedures
 
-#### Service Recovery
-
 ```bash
 # Restart specific service
-docker-compose restart postgres
-
-# Restart all services
-docker-compose restart
+docker compose -f docker-compose.prod.yml restart backend
 
 # Rebuild and restart
-docker-compose down
-docker-compose up --build -d
-```
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml up -d --build
 
-#### Data Recovery
-
-```bash
 # Restore database from backup
-docker-compose exec -i postgres psql -U postgres scholaria < backup.sql
-
-# Reset Qdrant collection
-./scripts/qdrant-reset.sh
-uv run python manage.py shell -c "from rag.retrieval.qdrant import QdrantService; QdrantService().reset_collection()"
-```
-
-### Performance Optimization
-
-#### Database Optimization
-
-```bash
-# Analyze database performance
-uv run python manage.py dbshell -c "ANALYZE;"
-
-# Check slow queries
-docker-compose logs postgres | grep "slow query"
-```
-
-#### Cache Optimization
-
-```bash
-# Monitor Redis memory usage
-docker-compose exec redis redis-cli info memory
-
-# Clear cache if needed
-docker-compose exec redis redis-cli flushall
+docker compose -f docker-compose.prod.yml exec -i postgres psql -U postgres scholaria < backup.sql
 ```
 
 ## Maintenance
@@ -451,46 +442,47 @@ docker-compose exec redis redis-cli flushall
 
 2. **Monthly**:
    - Update system packages
-   - Rotate log files
-   - Review security settings
+   - Review security logs
+   - Backup database
 
 3. **Quarterly**:
    - Update Docker images
-   - Review and rotate API keys
+   - Rotate JWT secret keys
    - Performance optimization review
 
 ### Updates and Upgrades
 
 ```bash
-# Update Docker images
-docker-compose pull
+# Pull latest images
+docker compose -f docker-compose.prod.yml pull
 
-# Restart with new images
-docker-compose down
-docker-compose up -d
+# Apply updates
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml up -d --build
 
-# Run migrations after updates
-uv run python manage.py migrate
+# Run migrations
+docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
 ```
 
-### Backup Strategy
+## Local Development with Docker
 
-Implement regular backups:
+For local testing with production-like environment:
 
 ```bash
-#!/bin/bash
-# backup.sh - Daily backup script
+# Use development compose file
+docker compose -f docker-compose.dev.yml up -d
 
-DATE=$(date +%Y%m%d_%H%M%S)
+# Apply migrations
+docker compose -f docker-compose.dev.yml exec backend alembic upgrade head
 
-# Database backup
-docker exec scholaria_postgres_1 pg_dump -U postgres scholaria > "backups/db_$DATE.sql"
-
-# MinIO data backup
-docker run --rm -v minio_data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/minio_$DATE.tar.gz /data
-
-# Qdrant data backup
-docker run --rm -v qdrant_data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/qdrant_$DATE.tar.gz /data
+# View logs
+docker compose -f docker-compose.dev.yml logs -f backend
 ```
 
-For support or additional help, refer to the project documentation or open an issue in the repository.
+## Support
+
+For support or additional help, refer to:
+- [README.md](../README.md) - Quick start guide
+- [ARCHITECTURE_DECISIONS.md](ARCHITECTURE_DECISIONS.md) - Technical decisions
+- [TESTING_STRATEGY.md](TESTING_STRATEGY.md) - Testing approach
+- Project issue tracker

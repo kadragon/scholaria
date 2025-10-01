@@ -36,10 +36,10 @@ Scholaria is built around disciplined engineering:
 
 ## Coding Standards
 
-- Follow the existing Django project structure and naming conventions.
+- Follow the monorepo structure (`backend/` FastAPI services, `frontend/` Refine admin) and reuse existing modules before adding new ones.
 - Prefer explicit imports and type annotations everywhere.
 - Document complex logic inline only when intent is not obvious.
-- Use existing utilities from `rag` and `core` apps before adding new abstractions.
+- Use existing utilities from `backend/` services and shared helpers before adding new abstractions.
 - Respect formatting enforced by Ruff; avoid hand-formatting that fights tooling.
 
 ## Testing Requirements
@@ -49,12 +49,11 @@ Run the full suite locally before pushing:
 ```bash
 uv run ruff check .
 uv run mypy .
-uv run python manage.py test --settings=core.test_settings
-pytest -k "not slow"
+uv run pytest
 docker-compose up -d --build
 ```
 
-- Keep tests parallel-safe (`pytest` and Django tests run with xdist in CI).
+- Keep tests parallel-safe (pytest runs with xdist in CI).
 - Add regression tests for every bug fix.
 - Skip brittle time-based or network-dependent assertions.
 
@@ -70,7 +69,7 @@ docker-compose up -d --build
 Before requesting review:
 
 - [ ] Confirm the branch rebases cleanly onto `main`.
-- [ ] Ensure all checks pass locally (`uv run ruff check .`, `uv run mypy .`, `python manage.py test`).
+- [ ] Ensure all checks pass locally (`uv run ruff check .`, `uv run mypy .`, `uv run pytest`).
 - [ ] Provide screenshots or logs for UI or operational changes.
 - [ ] Link to the relevant entry in `docs/tasks.md` and any related issues.
 - [ ] Verify new docs or code reference the correct `AGENTS.md` learnings.

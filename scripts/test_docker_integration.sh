@@ -135,7 +135,7 @@ fi
 
 print_status "Running database migrations..."
 export DOCKER_INTEGRATION_TESTS=true
-uv run python manage.py migrate
+uv run alembic upgrade head
 
 print_status "Running Docker integration tests..."
 
@@ -152,7 +152,7 @@ print_status "Test run completed. Keeping services running for manual testing...
 print_warning "Services are still running. You can:"
 print_warning "  - Access MinIO Console: http://localhost:9001 (admin/minioadmin)"
 print_warning "  - Access Qdrant Dashboard: http://localhost:6333/dashboard"
-print_warning "  - Run Django server: uv run python manage.py runserver"
+print_warning "  - Run FastAPI server: uv run uvicorn backend.main:app --reload"
 print_warning "  - Stop services: docker-compose down"
 
 exit $test_result
