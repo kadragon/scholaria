@@ -32,5 +32,13 @@ Django 레거시를 FastAPI 중심 모노레포로 전환 중
   - [x] `uv lock` 재생성 (Django 패키지 20개 제거)
   - [x] 검증: `api/tests/test_ingestion_service.py` 6/6 통과
 
+- [x] Step 3: 폴더 구조 재구성
+  - [x] `git mv api backend`
+  - [x] `git mv admin-frontend frontend`
+  - [x] `from api.` → `from backend.` 전역 변경 (backend/, alembic/)
+  - [x] `import api.` → `import backend.` 전역 변경
+  - [x] `pyproject.toml` 업데이트 (packages: [backend], isort: [backend], testpaths: [backend/tests])
+  - [x] 검증: `from backend.main import app` ✅, `backend/tests/test_ingestion_service.py` 6/6 ✅
+
 ## Next Step
-Step 3: 폴더 구조 재구성 (`api/` → `backend/`, `admin-frontend/` → `frontend/`)
+Step 4: Docker 구성 업데이트 (docker-compose.prod.yml, Dockerfile.backend, Dockerfile.frontend)

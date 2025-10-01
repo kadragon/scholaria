@@ -11,14 +11,14 @@ from sqlalchemy.schema import SchemaItem
 
 from alembic import context
 from alembic.config import Config
-from api.config import settings
-from api.models import (
+from backend.config import settings
+from backend.models import (
     associations,  # noqa: F401
     history,  # noqa: F401
     topic,  # noqa: F401
 )
-from api.models import context as context_models  # noqa: F401
-from api.models.base import Base
+from backend.models import context as context_models  # noqa: F401
+from backend.models.base import Base
 
 logger = logging.getLogger(__name__)
 
