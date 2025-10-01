@@ -1,0 +1,24 @@
+# Multi-stage build for Refine admin frontend SPA
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Install dependencies
+COPY admin-frontend/package*.json ./
+RUN npm ci
+
+# Build application
+COPY admin-frontend/ ./
+ARG VITE_API_URL=/api
+ARG VITE_BASE_PATH=/admin/
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_BASE_PATH=${VITE_BASE_PATH}
+RUN npm run build
+
+# Runtime image serving static assets with Nginx
+FROM nginx:1.25-alpine
+WORKDIR /usr/share/nginx/html
+COPY --from=builder /app/dist ./
+COPY nginx/admin-frontend.conf /etc/nginx/conf.d/default.conf
+
+# Provide minimal default configuration; nginx/nginx.conf handles reverse proxy
+EXPOSE 80

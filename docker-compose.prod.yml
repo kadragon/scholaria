@@ -65,6 +65,62 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # FastAPI Application
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8001 --workers 4
+    restart: unless-stopped
+    environment:
+      - DEBUG=False
+      - DB_ENGINE=postgresql
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - QDRANT_COLLECTION_NAME=${QDRANT_COLLECTION_NAME:-scholaria_documents}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-large}
+      - OPENAI_CHAT_MODEL=${OPENAI_CHAT_MODEL:-gpt-4o-mini}
+      - OPENAI_CHAT_TEMPERATURE=${OPENAI_CHAT_TEMPERATURE:-0.3}
+      - OPENAI_CHAT_MAX_TOKENS=${OPENAI_CHAT_MAX_TOKENS:-1000}
+      - SECRET_KEY=${SECRET_KEY}
+    expose:
+      - "8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+    networks:
+      - scholaria-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # Celery Worker
   celery-worker:
     build:
@@ -252,6 +308,36 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Refine Admin Frontend
+  admin-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/admin/}
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      fastapi:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    networks:
+      - scholaria-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 
   # Nginx Reverse Proxy (Optional - for production with SSL)
   nginx:
@@ -267,6 +353,8 @@ services:
       - media_volume:/var/www/media:ro
     depends_on:
       - web
+      - fastapi
+      - admin-frontend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health/"]
       interval: 30s

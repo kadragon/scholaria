@@ -14,6 +14,7 @@ django.setup()
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
+from api.config import settings  # noqa: E402
 from api.routers import auth, contexts, history, rag, topics  # noqa: E402
 from api.routers.admin import bulk_operations  # noqa: E402
 from api.routers.admin import contexts_router as admin_contexts  # noqa: E402
@@ -27,11 +28,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8000",
-        "http://localhost:3000",
-        "http://localhost:5173",
-    ],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

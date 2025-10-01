@@ -26,8 +26,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
+  const basename = import.meta.env.VITE_BASE_PATH || "/admin/";
+
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Refine
         dataProvider={adminDataProvider}
         authProvider={authProvider}

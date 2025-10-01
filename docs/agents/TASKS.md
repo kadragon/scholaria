@@ -47,15 +47,22 @@
 - [x] **Phase 6.1: FastAPI Admin API** ✅ **완료**:
   - [x] Bulk operations 엔드포인트 (assign-context, regenerate-embeddings, update-system-prompt)
   - [x] 10/10 테스트 통과
-- [ ] **Phase 6.2: Refine Admin Panel** ⬅️ **진행 중**:
-  - [ ] Vite + React 18 + TypeScript 프로젝트 생성
-  - [ ] Refine core + React Router v6 통합
-  - [ ] shadcn/ui 설정
-  - [ ] JWT 인증 provider 구현
-  - [ ] Topics 리소스 POC (List/Create/Edit)
-  - [ ] Contexts 리소스 (타입별 생성 폼)
-  - [ ] Bulk operations UI
-- [ ] **Phase 6.3**: Docker & Nginx 통합
+- [x] **Phase 6.2: Refine Admin Panel** ✅ **완료**:
+  - [x] Vite + React 18 + TypeScript 프로젝트 생성
+  - [x] Refine core + React Router v6 통합
+  - [x] shadcn/ui 설정 (Tailwind v3 + 10 components)
+  - [x] JWT 인증 provider 구현
+  - [x] Topics 리소스 POC (List/Create/Edit)
+  - [x] Contexts 리소스 (타입별 생성 폼: MARKDOWN/PDF/FAQ)
+  - [ ] Bulk operations UI (Phase 6.3에서 구현 예정)
+- [x] **Phase 6.3**: Docker & Nginx 통합 ✅ **완료**
+  - [x] ▶ Docker & Nginx integration (slug: docker-nginx-integration)
+  - [x] FastAPI + admin-frontend 서비스 docker-compose.prod.yml 추가
+  - [x] Nginx 리버스 프록시 설정 (/api → fastapi:8001, /admin → admin-frontend:80)
+  - [x] CORS 환경 변수 설정 (FASTAPI_ALLOWED_ORIGINS)
+  - [x] Vite base path 설정 (/admin/)
+  - [x] 프로덕션 빌드 설정 (VITE_API_URL=/api, VITE_BASE_PATH=/admin/)
+  - [x] 40/40 테스트 통과
 - [ ] **Phase 7**: 템플릿 → 프론트엔드 분리 (Optional)
 - [ ] **Phase 8**: Django 제거 + **프로젝트 구조 리팩토링**
   - [ ] Django 코드 제거 (`core/`, `rag/` Django 레거시)

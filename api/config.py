@@ -35,12 +35,24 @@ class Settings(BaseSettings):
     REDIS_PORT: str = os.getenv("REDIS_PORT", "6379")
     REDIS_DB: str = os.getenv("REDIS_DB", "0")
 
+    FASTAPI_ALLOWED_ORIGINS: str = os.getenv(
+        "FASTAPI_ALLOWED_ORIGINS",
+        "http://localhost:8000,http://localhost:3000,http://localhost:5173",
+    )
+
     database_url_override: str | None = Field(default=None, alias="DATABASE_URL")
 
     @property
     def redis_url(self) -> str:
         """Redis connection URL."""
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Parse CORS allowed origins from comma-separated string."""
+        if not self.FASTAPI_ALLOWED_ORIGINS:
+            return []
+        return [origin.strip() for origin in self.FASTAPI_ALLOWED_ORIGINS.split(",")]
 
     def database_config(self) -> tuple[str, dict[str, Any]]:
         """Return (SQLAlchemy URL, connect_args) derived from environment."""
