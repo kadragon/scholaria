@@ -246,6 +246,13 @@
 
 ---
 
+### Pydantic Config Modernization (Backlog)
+
+- [ ] `class Config` 대신 `ConfigDict`로 전환하여 Pydantic v2 경고 제거 (v3 대비)
+- [ ] 관련 모델/스키마 단위 테스트 재실행
+
+---
+
 ## 🎯 Quick Start Commands
 
 ```bash
