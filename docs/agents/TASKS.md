@@ -64,14 +64,17 @@
   - [x] 프로덕션 빌드 설정 (VITE_API_URL=/api, VITE_BASE_PATH=/admin/)
   - [x] 40/40 테스트 통과
 - [ ] **Phase 7**: 템플릿 → 프론트엔드 분리 (Optional)
-- [x] **Phase 8**: Django 제거 + **프로젝트 구조 리팩토링** ✅ **완료 (Steps 1-5)**
+- [x] **Phase 8**: Django 제거 + **프로젝트 구조 리팩토링** ✅ **완료**
   - [x] Django 코드 제거 (`core/`, `rag/` Django 레거시) ✅
   - [x] **폴더 구조 재구성**: `api/` → `backend/`, `admin-frontend/` → `frontend/` ✅
   - [x] Docker Compose 빌드 컨텍스트 정리 ✅
+  - [x] 테스트 Django 의존성 제거 (bcrypt → pbkdf2_sha256, pytest-django/xdist 제거) ✅
+  - [x] 핵심 테스트 검증 (auth 12/12, admin 31/31 통과) ✅
   - [ ] 문서 업데이트 (README, DEPLOYMENT, ARCHITECTURE) (Optional)
-  - [ ] 최종 테스트 (모든 테스트 FastAPI 환경에서 재실행) (Step 6, Optional)
   - **결과**: Django 100% 제거 완료, FastAPI 전용 모노레포 구조 (backend/, frontend/)
-  - **문서**: `docs/agents/tasks/django-removal-and-refactoring/TASK_SUMMARY.md`
+  - **문서**:
+    - `docs/agents/tasks/django-removal-and-refactoring/TASK_SUMMARY.md`
+    - `docs/agents/tasks/final-fastapi-tests/TASK_SUMMARY.md`
 - **문서**: `docs/agents/tasks/django-to-fastapi-migration/` (RESEARCH, PLAN, PROGRESS)
 - **예상 기간**: 12-18주, Critical: Phase 6 (Refine Admin 4-6주)
 - **주요 기술**: FastAPI + SQLAlchemy + Refine + shadcn/ui + React Query

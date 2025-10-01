@@ -3,18 +3,14 @@
 import importlib.util
 from pathlib import Path
 
-import pytest
-
 from alembic.config import Config
 
 
-@pytest.mark.django_db
 def test_alembic_ini_exists() -> None:
     """Alembic configuration file should exist at project root."""
     assert Path("alembic.ini").exists()
 
 
-@pytest.mark.django_db
 def test_alembic_metadata_includes_topic_table() -> None:
     """Alembic env must expose SQLAlchemy metadata with rag_topic table."""
     cfg = Config("alembic.ini")

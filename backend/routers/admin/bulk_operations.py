@@ -60,6 +60,11 @@ async def bulk_assign_context_to_topic(
     return BulkAssignContextResponse(assigned_count=len(contexts), topic_id=topic.id)
 
 
+@router.post(
+    "/regenerate-embeddings",
+    response_model=BulkRegenerateEmbeddingsResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def bulk_regenerate_embeddings(
     request: BulkRegenerateEmbeddingsRequest,
     db: Session = Depends(get_db),

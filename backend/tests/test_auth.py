@@ -3,7 +3,6 @@
 import importlib
 
 import pytest
-from django.contrib.auth.models import User
 from fastapi.testclient import TestClient
 
 import backend.auth.utils as auth_utils
@@ -31,12 +30,11 @@ def _reset_auth_utils(monkeypatch: pytest.MonkeyPatch):
 class TestAuthUtils:
     """Test authentication utility functions."""
 
-    def test_verify_django_password(self) -> None:
-        """Test Django password verification."""
-        user = User(username="test")
-        user.set_password("testpass123")
-        assert auth_utils.verify_password("testpass123", user.password)
-        assert not auth_utils.verify_password("wrongpass", user.password)
+    def test_verify_password(self) -> None:
+        """Test password verification with bcrypt."""
+        hashed = auth_utils.pwd_context.hash("testpass123")
+        assert auth_utils.verify_password("testpass123", hashed)
+        assert not auth_utils.verify_password("wrongpass", hashed)
 
     def test_create_and_decode_token(self) -> None:
         """Test JWT token creation and decoding."""

@@ -119,27 +119,4 @@ module = [
 ]
 ignore_missing_imports = true
 
-# Pytest configuration
-[tool.pytest.ini_options]
-python_files = ["tests.py", "test_*.py", "*_tests.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-testpaths = ["backend/tests"]
-addopts = [
-    "-n=auto",
-    "--tb=short",
-    "--strict-markers",
-    "--disable-warnings",
-]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "performance: marks tests as performance benchmarks",
-    "golden: marks tests as golden dataset validation",
-]
-env = [
-    "DB_ENGINE=postgresql",
-    "DB_NAME=test_scholaria",
-    "QDRANT_COLLECTION_NAME=context_items",
-    "OPENAI_EMBEDDING_DIM=4",
-]
+# Pytest configuration moved to pytest.ini

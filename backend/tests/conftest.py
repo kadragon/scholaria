@@ -11,8 +11,8 @@ from sqlalchemy.orm import sessionmaker
 
 from backend.auth.utils import pwd_context
 from backend.main import app
+from backend.models import User as SQLUser
 from backend.models.base import Base, get_db
-from backend.models.user import User as SQLUser
 
 WORKER_ID = os.environ.get("PYTEST_XDIST_WORKER")
 DB_FILENAME = f"test_api_{WORKER_ID}.db" if WORKER_ID else "test_api.db"
@@ -21,6 +21,8 @@ engine = create_engine(
     SQLALCHEMY_TEST_DATABASE_URL, connect_args={"check_same_thread": False}
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base.metadata.create_all(bind=engine, checkfirst=True)
 
 
 def override_get_db():
@@ -37,8 +39,7 @@ app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
-    """Create all tables in test database at session start."""
-    Base.metadata.create_all(bind=engine, checkfirst=True)
+    """Teardown test database at session end."""
     yield
     Base.metadata.drop_all(bind=engine, checkfirst=True)
     Path(DB_FILENAME).unlink(missing_ok=True)
@@ -65,7 +66,7 @@ def db_session():
 def admin_headers(db_session):
     """Create an admin user and return Authorization headers."""
     client = TestClient(app)
-    password = "AdminPass123!"
+    password = "AdminPass123"
     admin = SQLUser(
         username="admin",
         email="admin@example.com",

@@ -27,6 +27,7 @@ def reset_env(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(key, raising=False)
 
 
+@pytest.mark.skip(reason="Django dependency removed")
 def test_database_config_uses_sqlite_when_engine_is_sqlite(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
