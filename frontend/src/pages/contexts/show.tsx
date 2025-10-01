@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useOne, useNavigation } from "@refinedev/core";
 import { useParams } from "react-router-dom";
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -120,7 +121,7 @@ export const ContextShow = () => {
     })
   );
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/contexts/${id}/items`,
@@ -142,13 +143,13 @@ export const ContextShow = () => {
     } finally {
       setItemsLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     if (id) {
       fetchItems();
     }
-  }, [id]);
+  }, [id, fetchItems]);
 
   const handleEditClick = (item: ContextItem) => {
     setEditingItem(item);

@@ -55,7 +55,8 @@ export const ContextList = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedIds(new Set(data?.data.map((c) => c.id) || []));
+      const ids = data?.data.map((c) => c.id).filter((id): id is number => id !== undefined) || [];
+      setSelectedIds(new Set(ids));
     } else {
       setSelectedIds(new Set());
     }
@@ -153,7 +154,7 @@ export const ContextList = () => {
   };
 
   const allSelected =
-    data?.data.length > 0 && selectedIds.size === data?.data.length;
+    (data?.data?.length ?? 0) > 0 && selectedIds.size === (data?.data?.length ?? 0);
 
   return (
     <div className="p-6 space-y-4">
@@ -204,10 +205,12 @@ export const ContextList = () => {
                 <TableRow key={context.id}>
                   <TableCell>
                     <Checkbox
-                      checked={selectedIds.has(context.id)}
-                      onCheckedChange={(checked) =>
-                        handleSelectOne(context.id, checked as boolean)
-                      }
+                      checked={context.id !== undefined && typeof context.id === 'number' && selectedIds.has(context.id)}
+                      onCheckedChange={(checked) => {
+                        if (typeof context.id === 'number') {
+                          handleSelectOne(context.id, checked as boolean);
+                        }
+                      }}
                     />
                   </TableCell>
                   <TableCell>{context.id}</TableCell>
@@ -220,18 +223,22 @@ export const ContextList = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          context.id && show("contexts", context.id)
-                        }
+                        onClick={() => {
+                          if (typeof context.id === 'number') {
+                            show("contexts", context.id);
+                          }
+                        }}
                       >
                         View
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          context.id && edit("contexts", context.id)
-                        }
+                        onClick={() => {
+                          if (typeof context.id === 'number') {
+                            edit("contexts", context.id);
+                          }
+                        }}
                       >
                         Edit
                       </Button>
@@ -273,9 +280,11 @@ export const ContextList = () => {
               </SelectTrigger>
               <SelectContent>
                 {topicsData?.data.map((topic) => (
-                  <SelectItem key={topic.id} value={topic.id.toString()}>
-                    {topic.name}
-                  </SelectItem>
+                  topic.id !== undefined && (
+                    <SelectItem key={topic.id} value={topic.id.toString()}>
+                      {topic.name}
+                    </SelectItem>
+                  )
                 ))}
               </SelectContent>
             </Select>
