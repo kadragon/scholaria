@@ -9,6 +9,9 @@ import { adminDataProvider } from "./providers/dataProvider";
 import { TopicList } from "./pages/topics/list";
 import { TopicCreate } from "./pages/topics/create";
 import { TopicEdit } from "./pages/topics/edit";
+import { ContextList } from "./pages/contexts/list";
+import { ContextCreate } from "./pages/contexts/create";
+import { ContextEdit } from "./pages/contexts/edit";
 import { LoginPage } from "./pages/login";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -36,12 +39,21 @@ function App() {
             create: "/topics/create",
             edit: "/topics/edit/:id",
           },
+          {
+            name: "contexts",
+            list: "/contexts",
+            create: "/contexts/create",
+            edit: "/contexts/edit/:id",
+          },
         ]}
       >
         <Routes>
           <Route
             element={
-              <Authenticated key="authenticated-routes" fallback={<CatchAllNavigate to="/login" />}>
+              <Authenticated
+                key="authenticated-routes"
+                fallback={<CatchAllNavigate to="/login" />}
+              >
                 <Layout>
                   <Outlet />
                 </Layout>
@@ -53,6 +65,11 @@ function App() {
               <Route index element={<TopicList />} />
               <Route path="create" element={<TopicCreate />} />
               <Route path="edit/:id" element={<TopicEdit />} />
+            </Route>
+            <Route path="/contexts">
+              <Route index element={<ContextList />} />
+              <Route path="create" element={<ContextCreate />} />
+              <Route path="edit/:id" element={<ContextEdit />} />
             </Route>
           </Route>
           <Route

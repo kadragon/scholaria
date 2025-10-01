@@ -1,43 +1,63 @@
-import { useState } from "react";
-import { useCreate, useNavigation } from "@refinedev/core";
+import { useState, useEffect } from "react";
+import { useOne, useUpdate, useNavigation } from "@refinedev/core";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-export const TopicCreate = () => {
-  const { mutate, isLoading } = useCreate();
+export const ContextEdit = () => {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = useOne({
+    resource: "contexts",
+    id: id!,
+  });
+
+  const { mutate: update } = useUpdate();
   const { list } = useNavigation();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [systemPrompt, setSystemPrompt] = useState("");
+  const [originalContent, setOriginalContent] = useState("");
+
+  useEffect(() => {
+    if (data?.data) {
+      setName(data.data.name);
+      setDescription(data.data.description);
+      setOriginalContent(data.data.original_content || "");
+    }
+  }, [data]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutate(
+    update(
       {
-        resource: "topics",
+        resource: "contexts",
+        id: id!,
         values: {
           name,
           description,
-          system_prompt: systemPrompt,
+          original_content: originalContent || undefined,
         },
       },
       {
         onSuccess: () => {
-          list("topics");
+          list("contexts");
         },
       },
     );
   };
 
+  if (isLoading) {
+    return <div className="p-6">Loading...</div>;
+  }
+
   return (
     <div className="p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Create Topic</CardTitle>
+          <CardTitle>Edit Context: {data?.data.name}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -60,24 +80,24 @@ export const TopicCreate = () => {
               />
             </div>
 
-            <div>
-              <Label htmlFor="systemPrompt">System Prompt</Label>
-              <Textarea
-                id="systemPrompt"
-                value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                rows={6}
-              />
-            </div>
+            {data?.data.context_type === "MARKDOWN" && (
+              <div>
+                <Label htmlFor="content">Content</Label>
+                <Textarea
+                  id="content"
+                  value={originalContent}
+                  onChange={(e) => setOriginalContent(e.target.value)}
+                  rows={10}
+                />
+              </div>
+            )}
 
             <div className="flex gap-2">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create"}
-              </Button>
+              <Button type="submit">Save</Button>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => list("topics")}
+                onClick={() => list("contexts")}
               >
                 Cancel
               </Button>
