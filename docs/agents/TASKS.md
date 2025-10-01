@@ -44,7 +44,7 @@
 ## 🚀 향후 개선사항 (Backlog)
 
 ### 비동기 인프라 복원
-- [ ] Celery/비동기 큐 재도입 (장기 작업 차단 제거)
+- [x] **Celery/비동기 큐 재도입** ✅ (`docs/agents/tasks/celery-async-queue/`) - 임베딩 재생성 비동기화
 - [ ] Redis 공유 캐시 (수평 확장 지원)
 
 ### 성능 검증 및 최적화
@@ -79,13 +79,14 @@ uv run alembic upgrade head
 ```
 
 ## 📊 Production Readiness
-- ✅ 108 tests passing | mypy strict | ruff clean
+- ✅ 110 tests passing | mypy strict | ruff clean
 - ✅ JWT auth + admin API
 - ✅ Docker + Nginx production config
 - ✅ FastAPI + SQLAlchemy + Refine + shadcn/ui
 - ✅ 전략 패턴 기반 인제스션 아키텍처
+- ✅ Celery + Redis 비동기 작업 큐
 
 ## 🎯 다음 우선순위
-1. **비동기 큐** - Celery 재도입 (embedding 재생성 등)
-2. **프로덕션 배포** - 실제 환경 테스트
-3. **성능 벤치마크** - 실제 데이터로 검증
+1. **프로덕션 배포** - 실제 환경 테스트 (Celery 워커 포함)
+2. **성능 벤치마크** - 실제 데이터로 검증
+3. **Celery 모니터링** - Flower 등 대시보드 추가 (선택적)
