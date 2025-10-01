@@ -74,6 +74,12 @@ uv run pytest
 
 - 관리자 UI는 `frontend/` (Refine) 프로젝트로 제공되며 JWT 토큰을 localStorage에 저장해 API 요청에 첨부.
 
+### Django 의존성 제거 (2025-10-01)
+- `backend/services/rag_service.py`에서 `asgiref.sync_to_async` 사용을 Python 표준 라이브러리 `asyncio.to_thread()`로 전환하여 Django 잔재물 완전 제거.
+- 전환 대상: 임베딩 생성, Qdrant 검색, 리랭킹 처리 (총 4개소)
+- 결과: 86/86 테스트 통과, ruff/mypy 검증 완료, 외부 의존성 없는 FastAPI native async 패턴 적용.
+- 코드베이스에 Django 관련 import, 환경변수, 설정 없음 확인 완료.
+
 ### 프로덕션 기능
 - **모니터링**: 헬스 체크 엔드포인트, 구조화된 로깅, 성능 메트릭
 - **보안**: 파일 업로드 검증, 매직 바이트 체크, 크기 제한

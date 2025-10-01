@@ -93,6 +93,8 @@ class AsyncRAGService:
         Raises:
             ValueError: If query is None/empty or topic_ids is empty
         """
+        import asyncio
+
         if query is None or not query.strip():
             raise ValueError("Query cannot be None or empty")
 
@@ -111,15 +113,16 @@ class AsyncRAGService:
             return cached_result
 
         # Step 1: Generate embedding for the query (blocking, but fast)
-        from asgiref.sync import sync_to_async
-
-        query_embedding = await sync_to_async(
-            self.embedding_service.generate_embedding
-        )(query)
+        query_embedding = await asyncio.to_thread(
+            self.embedding_service.generate_embedding, query
+        )
 
         # Step 2: Search for similar context items in Qdrant (SQLAlchemy-backed lookups)
-        search_results = await sync_to_async(self.qdrant_service.search_similar)(
-            query_embedding=query_embedding, topic_ids=topic_ids, limit=limit
+        search_results = await asyncio.to_thread(
+            self.qdrant_service.search_similar,
+            query_embedding=query_embedding,
+            topic_ids=topic_ids,
+            limit=limit,
         )
 
         # If no results found, return empty response
@@ -134,8 +137,11 @@ class AsyncRAGService:
             return result
 
         # Step 3: Rerank results using BGE reranker (blocking, ML model)
-        reranked_results = await sync_to_async(self.reranking_service.rerank_results)(
-            query=query, search_results=search_results, top_k=rerank_top_k
+        reranked_results = await asyncio.to_thread(
+            self.reranking_service.rerank_results,
+            query=query,
+            search_results=search_results,
+            top_k=rerank_top_k,
         )
 
         # Step 4: Prepare context for the LLM
