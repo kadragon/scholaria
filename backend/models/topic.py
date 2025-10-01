@@ -5,9 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text
+from sqlalchemy import String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
 
 from backend.models.associations import topic_context_association
 from backend.models.base import Base
@@ -25,10 +24,10 @@ class Topic(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     system_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(), nullable=False
+        server_default=text("(CURRENT_TIMESTAMP)"), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now(), nullable=False
+        server_default=text("(CURRENT_TIMESTAMP)"), nullable=False
     )
     contexts: Mapped[list[Context]] = relationship(
         "Context",

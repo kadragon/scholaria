@@ -79,7 +79,7 @@ def test_ask_question_empty_question_fails():
         },
     )
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == 422
 
 
 def test_ask_question_invalid_topic_id_fails():
@@ -92,7 +92,7 @@ def test_ask_question_invalid_topic_id_fails():
         },
     )
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == 422
 
 
 def test_ask_question_service_value_error(mock_rag_service, mock_redis):

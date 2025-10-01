@@ -8,6 +8,9 @@
 
 ## 📋 현재 활성 태스크
 
+### 테스트 품질 개선
+- [ ] **테스트 경고 제거** (`docs/agents/tasks/test-warnings-cleanup/`) - 69개 경고 → 0개
+
 ### 관리 인터페이스 개선
 - [x] **청크 미리보기** ✅ (`docs/agents/tasks/chunk-preview-ui/`)
 - [x] **청크 편집** ✅ (`docs/agents/tasks/chunk-edit-feature/`)

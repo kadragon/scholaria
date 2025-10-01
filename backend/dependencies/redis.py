@@ -26,4 +26,4 @@ async def get_redis() -> AsyncGenerator[redis.Redis]:
     try:
         yield client
     finally:
-        await client.close()
+        await client.aclose()  # type: ignore[attr-defined]
