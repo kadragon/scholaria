@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
 
 from backend.models.base import Base
 
@@ -29,12 +28,14 @@ class QuestionHistory(Base):
     session_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     is_favorited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True),
+        server_default=text("(CURRENT_TIMESTAMP)"),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
+        server_default=text("(CURRENT_TIMESTAMP)"),
+        onupdate=lambda: datetime.now(UTC),
         nullable=False,
     )
 

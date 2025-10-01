@@ -1,67 +1,86 @@
-"""LlamaIndex-backed caching utilities for retrieval workflows."""
+"""Redis-backed caching utilities for retrieval workflows."""
 
 from __future__ import annotations
 
 import hashlib
-from pathlib import Path
-
-try:
-    from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
-except Exception:  # pragma: no cover - optional dependency guard
-    SimpleKVStore = None  # type: ignore[misc,assignment]
+import json
+from typing import Any
 
 from backend.config import settings
 
 
 class EmbeddingCache:
-    """Simple on-disk cache for embeddings using LlamaIndex storage primitives."""
+    """Redis-backed cache for embeddings with graceful fallback."""
 
     def __init__(self) -> None:
-        self._enabled = bool(settings.LLAMAINDEX_CACHE_ENABLED)
-        self._persist_path: Path | None = None
-        self._store: SimpleKVStore | None = None
+        self._enabled = False
+        self._client: Any = None
+        self._ttl_seconds: int = 0
 
-        if self._enabled and SimpleKVStore is not None:
-            cache_dir = Path(settings.LLAMAINDEX_CACHE_DIR)
-            cache_dir.mkdir(parents=True, exist_ok=True)
-            namespace = settings.LLAMAINDEX_CACHE_NAMESPACE
-            filename = (
-                f"{namespace}_embedding_cache.json"
-                if namespace
-                else "embedding_cache.json"
+        # Check for deprecated file-based cache config
+        if settings.LLAMAINDEX_CACHE_ENABLED:
+            import warnings
+
+            warnings.warn(
+                "LLAMAINDEX_CACHE_* settings are deprecated. Use REDIS_EMBEDDING_CACHE_* instead.",
+                DeprecationWarning,
+                stacklevel=2,
             )
-            self._persist_path = cache_dir / filename
 
-            if self._persist_path.exists():
-                self._store = SimpleKVStore.from_persist_path(str(self._persist_path))
-            else:
-                self._store = SimpleKVStore()
-        else:
-            self._enabled = False  # Guard against missing dependency
+        # Initialize Redis cache
+        if settings.REDIS_EMBEDDING_CACHE_ENABLED:
+            try:
+                import redis
+
+                self._client = redis.from_url(
+                    settings.redis_url,
+                    encoding="utf-8",
+                    decode_responses=True,
+                    socket_connect_timeout=2,
+                    socket_timeout=2,
+                )
+                # Test connection
+                self._client.ping()
+                self._enabled = True
+                self._ttl_seconds = settings.REDIS_EMBEDDING_CACHE_TTL_DAYS * 86400
+            except Exception:
+                # Graceful fallback - disable cache on any connection error
+                self._enabled = False
+                self._client = None
 
     def _make_key(self, text: str, model: str) -> str:
         digest_source = f"{model}::{text}".encode()
-        return hashlib.sha256(digest_source).hexdigest()
+        hash_digest = hashlib.sha256(digest_source).hexdigest()
+        namespace = settings.LLAMAINDEX_CACHE_NAMESPACE
+        prefix = settings.REDIS_EMBEDDING_CACHE_PREFIX
+        return f"{prefix}:{namespace}:{hash_digest}"
 
     def get(self, text: str, model: str) -> list[float] | None:
-        if not self._enabled or not self._store:
+        if not self._enabled or not self._client:
             return None
 
-        key = self._make_key(text, model)
-        payload = self._store.get(key)
-        if not payload:
+        try:
+            key = self._make_key(text, model)
+            cached = self._client.get(key)
+            if not cached:
+                return None
+
+            return json.loads(cached)
+        except Exception:
+            # Graceful degradation on any error
             return None
-        return payload.get("embedding")
 
     def set(self, text: str, model: str, embedding: list[float]) -> None:
-        if not self._enabled or not self._store:
+        if not self._enabled or not self._client:
             return
 
-        key = self._make_key(text, model)
-        self._store.put(key, {"embedding": embedding})
-
-        if self._persist_path:
-            self._store.persist(str(self._persist_path))
+        try:
+            key = self._make_key(text, model)
+            value = json.dumps(embedding)
+            self._client.setex(key, self._ttl_seconds, value)
+        except Exception:
+            # Graceful degradation - don't raise on cache write failure
+            pass
 
     def enabled(self) -> bool:
         return self._enabled

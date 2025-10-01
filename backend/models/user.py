@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
@@ -23,5 +23,5 @@ class User(Base):
     is_superuser = Column(Boolean, default=False, nullable=False)
     first_name = Column(String(150), nullable=False, default="")
     last_name = Column(String(150), nullable=False, default="")
-    date_joined = Column(DateTime, nullable=False, default=datetime.utcnow)
+    date_joined = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     last_login = Column(DateTime, nullable=True)

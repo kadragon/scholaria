@@ -13,30 +13,6 @@ from backend.models.context import Context, ContextItem
 logger = logging.getLogger(__name__)
 
 
-def _get_chunker(context_type: str) -> object | None:
-    """Import chunker dynamically to avoid circular imports."""
-    from backend.ingestion import chunkers as chunkers_module
-
-    CHUNKER_MAP = {
-        "PDF": chunkers_module.PDFChunker(chunk_size=1000, overlap=150),
-        "MARKDOWN": chunkers_module.MarkdownChunker(chunk_size=1200, overlap=200),
-        "FAQ": chunkers_module.FAQChunker(chunk_size=800, overlap=100),
-    }
-    return CHUNKER_MAP.get(context_type)
-
-
-def _get_parser(context_type: str) -> object | None:
-    """Import parser dynamically to avoid circular imports."""
-    from backend.ingestion.parsers import FAQParser, MarkdownParser, PDFParser
-
-    PARSER_MAP = {
-        "PDF": PDFParser(),
-        "MARKDOWN": MarkdownParser(),
-        "FAQ": FAQParser(),
-    }
-    return PARSER_MAP.get(context_type)
-
-
 def ingest_document(
     db: Session,
     context_id: int,
@@ -69,14 +45,16 @@ def ingest_document(
         logger.error(error_msg)
         raise ValueError(error_msg)
 
-    parser = _get_parser(context_type)
-    if not parser:
-        error_msg = f"Unsupported context type: {context_type}"
-        logger.error(error_msg)
-        raise ValueError(error_msg)
+    from backend.ingestion.strategies import get_ingestion_strategy
 
     try:
-        content = parser.parse_file(file_path)  # type: ignore[attr-defined]
+        strategy = get_ingestion_strategy(context_type)
+    except ValueError as e:
+        logger.error(str(e))
+        raise
+
+    try:
+        content = strategy.parse(file_path)
         logger.info(
             f"{context_type} parsed successfully: {len(content) if content else 0} characters"
         )
@@ -91,14 +69,8 @@ def ingest_document(
         logger.warning(f"Empty content from {context_type}: {file_path}")
         return 0
 
-    chunker = _get_chunker(context_type)
-    if not chunker:
-        error_msg = f"No chunker available for context type: {context_type}"
-        logger.error(error_msg)
-        raise ValueError(error_msg)
-
     try:
-        chunks = chunker.chunk_text(content)  # type: ignore[attr-defined]
+        chunks = strategy.chunk(content)
         logger.info(f"{context_type} content chunked into {len(chunks)} pieces")
     except Exception as e:
         logger.error(f"Chunking failed for {file_path}: {e}")

@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: scholaria
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
@@ -12,6 +12,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
     volumes:
@@ -24,6 +25,29 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: celery -A backend.celery_app worker --loglevel=info
+    environment:
+      - DB_ENGINE=postgresql
+      - DB_NAME=scholaria
+      - DB_USER=postgres
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+      - qdrant
+    volumes:
+      - ./backend:/app/backend
 
 volumes:
   postgres_data:

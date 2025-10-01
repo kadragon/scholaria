@@ -78,6 +78,12 @@ class AdminContextUpdate(BaseModel):
     original_content: str | None = None
 
 
+class AdminContextItemUpdate(BaseModel):
+    """ContextItem update schema for Admin API."""
+
+    content: str | None = Field(None, min_length=1)
+
+
 class ContextListResponse(BaseModel):
     """Context list response for Refine (data + total format)."""
 

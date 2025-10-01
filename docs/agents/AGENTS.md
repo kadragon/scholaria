@@ -71,8 +71,18 @@ uv run pytest
 - 개별 테스트 모듈에서 FastAPI `get_db` 의존성을 다시 오버라이드하면 공용 스키마가 손상되므로 반드시 `backend/tests/conftest.py` 제공 픽스처를 사용한다.
 - 개발 Docker Compose는 FastAPI 단일 서비스(`backend`)를 기동하며 Django 컨테이너는 제거됨.
 - 데이터베이스 비밀번호는 반드시 환경 변수로 지정해야 하며, 설정에서 기본값을 제공하지 않는다. 미지정 시 URL은 비밀번호 없이 구성된다.
-
 - 관리자 UI는 `frontend/` (Refine) 프로젝트로 제공되며 JWT 토큰을 localStorage에 저장해 API 요청에 첨부.
+
+### Pydantic 스키마 패턴 (2025-10-01)
+- 모든 스키마는 `backend/schemas/` 디렉터리에 모듈별로 분리 (`admin.py`, `context.py`, `topic.py`, `history.py`, `rag.py`, `utils.py`)
+- **ORM 매핑**: 모든 `*Out` 스키마는 `ConfigDict(from_attributes=True)` 사용 (SQLAlchemy → Pydantic 자동 변환)
+- **Datetime 직렬화**: `@field_serializer` + `backend.schemas.utils.to_local_iso()`로 timezone-aware ISO 8601 형식 변환
+  - 적용 완료: `ContextOut`, `ContextItemOut`, `TopicOut`, `QuestionHistoryOut`
+  - 미적용 (backlog): `AdminTopicOut`, `AdminContextOut` (Breaking change)
+- **Field 검증**: `Field(...)` 제약으로 입력 검증 (`min_length`, `max_length`, `gt`, `default_factory`)
+- **Alias 패턴**: `Field(alias=...)` + `ConfigDict(populate_by_name=True)` (현재 `QuestionHistoryOut.topic` 사용)
+- **Base 스키마**: 공통 필드는 `*Base` 클래스로 재사용 (`ContextBase`, `TopicBase`)
+- **상세 문서**: `backend/schemas/README.md` 참고
 
 ### Django 의존성 제거 (2025-10-01)
 - `backend/services/rag_service.py`에서 `asgiref.sync_to_async` 사용을 Python 표준 라이브러리 `asyncio.to_thread()`로 전환하여 Django 잔재물 완전 제거.
@@ -85,6 +95,16 @@ uv run pytest
 - 6개 테스트 케이스 추가: 정상 요청/응답, Pydantic 검증 (빈 질문, 잘못된 topic_id), 예외 처리 (ValueError, ConnectionError, Exception).
 - 테스트 커버리지: 86 → 92 (+6), AsyncRAGService 전체를 mock하여 외부 의존성 차단.
 - Mock 전략으로 단위 테스트 수준 유지, 통합 테스트는 별도 관리.
+
+### Redis 공유 캐시 (2025-10-01)
+- **임베딩 캐시**: 파일 기반 → Redis 전환으로 수평 확장 지원
+  - 키 포맷: `embedding_cache:{namespace}:{sha256(model::text)}`
+  - TTL: 30일 (설정 가능, `REDIS_EMBEDDING_CACHE_TTL_DAYS`)
+  - Graceful fallback: Redis 연결 실패 시 자동으로 캐시 비활성화
+- **Redis 설정**: AOF persistence + `allkeys-lru` eviction policy
+- **테스트 전략**: 유닛 테스트 (mock) + 통합 테스트 (Redis 컨테이너), 122 tests pass
+- **마이그레이션**: 기존 파일 캐시 (`storage/llamaindex_cache/`) 사용 중단, 설정 시 deprecation 경고
+- **성능**: 여러 FastAPI/Celery 워커 간 캐시 공유로 OpenAI API 호출 감소 (캐시 적중 시)
 
 ### 프로덕션 기능
 - **모니터링**: 헬스 체크 엔드포인트, 구조화된 로깅, 성능 메트릭

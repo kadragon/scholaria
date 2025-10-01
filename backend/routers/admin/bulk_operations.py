@@ -70,8 +70,8 @@ async def bulk_regenerate_embeddings(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> BulkRegenerateEmbeddingsResponse:
-    """Bulk regenerate embeddings for contexts (synchronous processing)."""
-    from backend.services.ingestion import generate_context_item_embedding
+    """Bulk regenerate embeddings for contexts (asynchronous processing via Celery)."""
+    from backend.tasks.embeddings import regenerate_embedding_task
 
     contexts = db.scalars(
         select(Context).where(Context.id.in_(request.context_ids))
@@ -83,31 +83,26 @@ async def bulk_regenerate_embeddings(
             detail="One or more context IDs not found",
         )
 
-    processed_count = 0
+    task_ids = []
+    queued_count = 0
+
     for context in contexts:
         context.processing_status = "PENDING"
-        db.commit()
 
         context_items = db.scalars(
             select(ContextItem).where(ContextItem.context_id == context.id)
         ).all()
 
         for item in context_items:
-            try:
-                generate_context_item_embedding(db, item.id)
-                processed_count += 1
-            except Exception as e:
-                context.processing_status = "FAILED"
-                db.commit()
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Failed to regenerate embeddings for context {context.id}: {e}",
-                ) from e
+            task = regenerate_embedding_task.delay(item.id)
+            task_ids.append(task.id)
+            queued_count += 1
 
-        context.processing_status = "COMPLETED"
-        db.commit()
+    db.commit()
 
-    return BulkRegenerateEmbeddingsResponse(queued_count=processed_count, task_ids=[])
+    return BulkRegenerateEmbeddingsResponse(
+        queued_count=queued_count, task_ids=task_ids
+    )
 
 
 @router.post(

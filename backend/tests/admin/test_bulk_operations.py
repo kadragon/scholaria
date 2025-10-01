@@ -141,7 +141,6 @@ class TestBulkRegenerateEmbeddings:
         db_session.add_all(contexts)
         db_session.commit()
 
-        # Seed one context item per context to trigger embedding regeneration
         items = []
         for ctx in contexts:
             item = ContextItem(
@@ -157,9 +156,9 @@ class TestBulkRegenerateEmbeddings:
         context_ids = [c.id for c in contexts]
 
         with patch(
-            "backend.services.ingestion.generate_context_item_embedding",
-            return_value=None,
-        ) as mock_generate:
+            "backend.tasks.embeddings.regenerate_embedding_task.delay"
+        ) as mock_delay:
+            mock_delay.return_value.id = "task-123"
             response = client.post(
                 "/api/admin/bulk/regenerate-embeddings",
                 json={"context_ids": context_ids},
@@ -170,8 +169,8 @@ class TestBulkRegenerateEmbeddings:
         data = response.json()
         assert data["queued_count"] == len(items)
         assert "task_ids" in data
-        assert data["task_ids"] == []
-        assert mock_generate.call_count == len(items)
+        assert len(data["task_ids"]) == len(items)
+        assert mock_delay.call_count == len(items)
 
     def test_bulk_regenerate_empty_ids(
         self, client: TestClient, admin_headers: dict[str, str]

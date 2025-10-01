@@ -44,7 +44,8 @@ export const TopicList = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedIds(new Set(data?.data.map((t) => t.id) || []));
+      const ids = data?.data.map((t) => t.id).filter((id): id is number => id !== undefined) || [];
+      setSelectedIds(new Set(ids));
     } else {
       setSelectedIds(new Set());
     }
@@ -104,7 +105,7 @@ export const TopicList = () => {
   };
 
   const allSelected =
-    data?.data.length > 0 && selectedIds.size === data?.data.length;
+    (data?.data?.length ?? 0) > 0 && selectedIds.size === (data?.data?.length ?? 0);
 
   return (
     <div className="p-6 space-y-4">
@@ -145,10 +146,12 @@ export const TopicList = () => {
                 <TableRow key={topic.id}>
                   <TableCell>
                     <Checkbox
-                      checked={selectedIds.has(topic.id)}
-                      onCheckedChange={(checked) =>
-                        handleSelectOne(topic.id, checked as boolean)
-                      }
+                      checked={topic.id !== undefined && typeof topic.id === 'number' && selectedIds.has(topic.id)}
+                      onCheckedChange={(checked) => {
+                        if (typeof topic.id === 'number') {
+                          handleSelectOne(topic.id, checked as boolean);
+                        }
+                      }}
                     />
                   </TableCell>
                   <TableCell>{topic.id}</TableCell>
@@ -161,7 +164,11 @@ export const TopicList = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => topic.id && edit("topics", topic.id)}
+                      onClick={() => {
+                        if (typeof topic.id === 'number') {
+                          edit("topics", topic.id);
+                        }
+                      }}
                     >
                       Edit
                     </Button>

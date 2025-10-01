@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from backend.dependencies.auth import require_admin
 from backend.models.base import get_db
 from backend.models.context import Context, ContextItem
+from backend.schemas.admin import AdminContextItemUpdate
 from backend.schemas.context import (
     ContextItemOut,
     ContextOut,
@@ -229,6 +230,30 @@ def delete_context(
     db.commit()
 
 
+@router.get("/contexts/{context_id}/items", response_model=list[ContextItemOut])
+def get_context_items(
+    context_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+) -> list[ContextItem]:
+    """
+    Get all items for a specific context with pagination.
+    """
+    context = db.query(Context).filter(Context.id == context_id).first()
+    if not context:
+        raise HTTPException(status_code=404, detail="Context not found")
+
+    items = (
+        db.query(ContextItem)
+        .filter(ContextItem.context_id == context_id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return items
+
+
 @router.post(
     "/contexts/{context_id}/qa",
     response_model=ContextItemOut,
@@ -263,3 +288,43 @@ def add_faq_qa(
     db.refresh(qa_item)
 
     return qa_item
+
+
+@router.patch(
+    "/contexts/{context_id}/items/{item_id}",
+    response_model=ContextItemOut,
+    dependencies=[Depends(require_admin)],
+)
+def update_context_item(
+    context_id: int,
+    item_id: int,
+    data: AdminContextItemUpdate,
+    db: Session = Depends(get_db),
+) -> ContextItem:
+    """
+    Update a context item (content only for now).
+    """
+    context = db.query(Context).filter(Context.id == context_id).first()
+    if not context:
+        raise HTTPException(status_code=404, detail="Context not found")
+
+    item = (
+        db.query(ContextItem)
+        .filter(ContextItem.id == item_id, ContextItem.context_id == context_id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Context item not found")
+
+    if data.content is not None:
+        item.content = data.content
+
+    db.commit()
+    db.refresh(item)
+
+    if data.content is not None:
+        from backend.tasks.embeddings import regenerate_embedding_task
+
+        regenerate_embedding_task.delay(item.id)
+
+    return item

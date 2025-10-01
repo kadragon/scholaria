@@ -99,6 +99,7 @@ The `docker-compose.prod.yml` provides a complete production setup:
 
 **Core Services**:
 - **backend**: FastAPI application (uvicorn)
+- **celery-worker**: Background task processing for async operations (embeddings, ingestion)
 - **admin-frontend**: Refine Admin Panel (nginx-served static files)
 - **nginx**: Reverse proxy & load balancer
 - **PostgreSQL 16**: Primary database
@@ -117,9 +118,13 @@ Internet → Nginx (80/443) → FastAPI Backend (8001)
                          → Admin Frontend (static files)
 
 FastAPI → PostgreSQL (5432)
-       → Redis (6379)
+       → Redis (6379) ← Celery Worker (async tasks)
        → Qdrant (6333)
        → OpenAI API
+
+Celery Worker → PostgreSQL (5432)
+             → Qdrant (6333)
+             → OpenAI API (embeddings)
 ```
 
 ## Environment Variables
@@ -334,7 +339,11 @@ docker compose -f docker-compose.prod.yml logs -f
 
 # Check specific service
 docker compose -f docker-compose.prod.yml logs backend
+docker compose -f docker-compose.prod.yml logs celery-worker
 docker compose -f docker-compose.prod.yml logs postgres
+
+# Check Celery worker status
+docker compose -f docker-compose.prod.yml exec celery-worker celery -A backend.celery_app inspect active
 ```
 
 ### Application Health
