@@ -37,7 +37,7 @@ export const ContextList = () => {
     resource: "topics",
   });
 
-  const { edit, create } = useNavigation();
+  const { edit, create, show } = useNavigation();
   const { mutate: deleteContext } = useDelete();
   const { toast } = useToast();
 
@@ -217,6 +217,15 @@ export const ContextList = () => {
                   <TableCell>{context.processing_status}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          context.id && show("contexts", context.id)
+                        }
+                      >
+                        View
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

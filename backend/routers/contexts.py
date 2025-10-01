@@ -229,6 +229,30 @@ def delete_context(
     db.commit()
 
 
+@router.get("/contexts/{context_id}/items", response_model=list[ContextItemOut])
+def get_context_items(
+    context_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+) -> list[ContextItem]:
+    """
+    Get all items for a specific context with pagination.
+    """
+    context = db.query(Context).filter(Context.id == context_id).first()
+    if not context:
+        raise HTTPException(status_code=404, detail="Context not found")
+
+    items = (
+        db.query(ContextItem)
+        .filter(ContextItem.context_id == context_id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return items
+
+
 @router.post(
     "/contexts/{context_id}/qa",
     response_model=ContextItemOut,
