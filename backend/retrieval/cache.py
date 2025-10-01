@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from typing import Any
 
 from backend.config import settings
@@ -63,7 +64,6 @@ class EmbeddingCache:
             cached = self._client.get(key)
             if not cached:
                 return None
-            import json
 
             return json.loads(cached)
         except Exception:
@@ -75,8 +75,6 @@ class EmbeddingCache:
             return
 
         try:
-            import json
-
             key = self._make_key(text, model)
             value = json.dumps(embedding)
             self._client.setex(key, self._ttl_seconds, value)

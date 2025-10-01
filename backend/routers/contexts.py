@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session
 from backend.dependencies.auth import require_admin
 from backend.models.base import get_db
 from backend.models.context import Context, ContextItem
-from backend.retrieval.embeddings import EmbeddingService
 from backend.schemas.admin import AdminContextItemUpdate
 from backend.schemas.context import (
     ContextItemOut,
@@ -319,10 +318,13 @@ def update_context_item(
 
     if data.content is not None:
         item.content = data.content
-        embedding_service = EmbeddingService()
-        embedding_service.generate_embedding(data.content)
 
     db.commit()
     db.refresh(item)
+
+    if data.content is not None:
+        from backend.tasks.embeddings import regenerate_embedding_task
+
+        regenerate_embedding_task.delay(item.id)
 
     return item

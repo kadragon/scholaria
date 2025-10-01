@@ -88,7 +88,6 @@ async def bulk_regenerate_embeddings(
 
     for context in contexts:
         context.processing_status = "PENDING"
-        db.commit()
 
         context_items = db.scalars(
             select(ContextItem).where(ContextItem.context_id == context.id)
@@ -98,6 +97,8 @@ async def bulk_regenerate_embeddings(
             task = regenerate_embedding_task.delay(item.id)
             task_ids.append(task.id)
             queued_count += 1
+
+    db.commit()
 
     return BulkRegenerateEmbeddingsResponse(
         queued_count=queued_count, task_ids=task_ids

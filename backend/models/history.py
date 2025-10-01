@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, text
@@ -35,6 +35,7 @@ class QuestionHistory(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=text("(CURRENT_TIMESTAMP)"),
+        onupdate=lambda: datetime.now(UTC),
         nullable=False,
     )
 

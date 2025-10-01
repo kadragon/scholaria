@@ -4,7 +4,7 @@ SQLAlchemy Context model.
 Equivalent to Django rag.models.Context.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, String, Text, text
@@ -33,7 +33,9 @@ class Context(Base):
         server_default=text("(CURRENT_TIMESTAMP)"), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        server_default=text("(CURRENT_TIMESTAMP)"), nullable=False
+        server_default=text("(CURRENT_TIMESTAMP)"),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
     )
 
     # Relationship to ContextItem
@@ -76,7 +78,9 @@ class ContextItem(Base):
         server_default=text("(CURRENT_TIMESTAMP)"), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        server_default=text("(CURRENT_TIMESTAMP)"), nullable=False
+        server_default=text("(CURRENT_TIMESTAMP)"),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
     )
 
     # Relationship to Context

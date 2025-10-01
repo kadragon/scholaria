@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Text, text
@@ -27,7 +27,9 @@ class Topic(Base):
         server_default=text("(CURRENT_TIMESTAMP)"), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        server_default=text("(CURRENT_TIMESTAMP)"), nullable=False
+        server_default=text("(CURRENT_TIMESTAMP)"),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
     )
     contexts: Mapped[list[Context]] = relationship(
         "Context",
