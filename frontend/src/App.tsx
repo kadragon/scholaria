@@ -57,6 +57,7 @@ function App() {
         ]}
       >
         <Routes>
+          <Route path="/setup" element={<SetupPage />} />
           <Route
             element={
               <Authenticated
@@ -92,7 +93,6 @@ function App() {
           >
             <Route path="/login" element={<LoginPage />} />
           </Route>
-          <Route path="/setup" element={<SetupPage />} />
         </Routes>
       </Refine>
     </BrowserRouter>

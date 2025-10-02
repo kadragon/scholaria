@@ -42,7 +42,13 @@ async def login(
     db: Annotated[Session, Depends(get_db)],
 ) -> Token:
     """Login endpoint: verify credentials and issue JWT token."""
-    user = db.query(User).filter(User.username == form_data.username).first()
+    user = (
+        db.query(User)
+        .filter(
+            (User.username == form_data.username) | (User.email == form_data.username)
+        )
+        .first()
+    )
     if not user or not verify_password(form_data.password, cast(str, user.password)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

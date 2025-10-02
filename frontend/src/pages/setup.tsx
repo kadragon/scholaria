@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api";
 
 interface SetupCheckResponse {
   needs_setup: boolean;
@@ -21,14 +21,10 @@ export const SetupPage = () => {
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(true);
 
-  useEffect(() => {
-    checkSetupStatus();
-  }, []);
-
-  const checkSetupStatus = async () => {
+  const checkSetupStatus = useCallback(async () => {
     try {
       const response = await axios.get<SetupCheckResponse>(
-        `${API_URL}/api/setup/check`
+        `${API_URL}/setup/check`
       );
       if (!response.data.needs_setup) {
         navigate("/login");
@@ -38,7 +34,11 @@ export const SetupPage = () => {
     } finally {
       setChecking(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    checkSetupStatus();
+  }, [checkSetupStatus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +57,7 @@ export const SetupPage = () => {
     setIsLoading(true);
 
     try {
-      await axios.post(`${API_URL}/api/setup/init`, {
+      await axios.post(`${API_URL}/setup/init`, {
         username,
         email,
         password,
@@ -68,9 +68,10 @@ export const SetupPage = () => {
         description: "관리자 계정이 생성되었습니다. 로그인 페이지로 이동합니다.",
       });
       navigate("/login");
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errorMessage =
-        err.response?.data?.detail || "계정 생성에 실패했습니다.";
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        "계정 생성에 실패했습니다.";
       setError(errorMessage);
     } finally {
       setIsLoading(false);

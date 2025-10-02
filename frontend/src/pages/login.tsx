@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLogin } from "@refinedev/core";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api";
 
 export const LoginPage = () => {
   const { mutate: login, isLoading } = useLogin();
@@ -11,20 +11,20 @@ export const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  useEffect(() => {
-    checkSetupStatus();
-  }, []);
-
-  const checkSetupStatus = async () => {
+  const checkSetupStatus = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/setup/check`);
+      const response = await axios.get(`${API_URL}/setup/check`);
       if (response.data.needs_setup) {
         navigate("/setup");
       }
     } catch (err) {
       console.error("Setup check failed:", err);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    checkSetupStatus();
+  }, [checkSetupStatus]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
