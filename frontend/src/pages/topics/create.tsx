@@ -37,12 +37,12 @@ export const TopicCreate = () => {
     <div className="p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Create Topic</CardTitle>
+          <CardTitle>토픽 생성</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">이름</Label>
               <Input
                 id="name"
                 value={name}
@@ -52,7 +52,7 @@ export const TopicCreate = () => {
             </div>
 
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">설명</Label>
               <Textarea
                 id="description"
                 value={description}
@@ -61,7 +61,7 @@ export const TopicCreate = () => {
             </div>
 
             <div>
-              <Label htmlFor="systemPrompt">System Prompt</Label>
+              <Label htmlFor="systemPrompt">시스템 프롬프트</Label>
               <Textarea
                 id="systemPrompt"
                 value={systemPrompt}
@@ -72,14 +72,14 @@ export const TopicCreate = () => {
 
             <div className="flex gap-2">
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create"}
+                {isLoading ? "생성 중..." : "생성"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => list("topics")}
               >
-                Cancel
+                취소
               </Button>
             </div>
           </form>

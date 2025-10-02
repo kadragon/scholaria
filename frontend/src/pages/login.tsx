@@ -12,69 +12,49 @@ export const LoginPage = () => {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        backgroundColor: "#f5f5f5",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "white",
-          padding: "40px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          width: "400px",
-        }}
-      >
-        <h1 style={{ textAlign: "center", marginBottom: "30px" }}>
-          Scholaria Admin
-        </h1>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
-              Email:
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-primary-50 via-secondary-50 to-accent-50">
+      <div className="bg-white p-10 rounded-lg shadow-xl w-full max-w-md border border-secondary-200">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-primary-700 mb-2">
+            Scholaria Admin
+          </h1>
+          <p className="text-secondary-500 text-sm">관리자 로그인</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-secondary-700 mb-2">
+              이메일
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ width: "100%", padding: "10px", fontSize: "16px" }}
+              className="w-full px-4 py-3 text-base border border-secondary-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+              placeholder="admin@example.com"
             />
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
-              Password:
+          <div>
+            <label className="block text-sm font-medium text-secondary-700 mb-2">
+              비밀번호
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{ width: "100%", padding: "10px", fontSize: "16px" }}
+              className="w-full px-4 py-3 text-base border border-secondary-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+              placeholder="••••••••"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            style={{
-              width: "100%",
-              padding: "12px",
-              fontSize: "16px",
-              backgroundColor: "#1890ff",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            className="w-full py-3 text-base font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 disabled:from-secondary-400 disabled:to-secondary-500 rounded-md shadow-md hover:shadow-lg transition-all duration-200 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Logging in..." : "Login"}
+            {isLoading ? "로그인 중..." : "로그인"}
           </button>
         </form>
       </div>

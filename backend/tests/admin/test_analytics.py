@@ -58,9 +58,7 @@ def user_token(client: TestClient, regular_user: User) -> str:
     return response.json()["access_token"]
 
 
-def test_analytics_summary_empty_data(
-    client: TestClient, admin_token: str
-) -> None:
+def test_analytics_summary_empty_data(client: TestClient, admin_token: str) -> None:
     response = client.get(
         "/api/admin/analytics/summary",
         headers={"Authorization": f"Bearer {admin_token}"},
@@ -264,9 +262,7 @@ def test_analytics_feedback_distribution(
     assert data["negative"] == 1
 
 
-def test_analytics_require_admin(
-    client: TestClient, user_token: str
-) -> None:
+def test_analytics_require_admin(client: TestClient, user_token: str) -> None:
     response = client.get(
         "/api/admin/analytics/summary",
         headers={"Authorization": f"Bearer {user_token}"},

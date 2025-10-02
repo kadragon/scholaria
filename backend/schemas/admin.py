@@ -137,7 +137,6 @@ class BulkUpdateSystemPromptResponse(BaseModel):
     updated_count: int
 
 
-
 class AnalyticsSummaryOut(BaseModel):
     """Analytics summary schema."""
 

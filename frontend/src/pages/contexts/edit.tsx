@@ -50,19 +50,19 @@ export const ContextEdit = () => {
   };
 
   if (isLoading) {
-    return <div className="p-6">Loading...</div>;
+    return <div className="p-6">로딩 중...</div>;
   }
 
   return (
     <div className="p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Edit Context: {data?.data.name}</CardTitle>
+          <CardTitle>컨텍스트 편집: {data?.data.name}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">이름</Label>
               <Input
                 id="name"
                 value={name}
@@ -72,7 +72,7 @@ export const ContextEdit = () => {
             </div>
 
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">설명</Label>
               <Textarea
                 id="description"
                 value={description}
@@ -82,7 +82,7 @@ export const ContextEdit = () => {
 
             {data?.data.context_type === "MARKDOWN" && (
               <div>
-                <Label htmlFor="content">Content</Label>
+                <Label htmlFor="content">내용</Label>
                 <Textarea
                   id="content"
                   value={originalContent}
@@ -93,13 +93,13 @@ export const ContextEdit = () => {
             )}
 
             <div className="flex gap-2">
-              <Button type="submit">Save</Button>
+              <Button type="submit">저장</Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => list("contexts")}
               >
-                Cancel
+                취소
               </Button>
             </div>
           </form>

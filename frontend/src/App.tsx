@@ -16,14 +16,15 @@ import { ContextShow } from "./pages/contexts/show";
 import { LoginPage } from "./pages/login";
 import { Analytics } from "./pages/analytics";
 import { Toaster } from "./components/ui/toaster";
+import { Sidebar } from "./components/Sidebar";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div>
-      <nav style={{ padding: "20px", borderBottom: "1px solid #ddd" }}>
-        <h2>Scholaria Admin</h2>
-      </nav>
-      <main>{children}</main>
+    <div className="flex min-h-screen bg-secondary-50">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
       <Toaster />
     </div>
   );

@@ -35,9 +35,7 @@ async def get_analytics_summary(
     active_sessions = (
         db.query(func.count(distinct(QuestionHistory.session_id))).scalar() or 0
     )
-    avg_feedback = (
-        db.query(func.avg(QuestionHistory.feedback_score)).scalar() or 0.0
-    )
+    avg_feedback = db.query(func.avg(QuestionHistory.feedback_score)).scalar() or 0.0
 
     return AnalyticsSummaryOut(
         total_questions=total_questions,

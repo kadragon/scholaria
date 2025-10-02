@@ -50,7 +50,7 @@ export const ContextList = () => {
   const [isRegenerating, setIsRegenerating] = useState(false);
 
   if (isLoading) {
-    return <div className="p-6">Loading...</div>;
+    return <div className="p-6">로딩 중...</div>;
   }
 
   const handleSelectAll = (checked: boolean) => {
@@ -96,8 +96,8 @@ export const ContextList = () => {
 
       const result = await response.json();
       toast({
-        title: "Success",
-        description: `${result.assigned_count} contexts assigned to topic`,
+        title: "성공",
+        description: `${result.assigned_count}개 컨텍스트가 토픽에 할당되었습니다.`,
       });
 
       setAssignDialogOpen(false);
@@ -105,8 +105,8 @@ export const ContextList = () => {
       setSelectedTopicId("");
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to assign contexts to topic",
+        title: "오류",
+        description: "컨텍스트 할당에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -137,15 +137,15 @@ export const ContextList = () => {
 
       const result = await response.json();
       toast({
-        title: "Success",
-        description: `${result.queued_count} contexts queued for embedding regeneration`,
+        title: "성공",
+        description: `${result.queued_count}개 컨텍스트의 임베딩 재생성이 대기열에 추가되었습니다.`,
       });
 
       setSelectedIds(new Set());
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to regenerate embeddings",
+        title: "오류",
+        description: "임베딩 재생성에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -160,7 +160,7 @@ export const ContextList = () => {
     <div className="p-6 space-y-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Contexts</CardTitle>
+          <CardTitle>컨텍스트 관리</CardTitle>
           <div className="flex gap-2">
             {selectedIds.size > 0 && (
               <>
@@ -168,18 +168,18 @@ export const ContextList = () => {
                   variant="outline"
                   onClick={() => setAssignDialogOpen(true)}
                 >
-                  Assign to Topic ({selectedIds.size})
+                  토픽에 할당 ({selectedIds.size})
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleRegenerateEmbeddings}
                   disabled={isRegenerating}
                 >
-                  {isRegenerating ? "Regenerating..." : "Regenerate Embeddings"}
+                  {isRegenerating ? "임베딩 재생성 중..." : "임베딩 재생성"}
                 </Button>
               </>
             )}
-            <Button onClick={() => create("contexts")}>Create Context</Button>
+            <Button onClick={() => create("contexts")}>컨텍스트 생성</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -193,11 +193,11 @@ export const ContextList = () => {
                   />
                 </TableHead>
                 <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Chunk Count</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>이름</TableHead>
+                <TableHead>타입</TableHead>
+                <TableHead>청크 수</TableHead>
+                <TableHead>상태</TableHead>
+                <TableHead>작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -229,7 +229,7 @@ export const ContextList = () => {
                           }
                         }}
                       >
-                        View
+                        보기
                       </Button>
                       <Button
                         variant="outline"
@@ -240,7 +240,7 @@ export const ContextList = () => {
                           }
                         }}
                       >
-                        Edit
+                        편집
                       </Button>
                       <Button
                         variant="destructive"
@@ -254,7 +254,7 @@ export const ContextList = () => {
                           }
                         }}
                       >
-                        Delete
+                        삭제
                       </Button>
                     </div>
                   </TableCell>
@@ -268,15 +268,15 @@ export const ContextList = () => {
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Contexts to Topic</DialogTitle>
+            <DialogTitle>컨텍스트를 토픽에 할당</DialogTitle>
             <DialogDescription>
-              Select a topic to assign {selectedIds.size} selected context(s).
+              선택한 {selectedIds.size}개 컨텍스트를 할당할 토픽을 선택하세요.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a topic" />
+                <SelectValue placeholder="토픽 선택" />
               </SelectTrigger>
               <SelectContent>
                 {topicsData?.data.map((topic) => (
@@ -294,13 +294,13 @@ export const ContextList = () => {
               variant="outline"
               onClick={() => setAssignDialogOpen(false)}
             >
-              Cancel
+              취소
             </Button>
             <Button
               onClick={handleAssignToTopic}
               disabled={!selectedTopicId || isAssigning}
             >
-              {isAssigning ? "Assigning..." : "Assign"}
+              {isAssigning ? "할당 중..." : "할당"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -39,7 +39,7 @@ export const TopicList = () => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   if (isLoading) {
-    return <div className="p-6">Loading...</div>;
+    return <div className="p-6">로딩 중...</div>;
   }
 
   const handleSelectAll = (checked: boolean) => {
@@ -85,8 +85,8 @@ export const TopicList = () => {
 
       const result = await response.json();
       toast({
-        title: "Success",
-        description: `${result.updated_count} topics updated`,
+        title: "성공",
+        description: `${result.updated_count}개 토픽이 업데이트되었습니다.`,
       });
 
       setUpdatePromptDialogOpen(false);
@@ -95,8 +95,8 @@ export const TopicList = () => {
       tableQueryResult.refetch();
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to update system prompts",
+        title: "오류",
+        description: "시스템 프롬프트 업데이트에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -111,17 +111,17 @@ export const TopicList = () => {
     <div className="p-6 space-y-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Topics</CardTitle>
+          <CardTitle>토픽 관리</CardTitle>
           <div className="flex gap-2">
             {selectedIds.size > 0 && (
               <Button
                 variant="outline"
                 onClick={() => setUpdatePromptDialogOpen(true)}
               >
-                Update System Prompt ({selectedIds.size})
+                시스템 프롬프트 업데이트 ({selectedIds.size})
               </Button>
             )}
-            <Button onClick={() => create("topics")}>Create Topic</Button>
+            <Button onClick={() => create("topics")}>토픽 생성</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -135,10 +135,10 @@ export const TopicList = () => {
                   />
                 </TableHead>
                 <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>System Prompt</TableHead>
-                <TableHead>Contexts</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>이름</TableHead>
+                <TableHead>시스템 프롬프트</TableHead>
+                <TableHead>컨텍스트 수</TableHead>
+                <TableHead>작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -170,7 +170,7 @@ export const TopicList = () => {
                         }
                       }}
                     >
-                      Edit
+                      편집
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -186,18 +186,18 @@ export const TopicList = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Update System Prompt</DialogTitle>
+            <DialogTitle>시스템 프롬프트 업데이트</DialogTitle>
             <DialogDescription>
-              Update the system prompt for {selectedIds.size} selected topic(s).
+              선택한 {selectedIds.size}개 토픽의 시스템 프롬프트를 업데이트합니다.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="system-prompt">System Prompt</Label>
+              <Label htmlFor="system-prompt">시스템 프롬프트</Label>
               <Tabs defaultValue="kr" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="kr">Korean</TabsTrigger>
-                  <TabsTrigger value="en">English</TabsTrigger>
+                  <TabsTrigger value="kr">한국어</TabsTrigger>
+                  <TabsTrigger value="en">영어</TabsTrigger>
                 </TabsList>
                 <TabsContent value="kr">
                   <textarea
@@ -225,13 +225,13 @@ export const TopicList = () => {
               variant="outline"
               onClick={() => setUpdatePromptDialogOpen(false)}
             >
-              Cancel
+              취소
             </Button>
             <Button
               onClick={handleUpdateSystemPrompt}
               disabled={!systemPrompt.trim() || isUpdating}
             >
-              {isUpdating ? "Updating..." : "Update"}
+              {isUpdating ? "업데이트 중..." : "업데이트"}
             </Button>
           </DialogFooter>
         </DialogContent>
