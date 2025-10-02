@@ -214,39 +214,48 @@ Test organization:
 
 ## 📚 Documentation
 
-- [Architecture Decisions](docs/ARCHITECTURE_DECISIONS.md)
-- [Deployment Guide](docs/DEPLOYMENT.md)
-- [Testing Strategy](docs/TESTING_STRATEGY.md)
-- [Contributing Guidelines](docs/CONTRIBUTING.md)
-- [User Guide](docs/USER_GUIDE.md)
-- [Admin Guide](docs/ADMIN_GUIDE.md)
+### 개발자 가이드
+- [Architecture Decisions](docs/ARCHITECTURE_DECISIONS.md) - 주요 기술 결정 (Django→FastAPI 이유 등)
+- [Contributing Guidelines](docs/CONTRIBUTING.md) - 개발 워크플로우 & 브랜치 전략
+- [Testing Strategy](docs/TESTING_STRATEGY.md) - TDD 원칙 & 테스트 실행 방법
+
+### 운영 가이드
+- [Deployment Guide](docs/DEPLOYMENT.md) - **프로덕션 배포 완전 가이드** (환경 설정, DB 초기화, 모니터링)
+- [Backup Strategy](docs/BACKUP_STRATEGY.md) - 백업/복원 전략 & 스크립트 사용법
+
+### 사용자 가이드
+- [Admin Guide](docs/ADMIN_GUIDE.md) - 관리 패널 사용법 (컨텍스트 업로드, 토픽 관리)
+- [User Guide](docs/USER_GUIDE.md) - 학생/엔드유저용 시스템 사용 가이드
+
+> 💡 **빠른 참조**: 프로덕션 배포는 [DEPLOYMENT.md](docs/DEPLOYMENT.md) → 환경 변수는 `.env.prod.example` 참조
 
 ## 🔧 Environment Variables
 
-Key configuration (see `.env.example` for full list):
+**필수 설정** (상세 설명은 `.env.example` & `.env.prod.example` 참조):
 
 ```bash
 # Database
 DATABASE_URL=postgresql://user:pass@localhost:5432/scholaria
 
-# OpenAI
+# OpenAI (필수)
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4o-mini
 
-# Qdrant
+# JWT Authentication (프로덕션 필수)
+JWT_SECRET_KEY=<python -c "import secrets; print(secrets.token_urlsafe(32))">
+JWT_ALGORITHM=HS256
+
+# Vector DB
 QDRANT_URL=http://localhost:6333
-QDRANT_COLLECTION_NAME=context_items
 
 # Redis
 REDIS_URL=redis://localhost:6379/0
 
-# JWT
-JWT_SECRET_KEY=your-secret-key
-JWT_ALGORITHM=HS256
-
-# CORS (production)
-FASTAPI_ALLOWED_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com
+# CORS (프로덕션)
+FASTAPI_ALLOWED_ORIGINS=https://yourdomain.com
 ```
+
+> 🔒 **보안**: `JWT_SECRET_KEY`는 반드시 생성 필요. 프로덕션 환경 설정 상세는 [DEPLOYMENT.md](docs/DEPLOYMENT.md#environment-variables) 참조.
 
 ## 🤝 Contributing
 

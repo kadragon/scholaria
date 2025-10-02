@@ -1,6 +1,13 @@
 # Deployment Guide
 
-This guide provides comprehensive instructions for deploying the **Scholaria RAG System** (FastAPI) in production environments.
+**Scholaria RAG System (FastAPI) 프로덕션 배포 완전 가이드**
+
+> 📚 **관련 문서**:
+> - [README.md](../README.md) - 프로젝트 개요 & 개발 환경 설정
+> - [ADMIN_GUIDE.md](ADMIN_GUIDE.md) - 관리 패널 사용법
+> - [backup-strategy.md](backup-strategy.md) - 백업/복원 전략
+> - [ARCHITECTURE_DECISIONS.md](ARCHITECTURE_DECISIONS.md) - 기술 스택 선택 배경
+> - `.env.prod.example` - 프로덕션 환경 변수 전체 목록
 
 ## Prerequisites
 
@@ -95,41 +102,39 @@ open http://localhost/admin
 
 ### Docker Compose Services
 
-The `docker-compose.prod.yml` provides a complete production setup:
+`docker-compose.prod.yml`이 다음 서비스들을 제공:
 
-**Core Services**:
-- **backend**: FastAPI application (uvicorn)
-- **celery-worker**: Background task processing for async operations (embeddings, ingestion)
-- **admin-frontend**: Refine Admin Panel (nginx-served static files)
-- **nginx**: Reverse proxy & load balancer
-- **PostgreSQL 16**: Primary database
-- **Redis 7**: Cache and Celery broker
-- **Qdrant**: Vector database for embeddings
+**핵심 서비스:**
+- **backend**: FastAPI (uvicorn ASGI)
+- **celery-worker**: 비동기 작업 처리 (임베딩, 문서 수집)
+- **admin-frontend**: Refine 관리 패널 (nginx 정적 서빙)
+- **nginx**: 리버스 프록시 & 로드 밸런서
+- **PostgreSQL 16**: 메인 데이터베이스
+- **Redis 7**: 캐시 & Celery 브로커
+- **Qdrant**: 벡터 데이터베이스
 
-**Volumes**:
-- `postgres_data`: Database persistence
-- `redis_data`: Cache persistence
-- `qdrant_data`: Vector database storage
+**볼륨:**
+- `postgres_data`: DB 영속성
+- `redis_data`: 캐시 영속성
+- `qdrant_data`: 벡터 저장소
 
-### Architecture
+### 아키텍처
 
 ```
 Internet → Nginx (80/443) → FastAPI Backend (8001)
-                         → Admin Frontend (static files)
+                          → Admin Frontend (정적)
 
 FastAPI → PostgreSQL (5432)
-       → Redis (6379) ← Celery Worker (async tasks)
+       → Redis (6379) ← Celery Worker
        → Qdrant (6333)
        → OpenAI API
-
-Celery Worker → PostgreSQL (5432)
-             → Qdrant (6333)
-             → OpenAI API (embeddings)
 ```
 
 ## Environment Variables
 
-### Required Variables (JWT & Auth)
+> 📋 **참고**: 전체 환경 변수 목록은 `.env.example` (개발), `.env.prod.example` (프로덕션) 참조.
+
+### 필수 변수 (JWT & Auth)
 
 ```bash
 # JWT Configuration (REQUIRED)
@@ -146,92 +151,72 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ### Database Configuration
 
 ```bash
-# Database
+# PostgreSQL
 DATABASE_URL=postgresql://postgres:secure-password@postgres:5432/scholaria
+# 또는 개별 설정
 DB_ENGINE=postgresql
 DB_NAME=scholaria
 DB_USER=postgres
-DB_PASSWORD=your-secure-database-password
+DB_PASSWORD=your-secure-database-password  # 필수
 DB_HOST=postgres
 DB_PORT=5432
 ```
 
-### OpenAI Configuration
+> ⚠️ **중요**: `DB_PASSWORD`는 기본값 없음. 모든 환경에서 명시적 설정 필요.
+
+### AI 및 서비스 설정
 
 ```bash
-# OpenAI API
+# OpenAI (필수)
 OPENAI_API_KEY=sk-your-openai-api-key-here
-OPENAI_EMBEDDING_MODEL=text-embedding-3-large
-OPENAI_CHAT_MODEL=gpt-4o-mini
-OPENAI_EMBEDDING_DIM=3072
-OPENAI_CHAT_TEMPERATURE=0.3
-OPENAI_CHAT_MAX_TOKENS=1000
+
+# 임베딩 & 채팅 모델 (옵션, 기본값 사용 가능)
+OPENAI_EMBEDDING_MODEL=text-embedding-3-large  # 기본값
+OPENAI_CHAT_MODEL=gpt-4o-mini                   # 기본값
+OPENAI_EMBEDDING_DIM=3072                       # 기본값
+OPENAI_CHAT_TEMPERATURE=0.3                     # 기본값
+OPENAI_CHAT_MAX_TOKENS=1000                     # 기본값
 ```
 
-### Service URLs
+### 벡터 DB & 캐시
 
 ```bash
-# Redis
+# Redis (Celery 브로커 & 캐시)
 REDIS_URL=redis://redis:6379/0
 
-# Qdrant
+# Qdrant (벡터 검색)
 QDRANT_URL=http://qdrant:6333
-QDRANT_COLLECTION_NAME=context_items
+QDRANT_COLLECTION_NAME=context_items  # 기본값
 ```
 
-### CORS Configuration (Production)
+### CORS 및 성능
 
 ```bash
-# Frontend domains that can access the API
+# CORS (프로덕션 필수)
 FASTAPI_ALLOWED_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com
+
+# RAG 검색 파라미터 (옵션)
+RAG_SEARCH_LIMIT=15           # 초기 검색 결과 수
+RAG_RERANK_TOP_K=7            # 리랭킹 후 최종 결과 수
 ```
 
-### Optional Performance Tuning
+
+
+### 프로덕션 .env 예시
 
 ```bash
-# RAG Search Parameters
-RAG_SEARCH_LIMIT=15
-RAG_RERANK_TOP_K=7
-
-# File Upload
-FILE_VALIDATION_MAX_SIZE=10485760  # 10MB
-```
-
-### Example Production .env File
-
-```bash
-# Production Configuration
 DEBUG=False
-
-# JWT (REQUIRED)
-JWT_SECRET_KEY=your-generated-secret-key-here
-JWT_ALGORITHM=HS256
-JWT_ACCESS_TOKEN_EXPIRE_HOURS=24
-
-# Database
-DATABASE_URL=postgresql://postgres:secure-db-password@postgres:5432/scholaria
-DB_PASSWORD=secure-db-password
-
-# Redis
+JWT_SECRET_KEY=<python -c "import secrets; print(secrets.token_urlsafe(32))">
+DATABASE_URL=postgresql://postgres:secure-pw@postgres:5432/scholaria
 REDIS_URL=redis://redis:6379/0
-
-# OpenAI
-OPENAI_API_KEY=sk-your-openai-api-key-here
-OPENAI_EMBEDDING_MODEL=text-embedding-3-large
-OPENAI_CHAT_MODEL=gpt-4o-mini
-OPENAI_EMBEDDING_DIM=3072
-
-# Qdrant
+OPENAI_API_KEY=sk-xxx
 QDRANT_URL=http://qdrant:6333
-QDRANT_COLLECTION_NAME=context_items
-
-# CORS (add your production domains)
 FASTAPI_ALLOWED_ORIGINS=https://yourdomain.com
-
-# Performance
-RAG_SEARCH_LIMIT=15
-RAG_RERANK_TOP_K=7
 ```
+
+> 🔒 **보안**: `JWT_SECRET_KEY`, `DB_PASSWORD`, `OPENAI_API_KEY`는 반드시 프로덕션 환경에서 설정 필요. 기본값 사용 금지.
+
+상세 환경 변수 설명은 `.env.prod.example` 참조.
 
 ## Database Management
 
@@ -251,47 +236,43 @@ docker compose -f docker-compose.prod.yml exec backend alembic downgrade -1
 docker compose -f docker-compose.prod.yml exec backend alembic history
 ```
 
-### Database Backup
+### 데이터베이스 백업
 
 ```bash
-# Automated backup script (included)
+# 자동 백업 (스크립트 사용)
 ./scripts/backup.sh
 
-# Manual backup
+# 수동 백업
 docker compose -f docker-compose.prod.yml exec postgres pg_dump -U postgres scholaria > backup_$(date +%Y%m%d).sql
 
-# Restore from backup
+# 복원
 docker compose -f docker-compose.prod.yml exec -i postgres psql -U postgres scholaria < backup.sql
 ```
 
+> 📦 **백업 전략**: 상세 백업/복원 절차는 `scripts/backup.sh`, `scripts/restore.sh` 참조. 일일/주간/월간 백업 스케줄 지원.
+
 ## Security
 
-### Essential Security Measures
+### 필수 보안 조치
 
-1. **JWT Secret Key**: Generate and store securely
+1. **JWT Secret**: 프로덕션에서 반드시 생성
    ```bash
-   # Never use default values in production!
    python -c "import secrets; print(secrets.token_urlsafe(32))"
    ```
 
-2. **Database Security**:
-   - Use strong passwords (minimum 20 characters)
-   - Restrict database access to application only
-   - Enable SSL connections in production
+2. **데이터베이스 보안**:
+   - 강력한 패스워드 사용 (20자 이상)
+   - 프로덕션에서 SSL 연결 활성화
 
 3. **API Keys**:
-   - Store OpenAI API keys in environment variables only
-   - Never commit secrets to version control
-   - Rotate keys regularly (quarterly recommended)
+   - 환경 변수로만 관리
+   - 정기 로테이션 (분기별 권장)
 
-4. **Network Security**:
-   - Use HTTPS for all external traffic
-   - Configure firewall to restrict internal service access
-   - Only expose nginx port (80/443) externally
+4. **네트워크**:
+   - HTTPS 필수
+   - nginx 포트(80/443)만 외부 노출
 
-5. **CORS Configuration**:
-   - Set `FASTAPI_ALLOWED_ORIGINS` to your specific domains
-   - Never use `*` (allow all) in production
+5. **CORS**: `FASTAPI_ALLOWED_ORIGINS`에 실제 도메인만 설정 (와일드카드 금지)
 
 ### SSL/TLS Configuration
 
@@ -488,10 +469,16 @@ docker compose -f docker-compose.dev.yml exec backend alembic upgrade head
 docker compose -f docker-compose.dev.yml logs -f backend
 ```
 
-## Support
+## 추가 참조
 
-For support or additional help, refer to:
-- [README.md](../README.md) - Quick start guide
-- [ARCHITECTURE_DECISIONS.md](ARCHITECTURE_DECISIONS.md) - Technical decisions
-- [TESTING_STRATEGY.md](TESTING_STRATEGY.md) - Testing approach
-- Project issue tracker
+**운영 관련:**
+- [BACKUP_STRATEGY.md](BACKUP_STRATEGY.md) - 백업 스크립트 & 재해 복구
+- [ADMIN_GUIDE.md](ADMIN_GUIDE.md) - 관리 패널 운영 가이드
+
+**개발 관련:**
+- [README.md](../README.md) - 개발 환경 설정
+- [TESTING_STRATEGY.md](TESTING_STRATEGY.md) - 테스트 전략
+- [CONTRIBUTING.md](CONTRIBUTING.md) - 개발 워크플로우
+
+**기술 배경:**
+- [ARCHITECTURE_DECISIONS.md](ARCHITECTURE_DECISIONS.md) - FastAPI 선택 이유 등

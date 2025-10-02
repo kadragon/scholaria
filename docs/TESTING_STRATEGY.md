@@ -1,8 +1,13 @@
 # Testing Strategy
 
-## Project Philosophy
+**Scholaria TDD 전략** - Red → Green → Refactor 원칙
 
-Scholaria follows **Test-Driven Development (TDD)** with the **Red → Green → Refactor** cycle and **Tidy First** principles. Every feature begins with a failing test, implements minimal code to pass, then refactors for quality.
+> 📚 **관련 문서**:
+> - [README.md](../README.md) - 테스트 실행 명령어
+> - [CONTRIBUTING.md](CONTRIBUTING.md) - 개발 워크플로우
+> - [ARCHITECTURE_DECISIONS.md](ARCHITECTURE_DECISIONS.md#adr-008-test-driven-development-methodology) - TDD 도입 배경
+
+모든 기능은 실패하는 테스트 → 최소 구현 → 리팩토링 순서로 개발됩니다.
 
 ## Testing Framework & Configuration
 

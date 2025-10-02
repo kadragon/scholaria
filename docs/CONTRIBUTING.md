@@ -1,6 +1,12 @@
 # Contributing to Scholaria
 
-Welcome! This guide explains how to contribute to the Scholaria school-integrated RAG system while preserving quality, safety, and velocity. Follow these practices to stay aligned with the project's Test-Driven Development workflow and documentation-driven collaboration.
+Scholaria 프로젝트 기여 가이드 - TDD 워크플로우 & 품질 유지 원칙
+
+> 📚 **관련 문서**:
+> - [README.md](../README.md) - 개발 환경 설정 & 빠른 시작
+> - [TESTING_STRATEGY.md](TESTING_STRATEGY.md) - TDD 원칙 & 테스트 실행
+> - [ARCHITECTURE_DECISIONS.md](ARCHITECTURE_DECISIONS.md) - 기술 결정 배경
+> - [DEPLOYMENT.md](DEPLOYMENT.md) - 프로덕션 배포
 
 ## Project Philosophy
 
@@ -13,10 +19,11 @@ Scholaria is built around disciplined engineering:
 
 ## Before You Start
 
-1. Read `docs/tasks.md` to understand active priorities.
-2. Review relevant `docs/agents/` knowledge bases for folder-specific context.
-3. Ensure you have Python 3.13+, Docker, and `uv` installed.
-4. Join the team Slack and review the pinned onboarding resources.
+1. **작업 목록 확인**: `docs/agents/TASKS.md`에서 현재 우선순위 파악
+2. **폴더별 컨텍스트**: 관련 `docs/agents/<folder>/AGENTS.md` 읽기
+3. **개발 환경 준비**: [README.md](../README.md) 참조
+   - Python 3.13+, Docker, uv 설치 필요
+4. **테스트 전략 숙지**: [TESTING_STRATEGY.md](TESTING_STRATEGY.md) 읽기
 
 ## Workflow Overview
 
