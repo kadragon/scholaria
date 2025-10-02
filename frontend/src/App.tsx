@@ -14,6 +14,7 @@ import { ContextCreate } from "./pages/contexts/create";
 import { ContextEdit } from "./pages/contexts/edit";
 import { ContextShow } from "./pages/contexts/show";
 import { LoginPage } from "./pages/login";
+import { SetupPage } from "./pages/setup";
 import { Analytics } from "./pages/analytics";
 import { Toaster } from "./components/ui/toaster";
 import { Sidebar } from "./components/Sidebar";
@@ -91,6 +92,7 @@ function App() {
           >
             <Route path="/login" element={<LoginPage />} />
           </Route>
+          <Route path="/setup" element={<SetupPage />} />
         </Routes>
       </Refine>
     </BrowserRouter>

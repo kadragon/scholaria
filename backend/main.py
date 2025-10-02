@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
-from backend.routers import auth, contexts, history, rag, topics
+from backend.routers import auth, contexts, history, rag, setup, topics
 from backend.routers.admin import analytics_router as admin_analytics
 from backend.routers.admin import bulk_operations
 from backend.routers.admin import contexts_router as admin_contexts
@@ -28,6 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(setup.router, prefix="/api", tags=["setup"])
 app.include_router(auth.router, prefix="/api", tags=["auth"])
 app.include_router(topics.router, prefix="/api", tags=["topics"])
 app.include_router(contexts.router, prefix="/api", tags=["contexts"])
