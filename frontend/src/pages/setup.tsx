@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
@@ -21,11 +21,7 @@ export const SetupPage = () => {
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(true);
 
-  useEffect(() => {
-    checkSetupStatus();
-  }, []);
-
-  const checkSetupStatus = async () => {
+  const checkSetupStatus = useCallback(async () => {
     try {
       const response = await axios.get<SetupCheckResponse>(
         `${API_URL}/setup/check`
@@ -38,7 +34,11 @@ export const SetupPage = () => {
     } finally {
       setChecking(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    checkSetupStatus();
+  }, [checkSetupStatus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
