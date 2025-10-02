@@ -51,6 +51,17 @@ services:
     healthcheck:
       disable: true
 
+  flower:
+    image: mher/flower:2.0
+    command: celery --broker=redis://redis:6379/0 flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - FLOWER_BASIC_AUTH=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-flower}
+    depends_on:
+      - redis
+      - celery-worker
+
 volumes:
   postgres_data:
   redis_data:

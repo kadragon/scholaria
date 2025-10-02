@@ -268,11 +268,15 @@ docker compose -f docker-compose.prod.yml exec -i postgres psql -U postgres scho
    - 환경 변수로만 관리
    - 정기 로테이션 (분기별 권장)
 
-4. **네트워크**:
+4. **Flower Dashboard**:
+   - `FLOWER_USER`, `FLOWER_PASSWORD` 강력한 값 설정
+   - 외부 접근 차단 (nginx proxy 또는 방화벽)
+
+5. **네트워크**:
    - HTTPS 필수
    - nginx 포트(80/443)만 외부 노출
 
-5. **CORS**: `FASTAPI_ALLOWED_ORIGINS`에 실제 도메인만 설정 (와일드카드 금지)
+6. **CORS**: `FASTAPI_ALLOWED_ORIGINS`에 실제 도메인만 설정 (와일드카드 금지)
 
 ### SSL/TLS Configuration
 
