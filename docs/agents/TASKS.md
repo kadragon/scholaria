@@ -2,7 +2,7 @@
 
 ## 🎉 프로젝트 상태: MVP 완료 & 프로덕션 준비
 
-✅ **100개 테스트 통과 | Django→FastAPI 전환 완료 | 배포 준비 완료**
+✅ **134개 테스트 통과 | Django→FastAPI 전환 완료 | 배포 준비 완료**
 
 ---
 
@@ -10,6 +10,9 @@
 
 ### Analytics 데이터 파싱 검증
 - [ ] **useCustom 응답 파싱 수정** (`docs/agents/tasks/analytics-data-parsing/`) - 타입 분석 완료, 실제 응답 구조 확인 대기
+
+### 품질 보증
+- [x] **Context Item Update 테스트 수정** ✅ (`docs/agents/tasks/fix-context-item-update-tests/`) - 모킹 경로 수정, 134 tests passing
 
 ### 관리 인터페이스 개선
 - [x] **청크 미리보기** ✅ (`docs/agents/tasks/chunk-preview-ui/`)
@@ -35,7 +38,7 @@
 - Docker Compose + Nginx 리버스 프록시
 - JWT 인증 + 환경변수 관리
 - Alembic 마이그레이션 + 백업 전략
-- 100% 테스트 커버리지 (100 tests passing)
+- 100% 테스트 커버리지 (134 tests passing)
 
 ### 라이브러리 마이그레이션 ✅
 - Unstructured → Docling (PDF 파싱)
@@ -82,7 +85,7 @@ uv run alembic upgrade head
 ```
 
 ## 📊 Production Readiness
-- ✅ 122 tests passing | mypy strict | ruff clean
+- ✅ 134 tests passing | mypy strict | ruff clean
 - ✅ JWT auth + admin API
 - ✅ Docker + Nginx production config
 - ✅ FastAPI + SQLAlchemy + Refine + shadcn/ui
