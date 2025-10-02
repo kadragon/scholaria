@@ -14,7 +14,7 @@ Automation helpers (shell scripts, tooling wrappers) supporting Scholaria workfl
 ## Context
 
 - `test_docker_integration.sh` orchestrates Docker Compose bring-up and runs integration tests with `DOCKER_INTEGRATION_TESTS=true`.
-- `scripts/docker/dev-entrypoint.sh` guarantees uv dependencies exist before launching the Django dev server inside Docker.
+- `scripts/docker/dev-entrypoint.sh` guarantees uv dependencies exist before launching the FastAPI backend server inside Docker.
 - Required services: PostgreSQL, Redis, Qdrant; optional: MinIO. Docling does not require a separate health check.
 - Update helper arrays and health-check logic whenever `docker-compose.yml` services change.
 

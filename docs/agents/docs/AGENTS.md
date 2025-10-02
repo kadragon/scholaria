@@ -6,7 +6,7 @@ Centralized product documentation (guides, playbooks, contributor docs) for Scho
 
 ## Constraints
 
-- Mirror engineering practices documented in tests; every major guide should have matching regression tests under `rag/tests/`.
+- Mirror engineering practices documented in tests; every major guide should have matching regression tests under `backend/tests/`.
 - Keep headings stable—tests assert exact section titles for critical guides.
 - Reference `docs/tasks.md` and folder-specific `AGENTS.md` workflows whenever describing process.
 
@@ -15,5 +15,5 @@ Centralized product documentation (guides, playbooks, contributor docs) for Scho
 - `CONTRIBUTING.md` defines contributor workflow emphasizing TDD, "red → green → refactor", and "Tidy First"; update tests alongside structural changes.
 - Existing guides (`ADMIN_GUIDE`, `USER_GUIDE`, `DEPLOYMENT`) follow instructional tone with actionable checklists and command snippets.
 - Deployment guide now documents Docling as an in-process dependency (no external Unstructured API env vars).
-- Deployment guide documents the `docker-compose.dev.yml` override for running the Django web container locally.
+- Deployment guide documents the `docker-compose.dev.yml` override for running the FastAPI backend container locally.
 - Add new documentation in Markdown with top-level heading matching file purpose and actionable subsections.
