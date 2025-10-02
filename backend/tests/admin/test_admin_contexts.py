@@ -234,9 +234,9 @@ class TestContextItemUpdate:
 
         from backend.models.context import ContextItem
 
-        mock_service = Mock()
+        mock_task = Mock()
         monkeypatch.setattr(
-            "backend.routers.contexts.EmbeddingService", lambda: mock_service
+            "backend.tasks.embeddings.regenerate_embedding_task", mock_task
         )
 
         ctx = SQLContext(
@@ -271,10 +271,9 @@ class TestContextItemUpdate:
 
         from backend.models.context import ContextItem
 
-        mock_service = Mock()
-        mock_service.generate_embedding = Mock(return_value=[0.1, 0.2])
+        mock_task = Mock()
         monkeypatch.setattr(
-            "backend.routers.contexts.EmbeddingService", lambda: mock_service
+            "backend.tasks.embeddings.regenerate_embedding_task", mock_task
         )
 
         ctx = SQLContext(
@@ -314,14 +313,13 @@ class TestContextItemUpdate:
         self, admin_headers, db_session, monkeypatch
     ):
         """Test that content update triggers embedding regeneration."""
-        from unittest.mock import MagicMock, Mock
+        from unittest.mock import Mock
 
         from backend.models.context import ContextItem
 
-        mock_service = Mock()
-        mock_service.generate_embedding = MagicMock(return_value=[0.9, 0.8, 0.7])
+        mock_task = Mock()
         monkeypatch.setattr(
-            "backend.routers.contexts.EmbeddingService", lambda: mock_service
+            "backend.tasks.embeddings.regenerate_embedding_task", mock_task
         )
 
         ctx = SQLContext(
@@ -349,9 +347,7 @@ class TestContextItemUpdate:
         )
         assert response.status_code == 200
 
-        mock_service.generate_embedding.assert_called_once_with(
-            "New content for embedding"
-        )
+        mock_task.delay.assert_called_once_with(item_id)
 
         db_session.expire_all()
         updated_item = db_session.query(ContextItem).filter_by(id=item_id).first()
