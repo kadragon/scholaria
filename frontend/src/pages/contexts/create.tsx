@@ -6,10 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api";
 
 export const ContextCreate = () => {
   const { mutate: create } = useCreate();
   const { list } = useNavigation();
+  const { toast } = useToast();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -17,25 +22,47 @@ export const ContextCreate = () => {
     "MARKDOWN",
   );
   const [originalContent, setOriginalContent] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    create(
-      {
-        resource: "contexts",
-        values: {
-          name,
-          description,
-          context_type: contextType,
-          original_content: originalContent || undefined,
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("context_type", contextType);
+
+      if (contextType === "PDF" && pdfFile) {
+        formData.append("file", pdfFile);
+      } else if (contextType === "MARKDOWN" && originalContent) {
+        formData.append("original_content", originalContent);
+      }
+
+      const token = localStorage.getItem("token");
+      await axios.post(`${API_URL}/contexts`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
         },
-      },
-      {
-        onSuccess: () => {
-          list("contexts");
-        },
-      },
-    );
+      });
+
+      toast({
+        title: "컨텍스트 생성 성공",
+        description: "컨텍스트가 생성되었습니다.",
+      });
+      list("contexts");
+    } catch (error: any) {
+      toast({
+        title: "오류",
+        description: error.response?.data?.detail || "컨텍스트 생성에 실패했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -93,9 +120,28 @@ export const ContextCreate = () => {
               <TabsContent value="PDF" className="space-y-4 mt-4">
                 <div>
                   <Label htmlFor="pdf">PDF 파일</Label>
-                  <Input id="pdf" type="file" accept=".pdf" disabled />
+                  <Input
+                    id="pdf"
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 100 * 1024 * 1024) {
+                          toast({
+                            title: "파일 크기 초과",
+                            description: "파일 크기는 100MB를 초과할 수 없습니다.",
+                            variant: "destructive",
+                          });
+                          e.target.value = "";
+                          return;
+                        }
+                        setPdfFile(file);
+                      }
+                    }}
+                  />
                   <p className="text-sm text-muted-foreground mt-2">
-                    PDF 업로드는 다음 단계에서 구현될 예정입니다.
+                    PDF 파일을 업로드하면 자동으로 파싱 및 청킹됩니다. (최대 100MB)
                   </p>
                 </div>
               </TabsContent>
@@ -108,11 +154,14 @@ export const ContextCreate = () => {
             </Tabs>
 
             <div className="flex gap-2">
-              <Button type="submit">생성</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "생성 중..." : "생성"}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => list("contexts")}
+                disabled={isSubmitting}
               >
                 취소
               </Button>

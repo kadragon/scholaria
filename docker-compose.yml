@@ -48,6 +48,8 @@ services:
       - qdrant
     volumes:
       - ./backend:/app/backend
+    healthcheck:
+      disable: true
 
 volumes:
   postgres_data:

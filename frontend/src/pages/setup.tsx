@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api";
 
 interface SetupCheckResponse {
   needs_setup: boolean;
@@ -28,7 +28,7 @@ export const SetupPage = () => {
   const checkSetupStatus = async () => {
     try {
       const response = await axios.get<SetupCheckResponse>(
-        `${API_URL}/api/setup/check`
+        `${API_URL}/setup/check`
       );
       if (!response.data.needs_setup) {
         navigate("/login");
@@ -57,7 +57,7 @@ export const SetupPage = () => {
     setIsLoading(true);
 
     try {
-      await axios.post(`${API_URL}/api/setup/init`, {
+      await axios.post(`${API_URL}/setup/init`, {
         username,
         email,
         password,
