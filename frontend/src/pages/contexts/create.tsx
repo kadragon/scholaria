@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigation } from "@refinedev/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,75 @@ export const ContextCreate = () => {
   const [originalContent, setOriginalContent] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string | null>(null);
+  const pollingIntervalRef = useRef<number | null>(null);
+
+  const pollContextStatus = async (contextId: number) => {
+    const token = localStorage.getItem("token");
+    const maxAttempts = 60;
+    let attempts = 0;
+
+    pollingIntervalRef.current = setInterval(async () => {
+      attempts++;
+
+      if (attempts > maxAttempts) {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+        setProcessingStatus(null);
+        setIsSubmitting(false);
+        toast({
+          title: "처리 시간 초과",
+          description: "PDF 처리가 너무 오래 걸립니다. 나중에 다시 확인해주세요.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${API_URL}/contexts/${contextId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const status = response.data.processing_status;
+        setProcessingStatus(status);
+
+        if (status === "COMPLETED") {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+          }
+          setProcessingStatus(null);
+          setIsSubmitting(false);
+          toast({
+            title: "컨텍스트 생성 성공",
+            description: "PDF 파싱 및 청킹이 완료되었습니다.",
+          });
+          list("contexts");
+        } else if (status === "FAILED") {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+          }
+          setProcessingStatus(null);
+          setIsSubmitting(false);
+          toast({
+            title: "PDF 처리 실패",
+            description: "PDF 파싱 중 오류가 발생했습니다.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Polling error:", error);
+      }
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,18 +130,24 @@ export const ContextCreate = () => {
       }
 
       const token = localStorage.getItem("token");
-      await axios.post(`${API_URL}/contexts`, formData, {
+      const response = await axios.post(`${API_URL}/contexts`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
       });
 
-      toast({
-        title: "컨텍스트 생성 성공",
-        description: "컨텍스트가 생성되었습니다.",
-      });
-      list("contexts");
+      if (contextType === "PDF") {
+        const contextId = response.data.id;
+        setProcessingStatus("PENDING");
+        pollContextStatus(contextId);
+      } else {
+        toast({
+          title: "컨텍스트 생성 성공",
+          description: "컨텍스트가 생성되었습니다.",
+        });
+        list("contexts");
+      }
     } catch (error: unknown) {
       const errorMessage =
         (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
@@ -82,8 +157,8 @@ export const ContextCreate = () => {
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
+      setProcessingStatus(null);
     }
   };
 
@@ -177,7 +252,11 @@ export const ContextCreate = () => {
 
             <div className="flex gap-2">
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "생성 중..." : "생성"}
+                {isSubmitting
+                  ? processingStatus === "PENDING"
+                    ? "PDF 파싱 중..."
+                    : "생성 중..."
+                  : "생성"}
               </Button>
               <Button
                 type="button"
