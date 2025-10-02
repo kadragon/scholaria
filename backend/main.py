@@ -38,7 +38,7 @@ app.include_router(rag.router, prefix="/api", tags=["rag"])
 app.include_router(admin_topics, prefix="/api/admin")
 app.include_router(admin_contexts, prefix="/api/admin")
 app.include_router(bulk_operations.router, prefix="/api/admin")
-app.include_router(admin_analytics, prefix="/api")
+app.include_router(admin_analytics, prefix="/api/admin")
 
 
 @app.get("/health")

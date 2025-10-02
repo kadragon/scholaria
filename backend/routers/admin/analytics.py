@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import distinct, func
+from sqlalchemy import case, distinct, func
 from sqlalchemy.orm import Session
 
 from backend.dependencies.auth import require_admin
@@ -17,7 +17,7 @@ from backend.schemas.admin import (
     TopicStatsOut,
 )
 
-router = APIRouter(prefix="/admin/analytics", tags=["Admin Analytics"])
+router = APIRouter(prefix="/analytics", tags=["Admin Analytics"])
 
 
 @router.get("/summary", response_model=AnalyticsSummaryOut)
@@ -25,17 +25,17 @@ async def get_analytics_summary(
     db: Annotated[Session, Depends(get_db)],
     _current_admin: Annotated[User, Depends(require_admin)],
 ) -> AnalyticsSummaryOut:
-    total_questions = db.query(func.count(QuestionHistory.id)).scalar() or 0
-    total_feedback = (
-        db.query(func.count(QuestionHistory.id))
-        .filter(QuestionHistory.feedback_score != 0)
-        .scalar()
-        or 0
-    )
-    active_sessions = (
-        db.query(func.count(distinct(QuestionHistory.session_id))).scalar() or 0
-    )
-    avg_feedback = db.query(func.avg(QuestionHistory.feedback_score)).scalar() or 0.0
+    results = db.query(
+        func.count(QuestionHistory.id),
+        func.count(func.nullif(QuestionHistory.feedback_score, 0)),
+        func.count(distinct(QuestionHistory.session_id)),
+        func.avg(QuestionHistory.feedback_score),
+    ).one()
+
+    total_questions = results[0] or 0
+    total_feedback = results[1] or 0
+    active_sessions = results[2] or 0
+    avg_feedback = results[3] or 0.0
 
     return AnalyticsSummaryOut(
         total_questions=total_questions,
@@ -103,24 +103,21 @@ async def get_feedback_distribution(
     db: Annotated[Session, Depends(get_db)],
     _current_admin: Annotated[User, Depends(require_admin)],
 ) -> FeedbackDistributionOut:
-    positive = (
-        db.query(func.count(QuestionHistory.id))
-        .filter(QuestionHistory.feedback_score > 0)
-        .scalar()
-        or 0
-    )
-    neutral = (
-        db.query(func.count(QuestionHistory.id))
-        .filter(QuestionHistory.feedback_score == 0)
-        .scalar()
-        or 0
-    )
-    negative = (
-        db.query(func.count(QuestionHistory.id))
-        .filter(QuestionHistory.feedback_score < 0)
-        .scalar()
-        or 0
-    )
+    results = db.query(
+        func.sum(case((QuestionHistory.feedback_score > 0, 1), else_=0)).label(
+            "positive"
+        ),
+        func.sum(case((QuestionHistory.feedback_score == 0, 1), else_=0)).label(
+            "neutral"
+        ),
+        func.sum(case((QuestionHistory.feedback_score < 0, 1), else_=0)).label(
+            "negative"
+        ),
+    ).one()
+
+    positive = results.positive or 0
+    neutral = results.neutral or 0
+    negative = results.negative or 0
 
     return FeedbackDistributionOut(
         positive=positive, neutral=neutral, negative=negative

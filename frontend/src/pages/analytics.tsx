@@ -51,18 +51,16 @@ const COLORS = {
 export const Analytics = () => {
   const [days, setDays] = useState(7);
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api/admin";
-
   const { data: summaryData, isLoading: summaryLoading } =
     useCustom<AnalyticsSummary>({
-      url: `${API_URL}/admin/analytics/summary`,
+      url: "admin/analytics/summary",
       method: "get",
     });
 
   const { data: topicsData, isLoading: topicsLoading } = useCustom<
     TopicStats[]
   >({
-    url: `${API_URL}/admin/analytics/topics`,
+    url: "admin/analytics/topics",
     method: "get",
   });
 
@@ -71,7 +69,7 @@ export const Analytics = () => {
     isLoading: trendLoading,
     refetch: refetchTrend,
   } = useCustom<QuestionTrend[]>({
-    url: `${API_URL}/admin/analytics/questions/trend`,
+    url: "admin/analytics/questions/trend",
     method: "get",
     config: {
       query: { days },
@@ -80,7 +78,7 @@ export const Analytics = () => {
 
   const { data: feedbackData, isLoading: feedbackLoading } =
     useCustom<FeedbackDistribution>({
-      url: `${API_URL}/admin/analytics/feedback/distribution`,
+      url: "admin/analytics/feedback/distribution",
       method: "get",
     });
 
@@ -92,10 +90,10 @@ export const Analytics = () => {
     return <div className="p-6">로딩 중...</div>;
   }
 
-  const summary = summaryData?.data as AnalyticsSummary | undefined;
-  const topics = (topicsData?.data as TopicStats[]) || [];
-  const trend = (trendData?.data as QuestionTrend[]) || [];
-  const feedback = feedbackData?.data as FeedbackDistribution | undefined;
+  const summary = summaryData?.data;
+  const topics = topicsData?.data || [];
+  const trend = trendData?.data || [];
+  const feedback = feedbackData?.data;
 
   const feedbackPieData = feedback
     ? [
