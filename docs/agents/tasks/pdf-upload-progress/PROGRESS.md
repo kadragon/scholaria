@@ -26,9 +26,16 @@ PDF 업로드 후 polling으로 처리 상태를 실시간 표시하는 기능 �
 - 동기 처리 유지 (Celery 도입 이번 scope 아님)
 
 ## Bonus Fixes
-- 청크 목록 내용 미리보기: `truncate` → `line-clamp-3` (다중 행 표시)
-- 편집 Dialog 배경: `bg-white` 추가 (배경 사라짐 방지)
-- Commit: 64b107a
+1. 청크 목록 내용 미리보기 (64b107a)
+   - `truncate` → `line-clamp-3` (다중 행 표시)
+   - `whitespace-pre-wrap` (줄바꿈 보존)
+2. Dialog 배경 CSS 깨짐 (3f64662)
+   - Tailwind config에 `background`, `foreground` 색상 추가
+   - shadcn/ui Dialog의 `bg-background` 클래스가 제대로 작동하도록 수정
+3. 분석 대시보드 화면 사라짐 (5468a17)
+   - `useCustom` URL을 상대 경로에서 절대 경로로 변경
+   - `admin/analytics/summary` → `/api/admin/analytics/summary`
+   - 중복 prefix 제거 (admin/admin/analytics → admin/analytics)
 
 ## Next Step
 Manual testing in browser (user can test after deployment)

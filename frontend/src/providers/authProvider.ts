@@ -1,6 +1,6 @@
 import type { AuthProvider } from "@refinedev/core";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api";
+const API_URL = import.meta.env.VITE_API_URL?.replace('/admin', '') || "http://localhost:8001/api";
 
 export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {

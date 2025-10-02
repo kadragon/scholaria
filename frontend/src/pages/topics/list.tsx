@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useTable, useNavigation } from "@refinedev/core";
+import { useTable, useNavigation, useDelete } from "@refinedev/core";
 import {
   Table,
   TableBody,
@@ -30,6 +30,7 @@ export const TopicList = () => {
 
   const { edit, create } = useNavigation();
   const { toast } = useToast();
+  const { mutate: deleteTopic } = useDelete();
 
   const { data, isLoading } = tableQueryResult;
 
@@ -161,17 +162,41 @@ export const TopicList = () => {
                   </TableCell>
                   <TableCell>{topic.contexts_count || 0}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (typeof topic.id === 'number') {
-                          edit("topics", topic.id);
-                        }
-                      }}
-                    >
-                      편집
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (typeof topic.id === 'number') {
+                            edit("topics", topic.id);
+                          }
+                        }}
+                      >
+                        편집
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          if (typeof topic.id === 'number' && confirm(`"${topic.name}" 토픽을 삭제하시겠습니까?`)) {
+                            deleteTopic({
+                              resource: "topics",
+                              id: topic.id,
+                            }, {
+                              onSuccess: () => {
+                                toast({
+                                  title: "성공",
+                                  description: "토픽이 삭제되었습니다.",
+                                });
+                                tableQueryResult.refetch();
+                              },
+                            });
+                          }
+                        }}
+                      >
+                        삭제
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

@@ -69,6 +69,7 @@ async def list_contexts(
                 context_type=ctx.context_type,
                 chunk_count=ctx.chunk_count,
                 processing_status=ctx.processing_status,
+                topics_count=len(ctx.topics),
                 created_at=ctx.created_at,
                 updated_at=ctx.updated_at,
             )
@@ -97,6 +98,7 @@ async def get_context(
         context_type=ctx.context_type,
         chunk_count=ctx.chunk_count,
         processing_status=ctx.processing_status,
+        topics_count=len(ctx.topics),
         created_at=ctx.created_at,
         updated_at=ctx.updated_at,
     )
@@ -126,6 +128,7 @@ async def create_context(
         context_type=ctx.context_type,
         chunk_count=ctx.chunk_count,
         processing_status=ctx.processing_status,
+        topics_count=len(ctx.topics),
         created_at=ctx.created_at,
         updated_at=ctx.updated_at,
     )
@@ -152,6 +155,12 @@ async def update_context(
     if context_data.original_content is not None:
         ctx.original_content = context_data.original_content
 
+    if context_data.topic_ids is not None:
+        from backend.models.topic import Topic
+
+        topics = db.query(Topic).filter(Topic.id.in_(context_data.topic_ids)).all()
+        ctx.topics = topics
+
     db.commit()
     db.refresh(ctx)
 
@@ -162,6 +171,7 @@ async def update_context(
         context_type=ctx.context_type,
         chunk_count=ctx.chunk_count,
         processing_status=ctx.processing_status,
+        topics_count=len(ctx.topics),
         created_at=ctx.created_at,
         updated_at=ctx.updated_at,
     )
