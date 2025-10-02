@@ -82,9 +82,10 @@ function SortableRow({ item, onEdit }: SortableRowProps) {
       </TableCell>
       <TableCell>{item.id}</TableCell>
       <TableCell className="font-medium">{item.title}</TableCell>
-      <TableCell className="truncate max-w-md">
-        {item.content.substring(0, 100)}
-        {item.content.length > 100 ? "..." : ""}
+      <TableCell className="max-w-md">
+        <div className="line-clamp-3 whitespace-pre-wrap">
+          {item.content}
+        </div>
       </TableCell>
       <TableCell className="text-sm text-gray-500">
         {new Date(item.created_at).toLocaleDateString()}
@@ -343,7 +344,7 @@ export const ContextShow = () => {
       </Card>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-white dark:bg-gray-900">
           <DialogHeader>
             <DialogTitle>청크 편집</DialogTitle>
             <DialogDescription>
