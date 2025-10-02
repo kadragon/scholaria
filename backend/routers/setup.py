@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.auth.utils import pwd_context
@@ -12,6 +13,12 @@ from backend.models.base import get_db
 from backend.models.user import User
 
 router = APIRouter(prefix="/setup", tags=["Setup"])
+
+
+def _admin_exists(db: Session) -> bool:
+    """Check if any admin user exists in the database."""
+    admin_count = db.query(func.count(User.id)).filter(User.is_staff.is_(True)).scalar()
+    return admin_count > 0
 
 
 class SetupCheckResponse(BaseModel):
@@ -26,9 +33,6 @@ class InitialAdminCreate(BaseModel):
 
 
 class InitialAdminResponse(BaseModel):
-    id: int
-    username: str
-    email: str
     message: str
 
 
@@ -36,16 +40,7 @@ class InitialAdminResponse(BaseModel):
 async def check_setup_status(
     db: Annotated[Session, Depends(get_db)],
 ) -> SetupCheckResponse:
-    admin_count = (
-        db.query(func.count(User.id))
-        .filter(
-            User.is_staff == True  # noqa: E712
-        )
-        .scalar()
-    )
-
-    admin_exists = admin_count > 0
-
+    admin_exists = _admin_exists(db)
     return SetupCheckResponse(
         needs_setup=not admin_exists,
         admin_exists=admin_exists,
@@ -61,15 +56,7 @@ async def create_initial_admin(
     data: InitialAdminCreate,
     db: Annotated[Session, Depends(get_db)],
 ) -> InitialAdminResponse:
-    admin_exists = (
-        db.query(func.count(User.id))
-        .filter(
-            User.is_staff == True  # noqa: E712
-        )
-        .scalar()
-    )
-
-    if admin_exists > 0:
+    if _admin_exists(db):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin user already exists. Initial setup is not allowed.",
@@ -98,13 +85,17 @@ async def create_initial_admin(
         is_superuser=True,
     )
 
-    db.add(admin)
-    db.commit()
-    db.refresh(admin)
+    try:
+        db.add(admin)
+        db.commit()
+        db.refresh(admin)
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Admin user creation failed due to concurrent request or duplicate data.",
+        ) from e
 
     return InitialAdminResponse(
-        id=int(admin.id),
-        username=str(admin.username),
-        email=str(admin.email),
         message="Initial admin user created successfully. Please login with your credentials.",
     )

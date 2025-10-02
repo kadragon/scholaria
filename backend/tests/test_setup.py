@@ -53,8 +53,6 @@ class TestInitialAdminCreation:
 
         assert response.status_code == 201
         data = response.json()
-        assert data["username"] == "admin"
-        assert data["email"] == "admin@scholaria.com"
         assert "message" in data
         assert "created successfully" in data["message"]
 

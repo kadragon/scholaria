@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useToast } from "@/hooks/use-toast";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001";
 
@@ -11,6 +12,7 @@ interface SetupCheckResponse {
 
 export const SetupPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,7 +63,10 @@ export const SetupPage = () => {
         password,
       });
 
-      alert("관리자 계정이 생성되었습니다. 로그인 페이지로 이동합니다.");
+      toast({
+        title: "계정 생성 성공",
+        description: "관리자 계정이 생성되었습니다. 로그인 페이지로 이동합니다.",
+      });
       navigate("/login");
     } catch (err: any) {
       const errorMessage =
