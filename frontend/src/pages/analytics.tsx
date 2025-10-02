@@ -53,14 +53,14 @@ export const Analytics = () => {
 
   const { data: summaryData, isLoading: summaryLoading } =
     useCustom<AnalyticsSummary>({
-      url: `${import.meta.env.VITE_API_URL || "http://localhost:8001/api"}/admin/analytics/summary`,
+      url: "analytics/summary",
       method: "get",
     });
 
   const { data: topicsData, isLoading: topicsLoading } = useCustom<
     TopicStats[]
   >({
-    url: `${import.meta.env.VITE_API_URL || "http://localhost:8001/api"}/admin/analytics/topics`,
+    url: "analytics/topics",
     method: "get",
   });
 
@@ -69,7 +69,7 @@ export const Analytics = () => {
     isLoading: trendLoading,
     refetch: refetchTrend,
   } = useCustom<QuestionTrend[]>({
-    url: `${import.meta.env.VITE_API_URL || "http://localhost:8001/api"}/admin/analytics/questions/trend`,
+    url: "analytics/questions/trend",
     method: "get",
     config: {
       query: { days },
@@ -78,7 +78,7 @@ export const Analytics = () => {
 
   const { data: feedbackData, isLoading: feedbackLoading } =
     useCustom<FeedbackDistribution>({
-      url: `${import.meta.env.VITE_API_URL || "http://localhost:8001/api"}/admin/analytics/feedback/distribution`,
+      url: "analytics/feedback/distribution",
       method: "get",
     });
 

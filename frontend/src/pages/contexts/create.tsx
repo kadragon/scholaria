@@ -147,6 +147,7 @@ export const ContextCreate = () => {
           description: "컨텍스트가 생성되었습니다.",
         });
         list("contexts");
+        setIsSubmitting(false);
       }
     } catch (error: unknown) {
       const errorMessage =

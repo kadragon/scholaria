@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from backend.dependencies.auth import require_admin
 from backend.models.base import get_db
 from backend.models.context import Context
+from backend.models.topic import Topic
 from backend.models.user import User
 from backend.schemas.admin import (
     AdminContextCreate,
@@ -156,8 +157,6 @@ async def update_context(
         ctx.original_content = context_data.original_content
 
     if context_data.topic_ids is not None:
-        from backend.models.topic import Topic
-
         topics = db.query(Topic).filter(Topic.id.in_(context_data.topic_ids)).all()
         ctx.topics = topics
 
