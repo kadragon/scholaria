@@ -344,7 +344,7 @@ export const ContextShow = () => {
       </Card>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl bg-white dark:bg-gray-900">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>청크 편집</DialogTitle>
             <DialogDescription>

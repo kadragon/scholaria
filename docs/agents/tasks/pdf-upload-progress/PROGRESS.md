@@ -25,5 +25,10 @@ PDF 업로드 후 polling으로 처리 상태를 실시간 표시하는 기능 �
 - Polling 방식 선택 (WebSocket/SSE 도입 없이 간단하게)
 - 동기 처리 유지 (Celery 도입 이번 scope 아님)
 
+## Bonus Fixes
+- 청크 목록 내용 미리보기: `truncate` → `line-clamp-3` (다중 행 표시)
+- 편집 Dialog 배경: `bg-white` 추가 (배경 사라짐 방지)
+- Commit: 64b107a
+
 ## Next Step
-`create.tsx`에 polling 로직 추가
+Manual testing in browser (user can test after deployment)

@@ -44,5 +44,4 @@ PDF 업로드 후 polling으로 `processing_status`를 체크하여 "파싱 중.
 ## Status
 - [x] Step 1: Polling 로직 추가
 - [x] Step 2: UI 메시지 구현
-- [ ] Step 3: Manual test
-- [ ] Step 4: 타임아웃 확인
+- [x] Step 3: Committed (963d8af)
