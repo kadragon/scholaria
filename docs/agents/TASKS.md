@@ -100,5 +100,5 @@ uv run alembic upgrade head
 
 ## 🎯 다음 우선순위
 1. [x] **프로덕션 배포 준비** ✅ - Celery 워커 설정 완료 (`docs/agents/tasks/production-deployment/`)
-2. **성능 벤ચ마크** - 실제 데이터로 검증 (프로덕션 배포 후)
-3. **Celery 모니터링** - Flower 등 대시보드 추가 (선택적)
+2. [x] **Celery 모니터링** ✅ - Flower 대시보드 추가 (`docs/agents/tasks/celery-monitoring/`, 0966ff5)
+3. **성능 벤치마크** - 실제 데이터로 검증 (프로덕션 배포 후) (선택적)
