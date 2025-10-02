@@ -55,6 +55,7 @@ class AdminContextOut(BaseModel):
     context_type: str
     chunk_count: int
     processing_status: str
+    topics_count: int = Field(default=0, description="Number of associated topics")
     created_at: datetime
     updated_at: datetime
 
@@ -76,6 +77,7 @@ class AdminContextUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=200)
     description: str | None = None
     original_content: str | None = None
+    topic_ids: list[int] | None = None
 
 
 class AdminContextItemUpdate(BaseModel):

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useOne, useUpdate, useNavigation } from "@refinedev/core";
+import { useOne, useUpdate, useNavigation, useList } from "@refinedev/core";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 export const ContextEdit = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,12 +21,21 @@ export const ContextEdit = () => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [originalContent, setOriginalContent] = useState("");
+  const [topicIds, setTopicIds] = useState<string[]>([]);
+
+  const { data: topicsData } = useList({
+    resource: "topics",
+    pagination: { mode: "off" },
+  });
 
   useEffect(() => {
     if (data?.data) {
       setName(data.data.name);
       setDescription(data.data.description);
       setOriginalContent(data.data.original_content || "");
+      if (data.data.topics) {
+        setTopicIds(data.data.topics.map((t: any) => String(t.id)));
+      }
     }
   }, [data]);
 
@@ -39,6 +49,7 @@ export const ContextEdit = () => {
           name,
           description,
           original_content: originalContent || undefined,
+          topic_ids: topicIds.map((id) => parseInt(id)),
         },
       },
       {
@@ -91,6 +102,22 @@ export const ContextEdit = () => {
                 />
               </div>
             )}
+
+            <div>
+              <Label>연결된 토픽</Label>
+              <MultiSelect
+                options={
+                  topicsData?.data?.map((topic) => ({
+                    label: topic.name,
+                    value: String(topic.id),
+                  })) || []
+                }
+                selected={topicIds}
+                onChange={setTopicIds}
+                placeholder="토픽 선택..."
+                emptyMessage="토픽이 없습니다."
+              />
+            </div>
 
             <div className="flex gap-2">
               <Button type="submit">저장</Button>

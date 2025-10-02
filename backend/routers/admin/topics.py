@@ -140,6 +140,7 @@ async def create_topic(
 
 
 @router.put("/{id}", response_model=AdminTopicOut)
+@router.patch("/{id}", response_model=AdminTopicOut)
 async def update_topic(
     id: int,
     topic_data: AdminTopicUpdate,

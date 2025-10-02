@@ -39,7 +39,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://localhost:8001/api
+      - VITE_API_URL=http://localhost:8001/api/admin
       - VITE_BASE_PATH=/admin/
     volumes:
       - ./frontend:/app
