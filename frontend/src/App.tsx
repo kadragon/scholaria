@@ -14,6 +14,7 @@ import { ContextCreate } from "./pages/contexts/create";
 import { ContextEdit } from "./pages/contexts/edit";
 import { ContextShow } from "./pages/contexts/show";
 import { LoginPage } from "./pages/login";
+import { Analytics } from "./pages/analytics";
 import { Toaster } from "./components/ui/toaster";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -78,6 +79,7 @@ function App() {
               <Route path="edit/:id" element={<ContextEdit />} />
               <Route path="show/:id" element={<ContextShow />} />
             </Route>
+            <Route path="/analytics" element={<Analytics />} />
           </Route>
           <Route
             element={

@@ -8,6 +8,9 @@
 
 ## 📋 현재 활성 태스크
 
+### Analytics 데이터 파싱 검증
+- [ ] **useCustom 응답 파싱 수정** (`docs/agents/tasks/analytics-data-parsing/`) - 타입 분석 완료, 실제 응답 구조 확인 대기
+
 ### 관리 인터페이스 개선
 - [x] **청크 미리보기** ✅ (`docs/agents/tasks/chunk-preview-ui/`)
 - [x] **청크 편집** ✅ (`docs/agents/tasks/chunk-edit-feature/`)
