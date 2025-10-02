@@ -248,7 +248,7 @@ export const ContextShow = () => {
   };
 
   if (isLoading) {
-    return <div className="p-6">Loading...</div>;
+    return <div className="p-6">로딩 중...</div>;
   }
 
   const context = data?.data;
@@ -257,39 +257,39 @@ export const ContextShow = () => {
     <div className="p-6 space-y-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Context Details</CardTitle>
+          <CardTitle>컨텍스트 상세</CardTitle>
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => context?.id && edit("contexts", context.id)}
             >
-              Edit
+              편집
             </Button>
             <Button variant="outline" onClick={() => list("contexts")}>
-              Back to List
+              목록으로
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="font-semibold">Name</h3>
+            <h3 className="font-semibold">이름</h3>
             <p>{context?.name}</p>
           </div>
           <div>
-            <h3 className="font-semibold">Description</h3>
-            <p>{context?.description || "N/A"}</p>
+            <h3 className="font-semibold">설명</h3>
+            <p>{context?.description || "없음"}</p>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <h3 className="font-semibold">Type</h3>
+              <h3 className="font-semibold">타입</h3>
               <p>{context?.context_type}</p>
             </div>
             <div>
-              <h3 className="font-semibold">Chunk Count</h3>
+              <h3 className="font-semibold">청크 수</h3>
               <p>{context?.chunk_count}</p>
             </div>
             <div>
-              <h3 className="font-semibold">Status</h3>
+              <h3 className="font-semibold">상태</h3>
               <p>{context?.processing_status}</p>
             </div>
           </div>
@@ -298,13 +298,13 @@ export const ContextShow = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Chunks ({items.length})</CardTitle>
+          <CardTitle>청크 목록 ({items.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {itemsLoading ? (
-            <div>Loading chunks...</div>
+            <div>청크 로딩 중...</div>
           ) : items.length === 0 ? (
-            <div className="text-gray-500">No chunks available</div>
+            <div className="text-gray-500">청크가 없습니다</div>
           ) : (
             <DndContext
               sensors={sensors}
@@ -316,10 +316,10 @@ export const ContextShow = () => {
                   <TableRow>
                     <TableHead className="w-[50px]"></TableHead>
                     <TableHead className="w-[100px]">ID</TableHead>
-                    <TableHead className="w-[200px]">Title</TableHead>
-                    <TableHead>Content Preview</TableHead>
-                    <TableHead className="w-[180px]">Created</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
+                    <TableHead className="w-[200px]">제목</TableHead>
+                    <TableHead>내용 미리보기</TableHead>
+                    <TableHead className="w-[180px]">생성일</TableHead>
+                    <TableHead className="w-[100px]">작업</TableHead>
                   </TableRow>
                 </TableHeader>
                 <SortableContext

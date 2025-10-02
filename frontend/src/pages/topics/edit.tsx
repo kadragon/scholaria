@@ -49,19 +49,19 @@ export const TopicEdit = () => {
   };
 
   if (isLoadingTopic) {
-    return <div className="p-6">Loading...</div>;
+    return <div className="p-6">로딩 중...</div>;
   }
 
   return (
     <div className="p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Edit Topic: {data?.data.name}</CardTitle>
+          <CardTitle>토픽 편집: {data?.data.name}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">이름</Label>
               <Input
                 id="name"
                 value={name}
@@ -71,7 +71,7 @@ export const TopicEdit = () => {
             </div>
 
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">설명</Label>
               <Textarea
                 id="description"
                 value={description}
@@ -80,7 +80,7 @@ export const TopicEdit = () => {
             </div>
 
             <div>
-              <Label htmlFor="systemPrompt">System Prompt</Label>
+              <Label htmlFor="systemPrompt">시스템 프롬프트</Label>
               <Textarea
                 id="systemPrompt"
                 value={systemPrompt}
@@ -91,14 +91,14 @@ export const TopicEdit = () => {
 
             <div className="flex gap-2">
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Updating..." : "Update"}
+                {isLoading ? "업데이트 중..." : "업데이트"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => list("topics")}
               >
-                Cancel
+                취소
               </Button>
             </div>
           </form>

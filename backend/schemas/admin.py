@@ -135,3 +135,36 @@ class BulkUpdateSystemPromptResponse(BaseModel):
     """Response schema for bulk update system prompt operation."""
 
     updated_count: int
+
+
+class AnalyticsSummaryOut(BaseModel):
+    """Analytics summary schema."""
+
+    total_questions: int
+    total_feedback: int
+    active_sessions: int
+    average_feedback_score: float
+
+
+class TopicStatsOut(BaseModel):
+    """Topic statistics schema."""
+
+    topic_id: int
+    topic_name: str
+    question_count: int
+    average_feedback_score: float
+
+
+class QuestionTrendOut(BaseModel):
+    """Question trend schema (time series)."""
+
+    date: str
+    question_count: int
+
+
+class FeedbackDistributionOut(BaseModel):
+    """Feedback score distribution schema."""
+
+    positive: int
+    neutral: int
+    negative: int

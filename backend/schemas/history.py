@@ -9,6 +9,14 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from backend.schemas.utils import to_local_iso
 
 
+class FeedbackRequest(BaseModel):
+    """Request schema for updating feedback score."""
+
+    feedback_score: int = Field(
+        ..., ge=-1, le=1, description="Feedback: -1 (dislike), 0 (neutral), 1 (like)"
+    )
+
+
 class QuestionHistoryOut(BaseModel):
     """Question history output payload."""
 
@@ -20,6 +28,7 @@ class QuestionHistoryOut(BaseModel):
     answer: str
     session_id: str
     is_favorited: bool
+    feedback_score: int
     created_at: datetime
     updated_at: datetime
 

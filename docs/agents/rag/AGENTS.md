@@ -52,6 +52,7 @@ Django RAG app with Topic, Context, and ContextItem models.
 - ✅ Rate limiting, usage monitoring
 - ✅ Complete admin interface with context management
 - ✅ PDF (Docling), Markdown, FAQ processing pipelines
+- ✅ Feedback system: like/dislike on Q&A history (PATCH `/api/history/{id}/feedback`)
 
 ### Context Enhancement
 
