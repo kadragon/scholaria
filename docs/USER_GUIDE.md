@@ -1,6 +1,12 @@
 # User Guide
 
-Welcome to **Scholaria**, an AI-powered question-answering system designed to help students and learners get accurate, citation-backed answers from educational content. This guide will help you navigate the system and get the most out of your learning experience.
+**Scholaria** - AI 기반 학습 지원 시스템 사용 가이드
+
+학생과 학습자를 위한 정확한 답변 및 출처 기반 학습 도구입니다.
+
+> 📚 **관련 문서**:
+> - [ADMIN_GUIDE.md](ADMIN_GUIDE.md) - 관리자/교수자용 가이드 (컨텐츠 업로드 등)
+> - [README.md](../README.md) - 시스템 개요
 
 ## Getting Started
 
@@ -388,4 +394,6 @@ While Scholaria is a powerful learning tool, it's important to understand its li
 - Always do your own critical thinking and analysis
 - Follow your institution's policies on AI assistance
 
-This guide provides comprehensive coverage of how to effectively use the Scholaria RAG system. For technical issues or questions about system availability, contact your instructor or system administrator. Happy learning!
+**기술 지원 또는 시스템 가용성 문의**: 담당 교수 또는 시스템 관리자에게 문의하세요.
+
+**관리자용 가이드**: [ADMIN_GUIDE.md](ADMIN_GUIDE.md) 참조

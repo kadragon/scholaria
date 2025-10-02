@@ -15,11 +15,11 @@ Docker Compose integration testing for containerized RAG services.
 
 ### Services
 - PostgreSQL (port 5432), Redis (6379), Qdrant (6333-6334)
-- MinIO (9000-9001); Docling runs in-process within the FastAPI backend container (no external service)
+- FastAPI backend (port 8001) with uvicorn hot-reload
 
 ### Development Setup
-- `docker-compose.dev.yml` extends the base compose file to run the FastAPI `backend` container with live reload.
-- `Dockerfile.dev` serves autoreloading `uvicorn backend.main:app` with a mounted project volume for hot reloading.
+- `docker-compose.dev.yml` extends base compose to run FastAPI `backend` container with live reload
+- `Dockerfile.dev` serves autoreloading `uvicorn backend.main:app` with mounted project volume
 
 ### Test Coverage
 - Service connectivity, data persistence, cross-service consistency

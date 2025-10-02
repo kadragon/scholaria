@@ -37,6 +37,7 @@ dependencies = [
     "mypy>=1.8.0",
     "types-redis>=4.6.0",
     "types-requests>=2.31.0",
+    "email-validator>=2.3.0",
 ]
 
 [build-system]

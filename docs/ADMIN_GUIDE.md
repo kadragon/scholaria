@@ -1,6 +1,11 @@
 # Scholaria Admin Guide (FastAPI + Refine)
 
-This guide explains how to operate the Scholaria administration panel after the migration to FastAPI and the Refine-based UI. It replaces the legacy Django admin workflow.
+Refine 기반 관리 패널 운영 가이드 (FastAPI 마이그레이션 후)
+
+> 📚 **관련 문서**:
+> - [DEPLOYMENT.md](DEPLOYMENT.md) - 프로덕션 배포 & 초기 설정
+> - [USER_GUIDE.md](USER_GUIDE.md) - 엔드유저(학생) 가이드
+> - [README.md](../README.md) - 개발 환경 설정
 
 ## Getting Started
 
@@ -53,4 +58,6 @@ Each resource can be filtered and sorted. Use the search box in the table header
 - Initial admin user creation still requires manual SQL or seed scripts (planned improvement).
 - Some archived documentation retains Django references—see docs archive for historical context only.
 
-For additional operational runbooks, consult `docs/DEPLOYMENT.md` and `docs/TESTING_STRATEGY.md`.
+**추가 참조:**
+- [DEPLOYMENT.md](DEPLOYMENT.md) - 프로덕션 배포 & 트러블슈팅
+- [BACKUP_STRATEGY.md](BACKUP_STRATEGY.md) - 백업/복원 절차
