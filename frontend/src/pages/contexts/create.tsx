@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCreate, useNavigation } from "@refinedev/core";
+import { useNavigation } from "@refinedev/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api";
+const MAX_FILE_SIZE_MB = 100;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export const ContextCreate = () => {
-  const { mutate: create } = useCreate();
   const { list } = useNavigation();
   const { toast } = useToast();
 
@@ -27,6 +28,24 @@ export const ContextCreate = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (contextType === "PDF" && !pdfFile) {
+      toast({
+        title: "파일 필요",
+        description: "PDF 컨텍스트를 생성하려면 PDF 파일을 선택해야 합니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (contextType === "MARKDOWN" && !originalContent.trim()) {
+      toast({
+        title: "내용 필요",
+        description: "Markdown 컨텍스트를 생성하려면 내용을 입력해야 합니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -54,10 +73,13 @@ export const ContextCreate = () => {
         description: "컨텍스트가 생성되었습니다.",
       });
       list("contexts");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        "컨텍스트 생성에 실패했습니다.";
       toast({
         title: "오류",
-        description: error.response?.data?.detail || "컨텍스트 생성에 실패했습니다.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -127,10 +149,10 @@ export const ContextCreate = () => {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        if (file.size > 100 * 1024 * 1024) {
+                        if (file.size > MAX_FILE_SIZE_BYTES) {
                           toast({
                             title: "파일 크기 초과",
-                            description: "파일 크기는 100MB를 초과할 수 없습니다.",
+                            description: `파일 크기는 ${MAX_FILE_SIZE_MB}MB를 초과할 수 없습니다.`,
                             variant: "destructive",
                           });
                           e.target.value = "";
@@ -141,7 +163,7 @@ export const ContextCreate = () => {
                     }}
                   />
                   <p className="text-sm text-muted-foreground mt-2">
-                    PDF 파일을 업로드하면 자동으로 파싱 및 청킹됩니다. (최대 100MB)
+                    PDF 파일을 업로드하면 자동으로 파싱 및 청킹됩니다. (최대 {MAX_FILE_SIZE_MB}MB)
                   </p>
                 </div>
               </TabsContent>

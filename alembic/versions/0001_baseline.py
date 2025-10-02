@@ -41,6 +41,7 @@ def upgrade() -> None:
     op.create_index(
         op.f("ix_auth_user_username"), "auth_user", ["username"], unique=True
     )
+    op.create_index(op.f("ix_auth_user_email"), "auth_user", ["email"], unique=True)
 
     op.create_table(
         "rag_topic",
@@ -59,6 +60,7 @@ def upgrade() -> None:
             sa.DateTime(),
             nullable=False,
             server_default=sa.text("CURRENT_TIMESTAMP"),
+            onupdate=sa.text("CURRENT_TIMESTAMP"),
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -90,6 +92,7 @@ def upgrade() -> None:
             sa.DateTime(),
             nullable=False,
             server_default=sa.text("CURRENT_TIMESTAMP"),
+            onupdate=sa.text("CURRENT_TIMESTAMP"),
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -115,6 +118,7 @@ def upgrade() -> None:
             sa.DateTime(),
             nullable=False,
             server_default=sa.text("CURRENT_TIMESTAMP"),
+            onupdate=sa.text("CURRENT_TIMESTAMP"),
         ),
         sa.ForeignKeyConstraint(["context_id"], ["rag_context.id"]),
         sa.PrimaryKeyConstraint("id"),
@@ -148,6 +152,7 @@ def upgrade() -> None:
             sa.DateTime(timezone=True),
             nullable=False,
             server_default=sa.text("CURRENT_TIMESTAMP"),
+            onupdate=sa.text("CURRENT_TIMESTAMP"),
         ),
         sa.ForeignKeyConstraint(["topic_id"], ["rag_topic.id"]),
         sa.PrimaryKeyConstraint("id"),
@@ -200,6 +205,7 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_rag_topic_name"), table_name="rag_topic")
     op.drop_index(op.f("ix_rag_topic_id"), table_name="rag_topic")
     op.drop_table("rag_topic")
+    op.drop_index(op.f("ix_auth_user_email"), table_name="auth_user")
     op.drop_index(op.f("ix_auth_user_username"), table_name="auth_user")
     op.drop_index(op.f("ix_auth_user_id"), table_name="auth_user")
     op.drop_table("auth_user")

@@ -68,9 +68,10 @@ export const SetupPage = () => {
         description: "관리자 계정이 생성되었습니다. 로그인 페이지로 이동합니다.",
       });
       navigate("/login");
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errorMessage =
-        err.response?.data?.detail || "계정 생성에 실패했습니다.";
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        "계정 생성에 실패했습니다.";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
