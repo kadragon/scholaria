@@ -33,10 +33,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
-  const basename = import.meta.env.VITE_BASE_PATH || "/admin/";
-
   return (
-    <BrowserRouter basename={basename}>
+    <BrowserRouter>
       <Refine
         dataProvider={adminDataProvider}
         authProvider={authProvider}
@@ -44,56 +42,62 @@ function App() {
         resources={[
           {
             name: "topics",
-            list: "/topics",
-            create: "/topics/create",
-            edit: "/topics/edit/:id",
+            list: "/admin/topics",
+            create: "/admin/topics/create",
+            edit: "/admin/topics/edit/:id",
           },
           {
             name: "contexts",
-            list: "/contexts",
-            create: "/contexts/create",
-            edit: "/contexts/edit/:id",
-            show: "/contexts/show/:id",
+            list: "/admin/contexts",
+            create: "/admin/contexts/create",
+            edit: "/admin/contexts/edit/:id",
+            show: "/admin/contexts/show/:id",
           },
         ]}
       >
         <Routes>
-          <Route path="/setup" element={<SetupPage />} />
-          <Route
-            element={
-              <Authenticated
-                key="authenticated-routes"
-                fallback={<CatchAllNavigate to="/login" />}
-              >
-                <Layout>
-                  <Outlet />
-                </Layout>
-              </Authenticated>
-            }
-          >
-            <Route index element={<NavigateToResource resource="topics" />} />
-            <Route path="/topics">
-              <Route index element={<TopicList />} />
-              <Route path="create" element={<TopicCreate />} />
-              <Route path="edit/:id" element={<TopicEdit />} />
+          {/* Public routes */}
+          <Route path="/" element={<ChatPage />} />
+          <Route path="/chat" element={<ChatPage />} />
+
+          {/* Admin routes */}
+          <Route path="/admin">
+            <Route path="setup" element={<SetupPage />} />
+            <Route
+              element={
+                <Authenticated
+                  key="authenticated-routes"
+                  fallback={<CatchAllNavigate to="/admin/login" />}
+                >
+                  <Layout>
+                    <Outlet />
+                  </Layout>
+                </Authenticated>
+              }
+            >
+              <Route index element={<NavigateToResource resource="topics" />} />
+              <Route path="topics">
+                <Route index element={<TopicList />} />
+                <Route path="create" element={<TopicCreate />} />
+                <Route path="edit/:id" element={<TopicEdit />} />
+              </Route>
+              <Route path="contexts">
+                <Route index element={<ContextList />} />
+                <Route path="create" element={<ContextCreate />} />
+                <Route path="edit/:id" element={<ContextEdit />} />
+                <Route path="show/:id" element={<ContextShow />} />
+              </Route>
+              <Route path="analytics" element={<Analytics />} />
             </Route>
-            <Route path="/contexts">
-              <Route index element={<ContextList />} />
-              <Route path="create" element={<ContextCreate />} />
-              <Route path="edit/:id" element={<ContextEdit />} />
-              <Route path="show/:id" element={<ContextShow />} />
+            <Route
+              element={
+                <Authenticated key="unauthenticated-routes" fallback={<Outlet />}>
+                  <NavigateToResource />
+                </Authenticated>
+              }
+            >
+              <Route path="login" element={<LoginPage />} />
             </Route>
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/chat" element={<ChatPage />} />
-          </Route>
-          <Route
-            element={
-              <Authenticated key="unauthenticated-routes" fallback={<Outlet />}>
-                <NavigateToResource />
-              </Authenticated>
-            }
-          >
-            <Route path="/login" element={<LoginPage />} />
           </Route>
         </Routes>
       </Refine>

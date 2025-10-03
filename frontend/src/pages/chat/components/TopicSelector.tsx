@@ -1,5 +1,5 @@
 
-import { useCustom } from "@refinedev/core";
+import { useState, useEffect } from "react";
 
 interface Topic {
   id: number;
@@ -16,12 +16,29 @@ export const TopicSelector = ({
   selectedTopicId,
   onSelectTopic,
 }: TopicSelectorProps) => {
-  const { data, isLoading, isError } = useCustom<{ data: Topic[] }>({
-    url: `${import.meta.env.VITE_API_URL}/api/topics`,
-    method: "get",
-  });
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
-  const topics = data?.data?.data ?? [];
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/topics");
+        if (!response.ok) throw new Error("Failed to fetch topics");
+        const data = await response.json();
+        setTopics(data.data || []);
+        setIsError(false);
+      } catch (error) {
+        console.error("Error fetching topics:", error);
+        setIsError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTopics();
+  }, []);
 
   if (isLoading) {
     return (

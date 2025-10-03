@@ -7,23 +7,18 @@ export const Sidebar = () => {
 
   const menuItems = [
     {
-      name: "질문하기",
-      path: "/chat",
-      icon: "💬",
-    },
-    {
       name: "토픽 관리",
-      path: "/topics",
+      path: "/admin/topics",
       icon: "📚",
     },
     {
       name: "컨텍스트 관리",
-      path: "/contexts",
+      path: "/admin/contexts",
       icon: "📄",
     },
     {
       name: "분석 대시보드",
-      path: "/analytics",
+      path: "/admin/analytics",
       icon: "📊",
     },
   ];
