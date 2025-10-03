@@ -48,5 +48,19 @@ PC 기반 스트리밍 질의응답 인터페이스 구축 진행 중
 
 **Commit:** [Behavioral] Add session history endpoint
 
+### ✅ Phase 3: Frontend Chat UI - Layout & Routing (완료)
+- **Step 3.1:** `/chat` 라우트 추가 (frontend/src/App.tsx:20) ✓
+- **Step 3.2:** 사이드바에 "질문하기" 메뉴 추가 (frontend/src/components/Sidebar.tsx:11) ✓
+- **Step 3.3:** `pages/chat/index.tsx` 레이아웃 생성 (3단 컬럼) ✓
+- **Step 3.4:** `TopicSelector` 컴포넌트 구현 ✓
+
+**Files:**
+- `frontend/src/App.tsx` (+2 lines, import + route)
+- `frontend/src/components/Sidebar.tsx` (+5 lines, menu item)
+- `frontend/src/pages/chat/index.tsx` (신규, 64 lines)
+- `frontend/src/pages/chat/components/TopicSelector.tsx` (신규, 60 lines)
+
+**Commit:** [Behavioral] Add chat page with topic selector
+
 ## Next Step
-Phase 3: Frontend Chat UI - Layout & Routing
+Phase 4: Frontend Chat UI - Messaging (SSE 연결, 메시지 렌더링)
