@@ -8,14 +8,17 @@
 
 ## 📋 현재 활성 태스크
 
+### 사용자 경험 개선
+- [x] **사용자 Q&A 인터페이스** ✅ (`docs/agents/tasks/user-qa-interface/`) - SSE 스트리밍 채팅 UI, dc715bf
+
 ### PDF 업로드 진행 상황 표시
-- [ ] **PDF 업로드 진행 UI 개선** (`docs/agents/tasks/pdf-upload-progress/`) - 처리 상태를 실시간으로 표시
+- [x] **PDF 업로드 진행 UI 개선** ✅ (`docs/agents/tasks/pdf-upload-progress/`) - Polling 구현, 963d8af
 
 ### 관리 UI 개선
 - [x] **토픽-컨텍스트 연결 UI** ✅ (`docs/agents/tasks/topic-context-connection-ui/`) - 양방향 multi-select 추가, 148 tests passing
 
 ### Analytics 데이터 파싱 검증
-- [ ] **useCustom 응답 파싱 수정** (`docs/agents/tasks/analytics-data-parsing/`) - 타입 분석 완료, 실제 응답 구조 확인 대기
+- [x] **useCustom 응답 파싱 수정** ✅ (`docs/agents/tasks/analytics-data-parsing/`) - 타입 단언 제거, 안전한 파싱
 
 ### 품질 보증
 - [x] **Context Item Update 테스트 수정** ✅ (`docs/agents/tasks/fix-context-item-update-tests/`) - 모킹 경로 수정, 134 tests passing
@@ -100,5 +103,6 @@ uv run alembic upgrade head
 
 ## 🎯 다음 우선순위
 1. [x] **프로덕션 배포 준비** ✅ - Celery 워커 설정 완료 (`docs/agents/tasks/production-deployment/`)
-2. **성능 벤ચ마크** - 실제 데이터로 검증 (프로덕션 배포 후)
-3. **Celery 모니터링** - Flower 등 대시보드 추가 (선택적)
+2. [x] **Celery 모니터링** ✅ - Flower 대시보드 추가 (`docs/agents/tasks/celery-monitoring/`, 0966ff5)
+3. [x] **사용자 Q&A 인터페이스** ✅ - SSE 스트리밍 채팅 UI (`docs/agents/tasks/user-qa-interface/`, dc715bf)
+4. **성능 벤치마크** - 실제 데이터로 검증 (프로덕션 배포 후) (선택적)

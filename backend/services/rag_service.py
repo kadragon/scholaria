@@ -9,6 +9,8 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
+from collections.abc import AsyncGenerator
 from typing import Any
 
 import redis.asyncio as redis
@@ -18,6 +20,8 @@ from backend.retrieval.embeddings import EmbeddingService
 from backend.retrieval.monitoring import OpenAIUsageMonitor
 from backend.retrieval.qdrant import QdrantService
 from backend.retrieval.reranking import RerankingService
+
+logger = logging.getLogger(__name__)
 
 
 class AsyncRAGService:
@@ -245,3 +249,135 @@ Please provide a comprehensive answer based on the context above. If the context
             response.choices[0].message.content
             or "I apologize, but I couldn't generate an answer at this time."
         )
+
+    async def query_stream(
+        self,
+        query: str,
+        topic_ids: list[int],
+        limit: int | None = None,
+        rerank_top_k: int | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Execute RAG query with streaming response.
+
+        Yields SSE-formatted JSON events:
+        - {"type": "answer_chunk", "content": str, "chunk_index": int}
+        - {"type": "citations", "citations": list[dict]}
+        - {"type": "done"}
+        - {"type": "error", "message": str}
+        """
+        if not query or not query.strip():
+            yield json.dumps({"type": "error", "message": "Query cannot be empty"})
+            return
+
+        if not topic_ids:
+            yield json.dumps({"type": "error", "message": "Topic IDs cannot be empty"})
+            return
+
+        try:
+            limit = limit if limit is not None else self.rag_search_limit
+            rerank_top_k = (
+                rerank_top_k if rerank_top_k is not None else self.rag_rerank_top_k
+            )
+
+            query_embedding = await asyncio.to_thread(
+                self.embedding_service.generate_embedding, query
+            )
+
+            search_results = await asyncio.to_thread(
+                self.qdrant_service.search_similar,
+                query_embedding=query_embedding,
+                topic_ids=topic_ids,
+                limit=limit,
+            )
+
+            if not search_results:
+                yield json.dumps(
+                    {
+                        "type": "answer_chunk",
+                        "content": "I couldn't find any relevant information for your question.",
+                        "chunk_index": 0,
+                    }
+                )
+                yield json.dumps({"type": "citations", "citations": []})
+                yield json.dumps({"type": "done"})
+                return
+
+            reranked_results = await asyncio.to_thread(
+                self.reranking_service.rerank_results,
+                query=query,
+                search_results=search_results,
+                top_k=rerank_top_k,
+            )
+
+            context_text = self._prepare_context(reranked_results)
+
+            chunk_index = 0
+            async for chunk in self._generate_answer_stream(query, context_text):
+                yield json.dumps(
+                    {
+                        "type": "answer_chunk",
+                        "content": chunk,
+                        "chunk_index": chunk_index,
+                    }
+                )
+                chunk_index += 1
+
+            citations = [
+                {
+                    "title": result["title"],
+                    "content": result["content"],
+                    "score": result.get("rerank_score", result.get("score", 0.0)),
+                    "context_type": result.get("context_type", ""),
+                    "context_item_id": result["context_item_id"],
+                }
+                for result in reranked_results
+            ]
+            yield json.dumps({"type": "citations", "citations": citations})
+            yield json.dumps({"type": "done"})
+
+        except Exception as e:
+            logger.error("RAG streaming error: %s", str(e), exc_info=True)
+            yield json.dumps(
+                {
+                    "type": "error",
+                    "message": "An error occurred while processing your request",
+                }
+            )
+
+    async def _generate_answer_stream(
+        self, query: str, context: str
+    ) -> AsyncGenerator[str, None]:
+        """Generate streaming answer using OpenAI API."""
+        if not context:
+            yield "I couldn't find any relevant information to answer your question."
+            return
+
+        prompt = f"""You are a helpful assistant that answers questions based on the provided context.
+
+Context:
+{context}
+
+Question: {query}
+
+Please provide a comprehensive answer based on the context above. If the context doesn't contain enough information to fully answer the question, acknowledge this in your response. Include relevant details from the sources where appropriate."""
+
+        self.monitor.track_request_timestamp("chat_completions")
+
+        stream = await self.chat_client.chat.completions.create(
+            model=self.openai_chat_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant that provides accurate answers based on the given context.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=self.openai_chat_temperature,
+            max_tokens=self.openai_chat_max_tokens,
+            stream=True,
+        )
+
+        async for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content

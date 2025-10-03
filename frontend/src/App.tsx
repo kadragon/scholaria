@@ -16,6 +16,7 @@ import { ContextShow } from "./pages/contexts/show";
 import { LoginPage } from "./pages/login";
 import { SetupPage } from "./pages/setup";
 import { Analytics } from "./pages/analytics";
+import { ChatPage } from "./pages/chat";
 import { Toaster } from "./components/ui/toaster";
 import { Sidebar } from "./components/Sidebar";
 
@@ -83,6 +84,7 @@ function App() {
               <Route path="show/:id" element={<ContextShow />} />
             </Route>
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/chat" element={<ChatPage />} />
           </Route>
           <Route
             element={

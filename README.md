@@ -50,6 +50,7 @@
    - API Docs: http://localhost:8001/docs
    - Admin Panel: http://localhost:8001/admin
    - Health Check: http://localhost:8001/health
+   - Flower (Celery monitoring): http://localhost:5555 (admin/flower)
 
 ## 🛠️ Development Commands
 
@@ -122,6 +123,7 @@ See [TASKS.md](docs/agents/TASKS.md) for detailed progress tracking.
 - **Admin UI**: Refine + React 18 + TypeScript + shadcn/ui
 - **Database**: PostgreSQL + Qdrant (vector DB)
 - **Queue**: Celery + Redis
+- **Monitoring**: Flower (Celery dashboard)
 - **Parsing**: Docling for PDF processing
 - **AI**: OpenAI GPT + Sentence Transformers
 - **Auth**: JWT (python-jose + passlib)

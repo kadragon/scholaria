@@ -22,6 +22,16 @@ class QuestionRequest(BaseModel):
     question: str = Field(..., min_length=1, description="Question cannot be empty")
 
 
+class StreamQuestionRequest(BaseModel):
+    """Request schema for streaming question."""
+
+    topic_id: int = Field(..., gt=0, description="Topic ID must be positive")
+    question: str = Field(..., min_length=1, description="Question cannot be empty")
+    session_id: str = Field(
+        ..., min_length=1, description="Session ID for conversation tracking"
+    )
+
+
 class AnswerResponse(BaseModel):
     """Response schema for RAG answers."""
 

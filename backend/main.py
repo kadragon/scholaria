@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
-from backend.routers import auth, contexts, history, rag, setup, topics
+from backend.routers import auth, contexts, history, rag, rag_streaming, setup, topics
 from backend.routers.admin import analytics_router as admin_analytics
 from backend.routers.admin import bulk_operations
 from backend.routers.admin import contexts_router as admin_contexts
@@ -34,6 +34,7 @@ app.include_router(topics.router, prefix="/api", tags=["topics"])
 app.include_router(contexts.router, prefix="/api", tags=["contexts"])
 app.include_router(history.router, prefix="/api", tags=["history"])
 app.include_router(rag.router, prefix="/api", tags=["rag"])
+app.include_router(rag_streaming.router, prefix="/api", tags=["rag"])
 
 # Admin API routers
 app.include_router(admin_topics, prefix="/api/admin")
