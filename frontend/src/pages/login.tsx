@@ -33,7 +33,7 @@ export const LoginPage = () => {
     login(
       { email, password },
       {
-        onError: (error) => {
+        onError: () => {
           toast({
             variant: "destructive",
             title: "로그인 실패",

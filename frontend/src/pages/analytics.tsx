@@ -91,8 +91,8 @@ export const Analytics = () => {
   }
 
   const summary = summaryData?.data;
-  const topics = topicsData?.data || [];
-  const trend = trendData?.data || [];
+  const topics = Array.isArray(topicsData?.data) ? topicsData.data : [];
+  const trend = Array.isArray(trendData?.data) ? trendData.data : [];
   const feedback = feedbackData?.data;
 
   const feedbackPieData = feedback
@@ -104,25 +104,28 @@ export const Analytics = () => {
     : [];
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">분석 대시보드</h1>
+    <div className="p-8 space-y-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-secondary-900 mb-2">분석 대시보드</h1>
+        <p className="text-secondary-600">시스템 사용 현황과 통계를 확인합니다</p>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-4 bg-white rounded-lg shadow">
+        <div className="p-4 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100">
           <h3 className="text-sm text-gray-500">총 질문 수</h3>
           <p className="text-2xl font-bold">{summary?.total_questions || 0}</p>
         </div>
-        <div className="p-4 bg-white rounded-lg shadow">
+        <div className="p-4 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100">
           <h3 className="text-sm text-gray-500">피드백 수</h3>
           <p className="text-2xl font-bold">{summary?.total_feedback || 0}</p>
         </div>
-        <div className="p-4 bg-white rounded-lg shadow">
+        <div className="p-4 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100">
           <h3 className="text-sm text-gray-500">활성 세션</h3>
           <p className="text-2xl font-bold">
             {summary?.active_sessions || 0}
           </p>
         </div>
-        <div className="p-4 bg-white rounded-lg shadow">
+        <div className="p-4 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100">
           <h3 className="text-sm text-gray-500">평균 피드백 점수</h3>
           <p className="text-2xl font-bold">
             {summary?.average_feedback_score?.toFixed(2) || "0.00"}

@@ -109,10 +109,14 @@ export const TopicList = () => {
     (data?.data?.length ?? 0) > 0 && selectedIds.size === (data?.data?.length ?? 0);
 
   return (
-    <div className="p-6 space-y-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>토픽 관리</CardTitle>
+    <div className="p-8 space-y-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-secondary-900 mb-2">토픽 관리</h1>
+        <p className="text-secondary-600">대화 주제별 토픽을 생성하고 관리합니다</p>
+      </div>
+      <Card className="shadow-lg">
+        <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-secondary-50 to-white border-b-2 border-secondary-100">
+          <CardTitle className="text-xl font-bold text-secondary-800">토픽 목록</CardTitle>
           <div className="flex gap-2">
             {selectedIds.size > 0 && (
               <Button

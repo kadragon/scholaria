@@ -60,10 +60,10 @@ export const TopicSelector = ({
         <button
           key={topic.id}
           onClick={() => onSelectTopic(topic.id)}
-          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+          className={`w-full text-left px-3 py-2 rounded-lg transition-colors border-2 ${
             selectedTopicId === topic.id
-              ? "bg-primary-100 text-primary-700 font-medium"
-              : "hover:bg-secondary-100 text-secondary-700"
+              ? "bg-primary-600 text-white font-semibold border-primary-600 shadow-md"
+              : "hover:bg-primary-50 text-secondary-700 border-transparent hover:border-primary-200"
           }`}
         >
           <div className="text-sm font-medium">{topic.name}</div>
