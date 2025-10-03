@@ -7,6 +7,11 @@ export const Sidebar = () => {
 
   const menuItems = [
     {
+      name: "질문하기",
+      path: "/chat",
+      icon: "💬",
+    },
+    {
       name: "토픽 관리",
       path: "/topics",
       icon: "📚",
