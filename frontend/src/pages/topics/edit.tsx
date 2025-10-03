@@ -34,8 +34,8 @@ export const TopicEdit = () => {
       setName(data.data.name);
       setDescription(data.data.description || "");
       setSystemPrompt(data.data.system_prompt || "");
-      if (data.data.contexts) {
-        setContextIds(data.data.contexts.map((c: any) => String(c.id)));
+      if (data.data.contexts && Array.isArray(data.data.contexts)) {
+        setContextIds(data.data.contexts.map((c: { id: number }) => String(c.id)));
       }
     }
   }, [data]);

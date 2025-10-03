@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useTable, useNavigation, useDelete } from "@refinedev/core";
+import { useState, useMemo } from "react";
+import { useTable, useNavigation, useDelete, useUpdate } from "@refinedev/core";
 import {
   Table,
   TableBody,
@@ -22,6 +22,15 @@ import {
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
+import { FacetedFilter } from "@/components/ui/faceted-filter";
+import { InlineEditCell } from "@/components/InlineEditCell";
+import { TableSkeleton } from "@/components/TableSkeleton";
+
+const contextCountOptions = [
+  { value: "has", label: "컨텍스트 있음" },
+  { value: "none", label: "컨텍스트 없음" },
+];
 
 export const TopicList = () => {
   const { tableQueryResult } = useTable({
@@ -31,6 +40,7 @@ export const TopicList = () => {
   const { edit, create } = useNavigation();
   const { toast } = useToast();
   const { mutate: deleteTopic } = useDelete();
+  const { mutate: updateTopic } = useUpdate();
 
   const { data, isLoading } = tableQueryResult;
 
@@ -39,8 +49,69 @@ export const TopicList = () => {
   const [systemPrompt, setSystemPrompt] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [contextCountFilter, setContextCountFilter] = useState<Set<string>>(new Set());
+
+  const filteredData = useMemo(() => {
+    if (!data?.data) return [];
+
+    return data.data.filter((topic) => {
+      const matchesSearch = searchQuery === "" ||
+        topic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        topic.system_prompt?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const hasContexts = (topic.contexts_count || 0) > 0;
+      const matchesContextCount = contextCountFilter.size === 0 ||
+        (contextCountFilter.has("has") && hasContexts) ||
+        (contextCountFilter.has("none") && !hasContexts);
+
+      return matchesSearch && matchesContextCount;
+    });
+  }, [data?.data, searchQuery, contextCountFilter]);
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setContextCountFilter(new Set());
+  };
+
+  const handleUpdateName = (id: number, newName: string) => {
+    updateTopic(
+      {
+        resource: "topics",
+        id,
+        values: { name: newName },
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "성공",
+            description: "토픽 이름이 업데이트되었습니다.",
+          });
+          tableQueryResult.refetch();
+        },
+        onError: () => {
+          toast({
+            title: "오류",
+            description: "토픽 이름 업데이트에 실패했습니다.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  };
+
   if (isLoading) {
-    return <div className="p-6">로딩 중...</div>;
+    return (
+      <div className="p-8 space-y-6">
+        <div className="mb-6">
+          <div className="h-9 bg-gray-200 animate-pulse rounded w-32 mb-2" />
+          <div className="h-5 bg-gray-200 animate-pulse rounded w-64" />
+        </div>
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <TableSkeleton rows={8} columns={6} />
+        </div>
+      </div>
+    );
   }
 
   const handleSelectAll = (checked: boolean) => {
@@ -106,7 +177,7 @@ export const TopicList = () => {
   };
 
   const allSelected =
-    (data?.data?.length ?? 0) > 0 && selectedIds.size === (data?.data?.length ?? 0);
+    filteredData.length > 0 && selectedIds.size === filteredData.length;
 
   return (
     <div className="p-8 space-y-6">
@@ -130,6 +201,20 @@ export const TopicList = () => {
           </div>
         </CardHeader>
         <CardContent>
+          <DataTableToolbar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="토픽 검색..."
+            onReset={handleResetFilters}
+            filters={
+              <FacetedFilter
+                title="컨텍스트 수"
+                options={contextCountOptions}
+                selectedValues={contextCountFilter}
+                onSelectedValuesChange={setContextCountFilter}
+              />
+            }
+          />
           <Table>
             <TableHeader>
               <TableRow>
@@ -147,7 +232,7 @@ export const TopicList = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.data.map((topic) => (
+              {filteredData.map((topic) => (
                 <TableRow key={topic.id}>
                   <TableCell>
                     <Checkbox
@@ -160,7 +245,16 @@ export const TopicList = () => {
                     />
                   </TableCell>
                   <TableCell>{topic.id}</TableCell>
-                  <TableCell>{topic.name}</TableCell>
+                  <TableCell>
+                    {typeof topic.id === 'number' ? (
+                      <InlineEditCell
+                        value={topic.name}
+                        onSave={(newName) => handleUpdateName(topic.id as number, newName)}
+                      />
+                    ) : (
+                      topic.name
+                    )}
+                  </TableCell>
                   <TableCell className="max-w-xs truncate">
                     {topic.system_prompt}
                   </TableCell>

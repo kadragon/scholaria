@@ -19,6 +19,8 @@ import { Analytics } from "./pages/analytics";
 import { ChatPage } from "./pages/chat";
 import { Toaster } from "./components/ui/toaster";
 import { Sidebar } from "./components/Sidebar";
+import { CommandPalette } from "./components/CommandPalette";
+import { useCommandPalette } from "./hooks/useCommandPalette";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -33,6 +35,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
+  const { open, setOpen } = useCommandPalette();
+
   return (
     <BrowserRouter
       future={{
@@ -106,6 +110,7 @@ function App() {
           </Route>
         </Routes>
       </Refine>
+      <CommandPalette open={open} onOpenChange={setOpen} />
     </BrowserRouter>
   );
 }

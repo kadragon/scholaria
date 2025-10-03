@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useTable, useNavigation, useDelete, useList } from "@refinedev/core";
+import { useState, useMemo } from "react";
+import { useTable, useNavigation, useDelete, useList, useUpdate } from "@refinedev/core";
 import {
   Table,
   TableBody,
@@ -27,6 +27,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
+import { FacetedFilter } from "@/components/ui/faceted-filter";
+import { FileText, FileQuestion, FileCode } from "lucide-react";
+import { InlineEditCell } from "@/components/InlineEditCell";
+import { TableSkeleton } from "@/components/TableSkeleton";
+
+const contextTypeOptions = [
+  { value: "PDF", label: "PDF", icon: FileText },
+  { value: "FAQ", label: "FAQ", icon: FileQuestion },
+  { value: "MARKDOWN", label: "Markdown", icon: FileCode },
+];
+
+const statusOptions = [
+  { value: "PENDING", label: "대기 중" },
+  { value: "PROCESSING", label: "처리 중" },
+  { value: "COMPLETED", label: "완료" },
+  { value: "FAILED", label: "실패" },
+];
 
 export const ContextList = () => {
   const { tableQueryResult } = useTable({
@@ -39,6 +57,7 @@ export const ContextList = () => {
 
   const { edit, create, show } = useNavigation();
   const { mutate: deleteContext } = useDelete();
+  const { mutate: updateContext } = useUpdate();
   const { toast } = useToast();
 
   const { data, isLoading } = tableQueryResult;
@@ -49,8 +68,72 @@ export const ContextList = () => {
   const [isAssigning, setIsAssigning] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
+
+  const filteredData = useMemo(() => {
+    if (!data?.data) return [];
+
+    return data.data.filter((context) => {
+      const matchesSearch = searchQuery === "" ||
+        context.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        context.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesType = typeFilter.size === 0 ||
+        typeFilter.has(context.context_type);
+
+      const matchesStatus = statusFilter.size === 0 ||
+        statusFilter.has(context.processing_status);
+
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [data?.data, searchQuery, typeFilter, statusFilter]);
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setTypeFilter(new Set());
+    setStatusFilter(new Set());
+  };
+
+  const handleUpdateName = (id: number, newName: string) => {
+    updateContext(
+      {
+        resource: "contexts",
+        id,
+        values: { name: newName },
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "성공",
+            description: "컨텍스트 이름이 업데이트되었습니다.",
+          });
+          tableQueryResult.refetch();
+        },
+        onError: () => {
+          toast({
+            title: "오류",
+            description: "컨텍스트 이름 업데이트에 실패했습니다.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  };
+
   if (isLoading) {
-    return <div className="p-6">로딩 중...</div>;
+    return (
+      <div className="p-8 space-y-6">
+        <div className="mb-6">
+          <div className="h-9 bg-gray-200 animate-pulse rounded w-40 mb-2" />
+          <div className="h-5 bg-gray-200 animate-pulse rounded w-72" />
+        </div>
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <TableSkeleton rows={8} columns={7} />
+        </div>
+      </div>
+    );
   }
 
   const handleSelectAll = (checked: boolean) => {
@@ -154,7 +237,7 @@ export const ContextList = () => {
   };
 
   const allSelected =
-    (data?.data?.length ?? 0) > 0 && selectedIds.size === (data?.data?.length ?? 0);
+    filteredData.length > 0 && selectedIds.size === filteredData.length;
 
   return (
     <div className="p-8 space-y-6">
@@ -187,6 +270,28 @@ export const ContextList = () => {
           </div>
         </CardHeader>
         <CardContent>
+          <DataTableToolbar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="컨텍스트 검색..."
+            onReset={handleResetFilters}
+            filters={
+              <>
+                <FacetedFilter
+                  title="타입"
+                  options={contextTypeOptions}
+                  selectedValues={typeFilter}
+                  onSelectedValuesChange={setTypeFilter}
+                />
+                <FacetedFilter
+                  title="상태"
+                  options={statusOptions}
+                  selectedValues={statusFilter}
+                  onSelectedValuesChange={setStatusFilter}
+                />
+              </>
+            }
+          />
           <Table>
             <TableHeader>
               <TableRow>
@@ -205,7 +310,7 @@ export const ContextList = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.data.map((context) => (
+              {filteredData.map((context) => (
                 <TableRow key={context.id}>
                   <TableCell>
                     <Checkbox
@@ -218,7 +323,16 @@ export const ContextList = () => {
                     />
                   </TableCell>
                   <TableCell>{context.id}</TableCell>
-                  <TableCell>{context.name}</TableCell>
+                  <TableCell>
+                    {typeof context.id === 'number' ? (
+                      <InlineEditCell
+                        value={context.name}
+                        onSave={(newName) => handleUpdateName(context.id as number, newName)}
+                      />
+                    ) : (
+                      context.name
+                    )}
+                  </TableCell>
                   <TableCell>{context.context_type}</TableCell>
                   <TableCell>{context.chunk_count}</TableCell>
                   <TableCell>{context.processing_status}</TableCell>

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react"; // v2
+import { useEffect, useState } from "react";
 import { useCustom } from "@refinedev/core";
+import { AnalyticsSkeleton } from "@/components/AnalyticsSkeleton";
 import {
   LineChart,
   Line,
@@ -87,7 +88,7 @@ export const Analytics = () => {
   }, [days, refetchTrend]);
 
   if (summaryLoading || topicsLoading || trendLoading || feedbackLoading) {
-    return <div className="p-6">로딩 중...</div>;
+    return <AnalyticsSkeleton />;
   }
 
   const summary = summaryData?.data;
@@ -110,68 +111,67 @@ export const Analytics = () => {
         <p className="text-secondary-600">시스템 사용 현황과 통계를 확인합니다</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-4 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100">
-          <h3 className="text-sm text-gray-500">총 질문 수</h3>
-          <p className="text-2xl font-bold">{summary?.total_questions || 0}</p>
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 auto-rows-fr">
+        <div className="md:col-span-2 p-6 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
+          <h3 className="text-sm text-gray-500 mb-1">총 질문 수</h3>
+          <p className="text-3xl font-bold text-primary-700">{summary?.total_questions || 0}</p>
         </div>
-        <div className="p-4 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100">
-          <h3 className="text-sm text-gray-500">피드백 수</h3>
-          <p className="text-2xl font-bold">{summary?.total_feedback || 0}</p>
+        <div className="md:col-span-2 p-6 bg-gradient-to-br from-white to-green-50 rounded-lg shadow-md border border-green-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
+          <h3 className="text-sm text-gray-500 mb-1">피드백 수</h3>
+          <p className="text-3xl font-bold text-green-700">{summary?.total_feedback || 0}</p>
         </div>
-        <div className="p-4 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100">
-          <h3 className="text-sm text-gray-500">활성 세션</h3>
-          <p className="text-2xl font-bold">
+        <div className="md:col-span-2 md:row-span-2 p-6 bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-xl transition-all duration-200">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold">질문 추세</h2>
+            <select
+              value={days}
+              onChange={(e) => setDays(Number(e.target.value))}
+              className="border rounded px-3 py-1 text-sm"
+            >
+              <option value={1}>1일</option>
+              <option value={7}>7일</option>
+              <option value={30}>30일</option>
+              <option value={90}>90일</option>
+            </select>
+          </div>
+          {trend.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={trend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="question_count"
+                  stroke={COLORS.primary}
+                  name="질문 수"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-gray-500 text-center py-12 text-sm">
+              선택한 기간에 데이터가 없습니다.
+            </p>
+          )}
+        </div>
+        <div className="md:col-span-2 p-6 bg-gradient-to-br from-white to-purple-50 rounded-lg shadow-md border border-purple-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
+          <h3 className="text-sm text-gray-500 mb-1">활성 세션</h3>
+          <p className="text-3xl font-bold text-purple-700">
             {summary?.active_sessions || 0}
           </p>
         </div>
-        <div className="p-4 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100">
-          <h3 className="text-sm text-gray-500">평균 피드백 점수</h3>
-          <p className="text-2xl font-bold">
+        <div className="md:col-span-2 p-6 bg-gradient-to-br from-white to-orange-50 rounded-lg shadow-md border border-orange-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
+          <h3 className="text-sm text-gray-500 mb-1">평균 피드백 점수</h3>
+          <p className="text-3xl font-bold text-orange-700">
             {summary?.average_feedback_score?.toFixed(2) || "0.00"}
           </p>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">질문 추세</h2>
-          <select
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-            className="border rounded px-3 py-1"
-          >
-            <option value={1}>1일</option>
-            <option value={7}>7일</option>
-            <option value={30}>30일</option>
-            <option value={90}>90일</option>
-          </select>
-        </div>
-        {trend.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={trend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="question_count"
-                stroke={COLORS.primary}
-                name="질문 수"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        ) : (
-          <p className="text-gray-500 text-center py-12">
-            선택한 기간에 데이터가 없습니다.
-          </p>
-        )}
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100">
           <h2 className="text-xl font-bold mb-4">토픽별 활동</h2>
           {topics.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -191,7 +191,7 @@ export const Analytics = () => {
           )}
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100">
           <h2 className="text-xl font-bold mb-4">피드백 분포</h2>
           {feedbackPieData.length > 0 &&
           feedbackPieData.some((d) => d.value > 0) ? (

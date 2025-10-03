@@ -35,8 +35,8 @@ export const ContextEdit = () => {
       setName(data.data.name);
       setDescription(data.data.description);
       setOriginalContent(data.data.original_content || "");
-      if (data.data.topics) {
-        setTopicIds(data.data.topics.map((t: any) => String(t.id)));
+      if (data.data.topics && Array.isArray(data.data.topics)) {
+        setTopicIds(data.data.topics.map((t: { id: number }) => String(t.id)));
       }
     }
   }, [data]);
