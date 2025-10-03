@@ -8,6 +8,9 @@
 
 ## 📋 현재 활성 태스크
 
+### 사용자 경험 개선
+- [x] **사용자 Q&A 인터페이스** ✅ (`docs/agents/tasks/user-qa-interface/`) - SSE 스트리밍 채팅 UI, dc715bf
+
 ### PDF 업로드 진행 상황 표시
 - [x] **PDF 업로드 진행 UI 개선** ✅ (`docs/agents/tasks/pdf-upload-progress/`) - Polling 구현, 963d8af
 
@@ -101,4 +104,5 @@ uv run alembic upgrade head
 ## 🎯 다음 우선순위
 1. [x] **프로덕션 배포 준비** ✅ - Celery 워커 설정 완료 (`docs/agents/tasks/production-deployment/`)
 2. [x] **Celery 모니터링** ✅ - Flower 대시보드 추가 (`docs/agents/tasks/celery-monitoring/`, 0966ff5)
-3. **성능 벤치마크** - 실제 데이터로 검증 (프로덕션 배포 후) (선택적)
+3. [x] **사용자 Q&A 인터페이스** ✅ - SSE 스트리밍 채팅 UI (`docs/agents/tasks/user-qa-interface/`, dc715bf)
+4. **성능 벤치마크** - 실제 데이터로 검증 (프로덕션 배포 후) (선택적)
