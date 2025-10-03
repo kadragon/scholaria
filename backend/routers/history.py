@@ -52,3 +52,18 @@ def update_feedback(
     db.commit()
     db.refresh(history)
     return history
+
+
+@router.get("/history/session/{session_id}", response_model=list[QuestionHistoryOut])
+def get_session_history(
+    session_id: str,
+    db: Session = Depends(get_db),
+) -> list[QuestionHistory]:
+    """Return conversation history for a specific session."""
+    histories = (
+        db.query(QuestionHistory)
+        .filter(QuestionHistory.session_id == session_id)
+        .order_by(QuestionHistory.created_at.asc())
+        .all()
+    )
+    return histories

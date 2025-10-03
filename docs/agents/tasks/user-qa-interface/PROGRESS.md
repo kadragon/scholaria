@@ -36,5 +36,17 @@ PC 기반 스트리밍 질의응답 인터페이스 구축 진행 중
 2. **이벤트 타입:** JSON 형식으로 `type` 필드 기반 구분
 3. **테스트 전략:** 통합 테스트는 수동 E2E로 연기 (Qdrant/OpenAI 의존성 회피)
 
+### ✅ Phase 2: Session History API (완료)
+- **Step 2.1:** `GET /api/history/session/{session_id}` 엔드포인트 추가 ✓
+- **Step 2.2:** `ConversationMessage` 스키마 추가 (backend/schemas/history.py:42) ✓
+- **Step 2.3:** 세션별 대화 조회 테스트 작성 (3 tests passing) ✓
+
+**Files:**
+- `backend/routers/history.py` (+15 lines)
+- `backend/schemas/history.py` (+11 lines)
+- `backend/tests/test_history_session.py` (신규, 3 tests passing)
+
+**Commit:** [Behavioral] Add session history endpoint
+
 ## Next Step
-Phase 2: Session History API (`GET /api/history/session/{session_id}`)
+Phase 3: Frontend Chat UI - Layout & Routing

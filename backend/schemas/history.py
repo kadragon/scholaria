@@ -35,3 +35,15 @@ class QuestionHistoryOut(BaseModel):
     @field_serializer("created_at", "updated_at")
     def serialize_datetime(self, value: datetime) -> str:
         return to_local_iso(value)
+
+
+class ConversationMessage(BaseModel):
+    """Single conversation message for chat UI."""
+
+    role: str = Field(..., description="Message role: 'user' or 'assistant'")
+    content: str
+    timestamp: datetime
+
+    @field_serializer("timestamp")
+    def serialize_timestamp(self, value: datetime) -> str:
+        return to_local_iso(value)
