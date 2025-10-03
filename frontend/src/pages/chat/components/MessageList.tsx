@@ -52,7 +52,7 @@ export const MessageList = ({ messages, isStreaming }: MessageListProps) => {
                       className="text-sm bg-secondary-50 p-2 rounded border border-secondary-200"
                     >
                       <div className="font-semibold text-secondary-700">
-                        {citation.context_title} (청크 {citation.chunk_index})
+                        {citation.title}
                       </div>
                       <div className="text-secondary-600 text-xs mt-1 line-clamp-2">
                         {citation.content}

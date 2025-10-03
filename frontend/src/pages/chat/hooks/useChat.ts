@@ -1,15 +1,15 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 
 export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   citations?: Array<{
-    context_id: number;
-    context_title: string;
-    chunk_index: number;
+    context_item_id: number;
+    title: string;
     content: string;
     score: number;
+    context_type: string;
   }>;
   timestamp: Date;
 }
@@ -34,22 +34,8 @@ export const useChat = ({
 }: UseChatOptions): UseChatReturn => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
   const currentAssistantMessageRef = useRef<string>("");
   const currentCitationsRef = useRef<Message["citations"]>();
-
-  const closeEventSource = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      closeEventSource();
-    };
-  }, [closeEventSource]);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -183,8 +169,7 @@ export const useChat = ({
 
   const clearMessages = useCallback(() => {
     setMessages([]);
-    closeEventSource();
-  }, [closeEventSource]);
+  }, []);
 
   return {
     messages,

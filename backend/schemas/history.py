@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -40,7 +41,9 @@ class QuestionHistoryOut(BaseModel):
 class ConversationMessage(BaseModel):
     """Single conversation message for chat UI."""
 
-    role: str = Field(..., description="Message role: 'user' or 'assistant'")
+    role: Literal["user", "assistant"] = Field(
+        ..., description="Message role: 'user' or 'assistant'"
+    )
     content: str
     timestamp: datetime
 

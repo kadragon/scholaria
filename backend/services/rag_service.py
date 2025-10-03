@@ -9,6 +9,8 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
+from collections.abc import AsyncGenerator
 from typing import Any
 
 import redis.asyncio as redis
@@ -18,6 +20,8 @@ from backend.retrieval.embeddings import EmbeddingService
 from backend.retrieval.monitoring import OpenAIUsageMonitor
 from backend.retrieval.qdrant import QdrantService
 from backend.retrieval.reranking import RerankingService
+
+logger = logging.getLogger(__name__)
 
 
 class AsyncRAGService:
@@ -252,7 +256,7 @@ Please provide a comprehensive answer based on the context above. If the context
         topic_ids: list[int],
         limit: int | None = None,
         rerank_top_k: int | None = None,
-    ) -> Any:
+    ) -> AsyncGenerator[str, None]:
         """
         Execute RAG query with streaming response.
 
@@ -333,9 +337,17 @@ Please provide a comprehensive answer based on the context above. If the context
             yield json.dumps({"type": "done"})
 
         except Exception as e:
-            yield json.dumps({"type": "error", "message": str(e)})
+            logger.error("RAG streaming error: %s", str(e), exc_info=True)
+            yield json.dumps(
+                {
+                    "type": "error",
+                    "message": "An error occurred while processing your request",
+                }
+            )
 
-    async def _generate_answer_stream(self, query: str, context: str) -> Any:
+    async def _generate_answer_stream(
+        self, query: str, context: str
+    ) -> AsyncGenerator[str, None]:
         """Generate streaming answer using OpenAI API."""
         if not context:
             yield "I couldn't find any relevant information to answer your question."

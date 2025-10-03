@@ -4,8 +4,10 @@ import { TopicSelector } from "./components/TopicSelector";
 import { MessageList } from "./components/MessageList";
 import { MessageInput } from "./components/MessageInput";
 import { useChat } from "./hooks/useChat";
+import { useToast } from "../../hooks/use-toast";
 
 export const ChatPage = () => {
+  const { toast } = useToast();
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [sessionId] = useState(() => {
     const stored = sessionStorage.getItem("chat_session_id");
@@ -20,7 +22,11 @@ export const ChatPage = () => {
     sessionId,
     onError: (error) => {
       console.error("Chat error:", error);
-      alert(`오류: ${error.message}`);
+      toast({
+        title: "오류",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
