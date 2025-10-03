@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useOne, useUpdate, useNavigation, useList } from "@refinedev/core";
 import { useParams } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ export const ContextEdit = () => {
 
   const { mutate: update } = useUpdate();
   const { list } = useNavigation();
+  const { toast } = useToast();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -54,7 +56,18 @@ export const ContextEdit = () => {
       },
       {
         onSuccess: () => {
+          toast({
+            title: "업데이트 성공",
+            description: "컨텍스트가 성공적으로 업데이트되었습니다.",
+          });
           list("contexts");
+        },
+        onError: (error) => {
+          toast({
+            variant: "destructive",
+            title: "업데이트 실패",
+            description: error.message || "컨텍스트 업데이트 중 오류가 발생했습니다.",
+          });
         },
       },
     );
