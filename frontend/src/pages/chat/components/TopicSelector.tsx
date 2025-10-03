@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+
 import { useCustom } from "@refinedev/core";
 
 interface Topic {

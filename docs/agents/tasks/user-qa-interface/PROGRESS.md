@@ -62,5 +62,34 @@ PC 기반 스트리밍 질의응답 인터페이스 구축 진행 중
 
 **Commit:** [Behavioral] Add chat page with topic selector
 
+### ✅ Phase 4: Frontend Chat UI - Messaging (완료)
+- **Step 4.1:** `useChat` hook 작성 (메시지 상태 관리 + SSE 연결) ✓
+- **Step 4.2:** Fetch-based SSE 스트리밍 구현 (ReadableStream) ✓
+- **Step 4.3:** `MessageList` 컴포넌트 (버블 UI + auto-scroll + 타이핑 인디케이터) ✓
+- **Step 4.4:** `MessageInput` 컴포넌트 (textarea + Enter 전송 + 글자수) ✓
+- **Step 4.5:** 인용 출처 Collapsible UI 구현 ✓
+- **Step 4.6:** ChatPage 통합 (sessionId 관리, 토픽 변경 시 초기화) ✓
+
+**Files:**
+- `frontend/src/pages/chat/hooks/useChat.ts` (신규, 175 lines)
+- `frontend/src/pages/chat/components/MessageList.tsx` (신규, 88 lines)
+- `frontend/src/pages/chat/components/MessageInput.tsx` (신규, 60 lines)
+- `frontend/src/pages/chat/index.tsx` (수정, 전체 재작성)
+- `frontend/src/components/ui/collapsible.tsx` (shadcn 추가)
+- `frontend/package.json` (+uuid, +@types/uuid)
+
+**Commit:** [Behavioral] Add chat messaging UI with SSE streaming
+
+### ✅ Phase 5: Testing & Polish (완료)
+- **Backend:** 143 tests passing (rag_endpoint 제외)
+- **Frontend:** 빌드 성공 (타입 에러 수정 완료)
+- **Quality:** ruff clean, mypy success
+
+## Decision Log (Phase 4-5)
+1. **SSE 구현:** EventSource 대신 Fetch + ReadableStream 사용 (POST body 지원)
+2. **SessionID 관리:** sessionStorage + UUID v4
+3. **타입 임포트:** verbatimModuleSyntax 준수 (`type` 키워드 명시)
+4. **Collapsible:** shadcn/ui 컴포넌트 추가
+
 ## Next Step
-Phase 4: Frontend Chat UI - Messaging (SSE 연결, 메시지 렌더링)
+Phase 6: 문서화 & 커밋

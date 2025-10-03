@@ -1,8 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { TopicSelector } from "./components/TopicSelector";
+import { MessageList } from "./components/MessageList";
+import { MessageInput } from "./components/MessageInput";
+import { useChat } from "./hooks/useChat";
 
 export const ChatPage = () => {
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
+  const [sessionId] = useState(() => {
+    const stored = sessionStorage.getItem("chat_session_id");
+    if (stored) return stored;
+    const newId = uuidv4();
+    sessionStorage.setItem("chat_session_id", newId);
+    return newId;
+  });
+
+  const { messages, isStreaming, sendMessage, clearMessages } = useChat({
+    topicId: selectedTopicId,
+    sessionId,
+    onError: (error) => {
+      console.error("Chat error:", error);
+      alert(`오류: ${error.message}`);
+    },
+  });
+
+  useEffect(() => {
+    clearMessages();
+  }, [selectedTopicId, clearMessages]);
 
   return (
     <div className="flex h-screen bg-secondary-50">
@@ -26,36 +50,27 @@ export const ChatPage = () => {
           </aside>
 
           <main className="flex-1 flex flex-col">
-            <div className="flex-1 overflow-y-auto p-6">
-              {selectedTopicId ? (
-                <div className="text-center text-secondary-400 mt-20">
-                  대화를 시작하세요
-                </div>
-              ) : (
-                <div className="text-center text-secondary-400 mt-20">
+            {messages.length === 0 && !selectedTopicId ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center text-secondary-400">
                   토픽을 선택하여 대화를 시작하세요
                 </div>
-              )}
-            </div>
-
-            <div className="border-t bg-white p-4">
-              <div className="max-w-3xl mx-auto">
-                <textarea
-                  className="w-full border rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="질문을 입력하세요..."
-                  rows={3}
-                  disabled={!selectedTopicId}
-                />
-                <div className="flex justify-end mt-2">
-                  <button
-                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!selectedTopicId}
-                  >
-                    전송
-                  </button>
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center text-secondary-400">
+                  대화를 시작하세요
                 </div>
               </div>
-            </div>
+            ) : (
+              <MessageList messages={messages} isStreaming={isStreaming} />
+            )}
+
+            <MessageInput
+              onSend={sendMessage}
+              disabled={!selectedTopicId}
+              isStreaming={isStreaming}
+            />
           </main>
         </div>
       </div>
