@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useOne, useUpdate, useNavigation, useList } from "@refinedev/core";
 import { useParams } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ export const TopicEdit = () => {
   });
   const { mutate, isLoading } = useUpdate();
   const { list } = useNavigation();
+  const { toast } = useToast();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -32,8 +34,8 @@ export const TopicEdit = () => {
       setName(data.data.name);
       setDescription(data.data.description || "");
       setSystemPrompt(data.data.system_prompt || "");
-      if (data.data.contexts) {
-        setContextIds(data.data.contexts.map((c: any) => String(c.id)));
+      if (data.data.contexts && Array.isArray(data.data.contexts)) {
+        setContextIds(data.data.contexts.map((c: { id: number }) => String(c.id)));
       }
     }
   }, [data]);
@@ -53,7 +55,18 @@ export const TopicEdit = () => {
       },
       {
         onSuccess: () => {
+          toast({
+            title: "업데이트 성공",
+            description: "토픽이 성공적으로 업데이트되었습니다.",
+          });
           list("topics");
+        },
+        onError: (error) => {
+          toast({
+            variant: "destructive",
+            title: "업데이트 실패",
+            description: error.message || "토픽 업데이트 중 오류가 발생했습니다.",
+          });
         },
       },
     );

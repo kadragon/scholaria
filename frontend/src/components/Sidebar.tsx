@@ -28,10 +28,19 @@ export const Sidebar = () => {
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-secondary-200 min-h-screen flex flex-col shadow-sm">
+    <aside className="w-64 bg-white/90 backdrop-blur-xl border-r border-white/30 min-h-screen flex flex-col shadow-xl">
       <div className="p-6 border-b border-secondary-200">
         <h2 className="text-xl font-bold text-primary-700">Scholaria</h2>
         <p className="text-xs text-secondary-500 mt-1">관리자 패널</p>
+        <button
+          onClick={() => {}}
+          className="mt-3 w-full px-3 py-2 text-xs bg-secondary-50 hover:bg-secondary-100 border border-secondary-200 rounded-md text-secondary-600 transition-colors flex items-center justify-between"
+        >
+          <span>빠른 명령</span>
+          <kbd className="text-[10px] bg-white px-1.5 py-0.5 rounded border border-secondary-300">
+            ⌘K
+          </kbd>
+        </button>
       </div>
 
       <nav className="flex-1 p-4 space-y-1">

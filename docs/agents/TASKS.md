@@ -68,11 +68,18 @@
   - 일반적인 쿼리에 대해 답변 지연시간 3초 미만 보장
   - 동시 사용자 부하 테스트 수행
 
+### 프론트엔드 디자인 개선
+- [x] **Command Palette (⌘K) 구현** ✅ (`docs/agents/tasks/command-palette/`)
+- [x] **Data Table with Faceted Filters** ✅ (`docs/agents/tasks/data-table-filters/`)
+- [x] **Bento Grid Layout** ✅ (`docs/agents/tasks/bento-grid-layout/`)
+- [x] **Glassmorphism UI** ✅ (`docs/agents/tasks/glassmorphism-ui/`)
+- [x] **Inline Editing + Optimistic UI** ✅ (`docs/agents/tasks/inline-editing-optimistic/`)
+- [x] **Skeleton Loading States** ✅ (`docs/agents/tasks/skeleton-loading/`)
+
 ### 선택적 기능
 - [ ] 다크 모드
 - [x] **피드백 시스템 (좋아요/싫어요)** ✅ (`docs/agents/tasks/feedback-system/`)
 - [ ] 다국어 지원
-- [ ] 분석 대시보드
 - [ ] SSO 통합
 
 ---
