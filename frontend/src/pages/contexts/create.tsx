@@ -19,11 +19,12 @@ export const ContextCreate = () => {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [contextType, setContextType] = useState<"MARKDOWN" | "PDF" | "FAQ">(
+  const [contextType, setContextType] = useState<"MARKDOWN" | "PDF" | "FAQ" | "WEBSCRAPER">(
     "MARKDOWN",
   );
   const [originalContent, setOriginalContent] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [webUrl, setWebUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<string | null>(null);
   const pollingIntervalRef = useRef<number | null>(null);
@@ -44,7 +45,7 @@ export const ContextCreate = () => {
         setIsSubmitting(false);
         toast({
           title: "처리 시간 초과",
-          description: "PDF 처리가 너무 오래 걸립니다. 나중에 다시 확인해주세요.",
+          description: "처리가 너무 오래 걸립니다. 나중에 다시 확인해주세요.",
           variant: "destructive",
         });
         return;
@@ -64,9 +65,12 @@ export const ContextCreate = () => {
           }
           setProcessingStatus(null);
           setIsSubmitting(false);
+          const descriptionText = contextType === "PDF"
+            ? "PDF 파싱 및 청킹이 완료되었습니다."
+            : "웹 페이지 스크래핑 및 청킹이 완료되었습니다.";
           toast({
             title: "컨텍스트 생성 성공",
-            description: "PDF 파싱 및 청킹이 완료되었습니다.",
+            description: descriptionText,
           });
           list("contexts");
         } else if (status === "FAILED") {
@@ -75,9 +79,12 @@ export const ContextCreate = () => {
           }
           setProcessingStatus(null);
           setIsSubmitting(false);
+          const errorDescText = contextType === "PDF"
+            ? "PDF 파싱 중 오류가 발생했습니다."
+            : "웹 페이지 스크래핑 중 오류가 발생했습니다.";
           toast({
-            title: "PDF 처리 실패",
-            description: "PDF 파싱 중 오류가 발생했습니다.",
+            title: "처리 실패",
+            description: errorDescText,
             variant: "destructive",
           });
         }
@@ -114,6 +121,14 @@ export const ContextCreate = () => {
       });
       return;
     }
+    if (contextType === "WEBSCRAPER" && !webUrl.trim()) {
+      toast({
+        title: "URL 필요",
+        description: "웹 스크래핑 컨텍스트를 생성하려면 URL을 입력해야 합니다.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -127,6 +142,8 @@ export const ContextCreate = () => {
         formData.append("file", pdfFile);
       } else if (contextType === "MARKDOWN" && originalContent) {
         formData.append("original_content", originalContent);
+      } else if (contextType === "WEBSCRAPER" && webUrl) {
+        formData.append("url", webUrl);
       }
 
       const token = localStorage.getItem("token");
@@ -137,7 +154,7 @@ export const ContextCreate = () => {
         },
       });
 
-      if (contextType === "PDF") {
+      if (contextType === "PDF" || contextType === "WEBSCRAPER") {
         const contextId = response.data.id;
         setProcessingStatus("PENDING");
         pollContextStatus(contextId);
@@ -193,13 +210,14 @@ export const ContextCreate = () => {
             <Tabs
               value={contextType}
               onValueChange={(v) =>
-                setContextType(v as "MARKDOWN" | "PDF" | "FAQ")
+                setContextType(v as "MARKDOWN" | "PDF" | "FAQ" | "WEBSCRAPER")
               }
             >
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="MARKDOWN">Markdown</TabsTrigger>
                 <TabsTrigger value="PDF">PDF</TabsTrigger>
                 <TabsTrigger value="FAQ">FAQ</TabsTrigger>
+                <TabsTrigger value="WEBSCRAPER">Web URL</TabsTrigger>
               </TabsList>
 
               <TabsContent value="MARKDOWN" className="space-y-4 mt-4">
@@ -249,13 +267,29 @@ export const ContextCreate = () => {
                   FAQ 컨텍스트가 생성됩니다. Q&A 쌍은 생성 후 추가할 수 있습니다.
                 </p>
               </TabsContent>
+
+              <TabsContent value="WEBSCRAPER" className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="webUrl">웹 페이지 URL</Label>
+                  <Input
+                    id="webUrl"
+                    type="url"
+                    value={webUrl}
+                    onChange={(e) => setWebUrl(e.target.value)}
+                    placeholder="https://example.com"
+                  />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    웹 페이지를 자동으로 스크래핑하여 내용을 추출하고 청킹합니다.
+                  </p>
+                </div>
+              </TabsContent>
             </Tabs>
 
             <div className="flex gap-2">
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting
                   ? processingStatus === "PENDING"
-                    ? "PDF 파싱 중..."
+                    ? contextType === "PDF" ? "PDF 파싱 중..." : "웹 스크래핑 중..."
                     : "생성 중..."
                   : "생성"}
               </Button>

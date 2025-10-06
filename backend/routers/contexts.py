@@ -61,6 +61,7 @@ def create_context(
     context_type: str = Form(...),
     original_content: str | None = Form(None),
     file: UploadFile | None = File(None),
+    url: str | None = Form(None),
     db: Session = Depends(get_db),
 ) -> Context:
     """
@@ -68,17 +69,24 @@ def create_context(
 
     For PDF contexts, file upload is required.
     For Markdown/FAQ contexts, file is optional.
+    For WEBSCRAPER contexts, URL is required.
     """
-    if context_type not in ["PDF", "MARKDOWN", "FAQ"]:
+    if context_type not in ["PDF", "MARKDOWN", "FAQ", "WEBSCRAPER"]:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Invalid context_type. Must be PDF, MARKDOWN, or FAQ.",
+            detail="Invalid context_type. Must be PDF, MARKDOWN, FAQ, or WEBSCRAPER.",
         )
 
     if context_type == "PDF" and not file:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File upload is required for PDF contexts.",
+        )
+
+    if context_type == "WEBSCRAPER" and not url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="URL is required for WEBSCRAPER contexts.",
         )
 
     if file:
@@ -105,8 +113,10 @@ def create_context(
     db.commit()
     db.refresh(context)
 
-    if file and context_type == "PDF":
+    if context_type == "PDF" and file:
         _process_pdf_upload(context, file, db)
+    elif context_type == "WEBSCRAPER" and url:
+        _process_webscraper_upload(context, url, db)
 
     return context
 
@@ -123,20 +133,13 @@ def _process_pdf_upload(context: Context, file: UploadFile, db: Session) -> None
     temp_path = save_uploaded_file(file_content, suffix=".pdf")
 
     try:
-        num_chunks = ingest_document(
+        num_chunks, text_content = ingest_document(
             db=db,
             context_id=context.id,
             file_path=str(temp_path),
             title=context.name,
             context_type="PDF",
         )
-
-        text_content = None
-        if num_chunks > 0:
-            from backend.ingestion.parsers import PDFParser
-
-            parser = PDFParser()
-            text_content = parser.parse_file(str(temp_path))
 
         context.original_content = text_content
         context.processing_status = "COMPLETED" if num_chunks > 0 else "FAILED"
@@ -150,6 +153,30 @@ def _process_pdf_upload(context: Context, file: UploadFile, db: Session) -> None
 
     finally:
         delete_temp_file(temp_path)
+
+
+def _process_webscraper_upload(context: Context, url: str, db: Session) -> None:
+    """Process web scraper URL: scrape → chunk → save."""
+    from backend.services.ingestion import ingest_document
+
+    try:
+        num_chunks, text_content = ingest_document(
+            db=db,
+            context_id=context.id,
+            title=context.name,
+            context_type="WEBSCRAPER",
+            url=url,
+        )
+
+        context.original_content = text_content
+        context.processing_status = "COMPLETED" if num_chunks > 0 else "FAILED"
+        db.commit()
+
+    except Exception as e:
+        logger.error(f"Web scraping failed for context {context.id}: {e}")
+        context.processing_status = "FAILED"
+        db.commit()
+        raise
 
 
 @router.put(

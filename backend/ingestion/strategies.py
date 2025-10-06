@@ -114,12 +114,38 @@ class FAQIngestionStrategy(BaseIngestionStrategy):
         return self.chunker.chunk_text(text)
 
 
+class WebScraperIngestionStrategy(BaseIngestionStrategy):
+    """Ingestion strategy for web-scraped documents."""
+
+    def __init__(self, chunk_size: int = 1000, overlap: int = 150) -> None:
+        """
+        Initialize WebScraper ingestion strategy.
+
+        Args:
+            chunk_size: Maximum size of each chunk in characters
+            overlap: Number of overlapping characters between chunks
+        """
+        from backend.ingestion.chunkers import WebScraperChunker
+        from backend.ingestion.parsers import WebScraperParser
+
+        self.parser = WebScraperParser()
+        self.chunker = WebScraperChunker(chunk_size=chunk_size, overlap=overlap)
+
+    def parse(self, file_path: str) -> str:
+        """Parse web URL and extract text content using Playwright."""
+        return self.parser.parse_url(file_path)
+
+    def chunk(self, text: str) -> list[str]:
+        """Chunk web-scraped text using web-aware chunking."""
+        return self.chunker.chunk_text(text)
+
+
 def get_ingestion_strategy(context_type: str) -> BaseIngestionStrategy:
     """
     Factory function to get the appropriate ingestion strategy.
 
     Args:
-        context_type: Type of context (PDF, MARKDOWN, FAQ)
+        context_type: Type of context (PDF, MARKDOWN, FAQ, WEBSCRAPER)
 
     Returns:
         Appropriate ingestion strategy instance
@@ -131,6 +157,7 @@ def get_ingestion_strategy(context_type: str) -> BaseIngestionStrategy:
         "PDF": PDFIngestionStrategy(),
         "MARKDOWN": MarkdownIngestionStrategy(),
         "FAQ": FAQIngestionStrategy(),
+        "WEBSCRAPER": WebScraperIngestionStrategy(),
     }
 
     strategy = strategy_map.get(context_type)

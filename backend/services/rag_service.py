@@ -256,7 +256,7 @@ Please provide a comprehensive answer based on the context above. If the context
         topic_ids: list[int],
         limit: int | None = None,
         rerank_top_k: int | None = None,
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[str]:
         """
         Execute RAG query with streaming response.
 
@@ -347,7 +347,7 @@ Please provide a comprehensive answer based on the context above. If the context
 
     async def _generate_answer_stream(
         self, query: str, context: str
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[str]:
         """Generate streaming answer using OpenAI API."""
         if not context:
             yield "I couldn't find any relevant information to answer your question."

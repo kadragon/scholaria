@@ -45,7 +45,7 @@ async def stream_answer(
 ) -> EventSourceResponse:
     """Stream RAG answer with Server-Sent Events."""
 
-    async def event_generator() -> AsyncGenerator[dict[str, str], None]:
+    async def event_generator() -> AsyncGenerator[dict[str, str]]:
         try:
             async for event_data in rag_service.query_stream(
                 query=request.question,
