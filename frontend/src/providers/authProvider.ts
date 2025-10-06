@@ -25,7 +25,7 @@ export const authProvider: AuthProvider = {
 
     return {
       success: true,
-      redirectTo: "/",
+      redirectTo: "/admin",
     };
   },
 
@@ -33,7 +33,7 @@ export const authProvider: AuthProvider = {
     localStorage.removeItem("token");
     return {
       success: true,
-      redirectTo: "/login",
+      redirectTo: "/admin/login",
     };
   },
 
@@ -42,7 +42,7 @@ export const authProvider: AuthProvider = {
     if (!token) {
       return {
         authenticated: false,
-        redirectTo: "/login",
+        redirectTo: "/admin/login",
       };
     }
 
@@ -73,7 +73,7 @@ export const authProvider: AuthProvider = {
     if (error.status === 401 || error.status === 403) {
       return {
         logout: true,
-        redirectTo: "/login",
+        redirectTo: "/admin/login",
         error,
       };
     }

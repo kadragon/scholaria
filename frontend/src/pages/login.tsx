@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useLogin } from "@refinedev/core";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useToast } from "@/hooks/use-toast";
 
 const API_URL = import.meta.env.VITE_API_URL?.replace('/admin', '') || "http://localhost:8001/api";
 
 export const LoginPage = () => {
   const { mutate: login, isLoading } = useLogin();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -15,7 +17,7 @@ export const LoginPage = () => {
     try {
       const response = await axios.get(`${API_URL}/setup/check`);
       if (response.data.needs_setup) {
-        navigate("/setup");
+        navigate("/admin/setup");
       }
     } catch (err) {
       console.error("Setup check failed:", err);
@@ -28,7 +30,18 @@ export const LoginPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login({ email, password });
+    login(
+      { email, password },
+      {
+        onError: () => {
+          toast({
+            variant: "destructive",
+            title: "로그인 실패",
+            description: "이메일 또는 비밀번호가 올바르지 않습니다.",
+          });
+        },
+      }
+    );
   };
 
   return (

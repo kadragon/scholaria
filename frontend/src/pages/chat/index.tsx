@@ -35,18 +35,18 @@ export const ChatPage = () => {
   }, [selectedTopicId, clearMessages]);
 
   return (
-    <div className="flex h-screen bg-secondary-50">
-      <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full">
-        <header className="border-b bg-white px-6 py-4 shadow-sm">
-          <h1 className="text-2xl font-bold text-primary-700">질문하기</h1>
-          <p className="text-sm text-secondary-500 mt-1">
-            토픽을 선택하고 질문하세요
+    <div className="flex h-screen bg-gradient-to-br from-secondary-50 to-secondary-100">
+      <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full shadow-2xl bg-white">
+        <header className="border-b-2 border-primary-100 bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6 shadow-lg">
+          <h1 className="text-3xl font-bold text-white">AI 질문 답변</h1>
+          <p className="text-sm text-primary-100 mt-2">
+            토픽을 선택하고 궁금한 점을 질문하세요
           </p>
         </header>
 
         <div className="flex-1 flex overflow-hidden">
-          <aside className="w-64 border-r bg-white p-4">
-            <h2 className="text-sm font-semibold text-secondary-700 mb-3">
+          <aside className="w-72 border-r-2 border-secondary-200 bg-gradient-to-b from-white to-secondary-50 p-6 shadow-inner">
+            <h2 className="text-sm font-bold text-secondary-800 mb-4 uppercase tracking-wider">
               토픽 선택
             </h2>
             <TopicSelector
@@ -55,17 +55,29 @@ export const ChatPage = () => {
             />
           </aside>
 
-          <main className="flex-1 flex flex-col">
+          <main className="flex-1 flex flex-col bg-white">
             {messages.length === 0 && !selectedTopicId ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center text-secondary-400">
-                  토픽을 선택하여 대화를 시작하세요
+              <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-secondary-50 to-white">
+                <div className="text-center max-w-md p-8">
+                  <div className="mb-4 text-6xl">💬</div>
+                  <h3 className="text-xl font-bold text-secondary-700 mb-2">
+                    대화를 시작해보세요
+                  </h3>
+                  <p className="text-secondary-500">
+                    왼쪽에서 토픽을 선택하면 해당 주제에 대해 질문할 수 있습니다
+                  </p>
                 </div>
               </div>
             ) : messages.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center text-secondary-400">
-                  대화를 시작하세요
+              <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-secondary-50 to-white">
+                <div className="text-center max-w-md p-8">
+                  <div className="mb-4 text-6xl">✨</div>
+                  <h3 className="text-xl font-bold text-secondary-700 mb-2">
+                    질문을 입력하세요
+                  </h3>
+                  <p className="text-secondary-500">
+                    아래 입력창에 궁금한 점을 자유롭게 질문해주세요
+                  </p>
                 </div>
               </div>
             ) : (

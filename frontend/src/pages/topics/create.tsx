@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCreate, useNavigation } from "@refinedev/core";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 export const TopicCreate = () => {
   const { mutate, isLoading } = useCreate();
   const { list } = useNavigation();
+  const { toast } = useToast();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -27,7 +29,18 @@ export const TopicCreate = () => {
       },
       {
         onSuccess: () => {
+          toast({
+            title: "생성 성공",
+            description: "토픽이 성공적으로 생성되었습니다.",
+          });
           list("topics");
+        },
+        onError: (error) => {
+          toast({
+            variant: "destructive",
+            title: "생성 실패",
+            description: error.message || "토픽 생성 중 오류가 발생했습니다.",
+          });
         },
       },
     );

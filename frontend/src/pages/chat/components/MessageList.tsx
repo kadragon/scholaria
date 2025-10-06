@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { Message } from "../hooks/useChat";
 import {
   Collapsible,
@@ -12,6 +14,138 @@ interface MessageListProps {
   isStreaming: boolean;
 }
 
+interface MarkdownContentProps {
+  content: string;
+}
+
+const MarkdownContent = ({ content }: MarkdownContentProps) => {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        h1: ({ children }) => (
+          <h1 className="text-2xl font-bold text-secondary-900 mt-6 mb-4 pb-2 border-b-2 border-primary-200">
+            {children}
+          </h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="text-xl font-bold text-secondary-900 mt-5 mb-3">
+            {children}
+          </h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="text-lg font-semibold text-secondary-800 mt-4 mb-2">
+            {children}
+          </h3>
+        ),
+        h4: ({ children }) => (
+          <h4 className="text-base font-semibold text-secondary-800 mt-3 mb-2">
+            {children}
+          </h4>
+        ),
+        p: ({ children }) => (
+          <p className="text-secondary-700 leading-relaxed my-3">
+            {children}
+          </p>
+        ),
+        ul: ({ children }) => (
+          <ul className="list-disc list-inside space-y-2 my-3 ml-4 text-secondary-700">
+            {children}
+          </ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="list-decimal list-inside space-y-2 my-3 ml-4 text-secondary-700">
+            {children}
+          </ol>
+        ),
+        li: ({ children }) => (
+          <li className="leading-relaxed">
+            {children}
+          </li>
+        ),
+        code: ({ className, children, ...props }) => {
+          const isInline = !className;
+          if (isInline) {
+            return (
+              <code className="bg-secondary-100 text-primary-700 px-1.5 py-0.5 rounded text-sm font-mono">
+                {children}
+              </code>
+            );
+          }
+          return <code className={className} {...props}>{children}</code>;
+        },
+        pre: ({ children }) => (
+          <pre className="bg-secondary-900 text-secondary-100 p-4 rounded-lg overflow-x-auto my-4 font-mono text-sm">
+            {children}
+          </pre>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-4 border-primary-500 pl-4 py-2 my-4 italic text-secondary-600 bg-primary-50 rounded-r">
+            {children}
+          </blockquote>
+        ),
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            className="text-primary-600 hover:text-primary-700 underline font-medium"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {children}
+          </a>
+        ),
+        table: ({ children }) => (
+          <div className="overflow-x-auto my-4">
+            <table className="min-w-full divide-y divide-secondary-200 border border-secondary-200 rounded-lg">
+              {children}
+            </table>
+          </div>
+        ),
+        thead: ({ children }) => (
+          <thead className="bg-secondary-100">
+            {children}
+          </thead>
+        ),
+        tbody: ({ children }) => (
+          <tbody className="bg-white divide-y divide-secondary-200">
+            {children}
+          </tbody>
+        ),
+        tr: ({ children }) => (
+          <tr className="hover:bg-secondary-50">
+            {children}
+          </tr>
+        ),
+        th: ({ children }) => (
+          <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-700 uppercase tracking-wider">
+            {children}
+          </th>
+        ),
+        td: ({ children }) => (
+          <td className="px-4 py-3 text-sm text-secondary-600">
+            {children}
+          </td>
+        ),
+        strong: ({ children }) => (
+          <strong className="font-bold text-secondary-900">
+            {children}
+          </strong>
+        ),
+        em: ({ children }) => (
+          <em className="italic text-secondary-700">
+            {children}
+          </em>
+        ),
+        hr: () => (
+          <hr className="my-6 border-t-2 border-secondary-200" />
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+};
+
 export const MessageList = ({ messages, isStreaming }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -20,7 +154,7 @@ export const MessageList = ({ messages, isStreaming }: MessageListProps) => {
   }, [messages, isStreaming]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-secondary-50 to-white">
       {messages.map((message) => (
         <div
           key={message.id}
@@ -29,36 +163,50 @@ export const MessageList = ({ messages, isStreaming }: MessageListProps) => {
           }`}
         >
           <div
-            className={`max-w-[70%] rounded-lg p-4 ${
+            className={`max-w-[75%] rounded-2xl p-5 shadow-md ${
               message.role === "user"
-                ? "bg-primary-600 text-white"
-                : "bg-white border border-secondary-200"
+                ? "bg-gradient-to-br from-primary-600 to-primary-700 text-white"
+                : "bg-white border-2 border-secondary-100"
             }`}
           >
-            <div className="whitespace-pre-wrap break-words">
-              {message.content}
+            <div className="prose prose-sm max-w-none">
+              {message.role === "user" ? (
+                <div className="text-white whitespace-pre-wrap break-words">
+                  {message.content}
+                </div>
+              ) : (
+                <MarkdownContent content={message.content} />
+              )}
             </div>
 
-            {message.role === "assistant" && message.citations && (
-              <Collapsible className="mt-3">
-                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-secondary-600 hover:text-secondary-800">
+            {message.role === "assistant" && message.citations && message.citations.length > 0 && (
+              <Collapsible className="mt-4 pt-4 border-t border-secondary-200">
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-secondary-600 hover:text-primary-600 font-medium transition-colors">
                   <ChevronDown className="h-4 w-4" />
-                  인용 출처 ({message.citations.length})
+                  참고 자료 ({message.citations.length})
                 </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2 space-y-2">
+                <CollapsibleContent className="mt-3 space-y-2">
                   {message.citations.map((citation, idx) => (
                     <div
                       key={idx}
-                      className="text-sm bg-secondary-50 p-2 rounded border border-secondary-200"
+                      className="text-sm bg-gradient-to-br from-secondary-50 to-white p-3 rounded-lg border border-secondary-200 hover:border-primary-300 transition-colors"
                     >
-                      <div className="font-semibold text-secondary-700">
+                      <div className="font-semibold text-secondary-800">
                         {citation.title}
                       </div>
-                      <div className="text-secondary-600 text-xs mt-1 line-clamp-2">
+                      <div className="text-secondary-600 text-xs mt-1.5 line-clamp-2">
                         {citation.content}
                       </div>
-                      <div className="text-secondary-500 text-xs mt-1">
-                        유사도: {(citation.score * 100).toFixed(1)}%
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="flex-1 bg-secondary-200 rounded-full h-1.5">
+                          <div
+                            className="bg-primary-500 h-1.5 rounded-full transition-all"
+                            style={{ width: `${citation.score * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-secondary-500 text-xs font-medium">
+                          {(citation.score * 100).toFixed(0)}%
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -71,14 +219,14 @@ export const MessageList = ({ messages, isStreaming }: MessageListProps) => {
 
       {isStreaming && (
         <div className="flex justify-start">
-          <div className="bg-white border border-secondary-200 rounded-lg p-4">
-            <div className="flex items-center gap-2">
+          <div className="bg-white border-2 border-primary-200 rounded-2xl p-5 shadow-md">
+            <div className="flex items-center gap-3">
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-secondary-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                <div className="w-2 h-2 bg-secondary-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                <div className="w-2 h-2 bg-secondary-400 rounded-full animate-bounce"></div>
+                <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce"></div>
               </div>
-              <span className="text-sm text-secondary-600">답변 생성 중...</span>
+              <span className="text-sm text-primary-700 font-medium">답변 생성 중...</span>
             </div>
           </div>
         </div>
