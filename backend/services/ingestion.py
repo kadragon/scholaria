@@ -20,7 +20,7 @@ def ingest_document(
     context_type: str,
     file_path: str | None = None,
     url: str | None = None,
-) -> int:
+) -> tuple[int, str | None]:
     """
     Ingest a document into the system (PDF/Markdown/FAQ/WEBSCRAPER).
 
@@ -33,7 +33,7 @@ def ingest_document(
         url: URL to scrape (required for WEBSCRAPER)
 
     Returns:
-        Number of chunks created
+        Tuple of (number of chunks created, parsed content text)
 
     Raises:
         ValueError: If context not found or parsing fails
@@ -55,6 +55,7 @@ def ingest_document(
         logger.error(str(e))
         raise
 
+    source_ref = ""
     try:
         if context_type == "WEBSCRAPER":
             if not url:
@@ -81,7 +82,7 @@ def ingest_document(
 
     if not content:
         logger.warning(f"Empty content from {context_type}: {source_ref}")
-        return 0
+        return 0, None
 
     try:
         chunks = strategy.chunk(content)
@@ -92,7 +93,7 @@ def ingest_document(
 
     if not chunks:
         logger.warning(f"No chunks created from {context_type}: {source_ref}")
-        return 0
+        return 0, content
 
     ingestion_timestamp = datetime.now(UTC).isoformat()
 
@@ -123,7 +124,7 @@ def ingest_document(
 
     logger.info(f"Created {len(chunks)} ContextItems for {context_type}: {title}")
 
-    return len(chunks)
+    return len(chunks), content
 
 
 def save_uploaded_file(file_content: bytes, suffix: str = ".tmp") -> Path:

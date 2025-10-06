@@ -133,20 +133,13 @@ def _process_pdf_upload(context: Context, file: UploadFile, db: Session) -> None
     temp_path = save_uploaded_file(file_content, suffix=".pdf")
 
     try:
-        num_chunks = ingest_document(
+        num_chunks, text_content = ingest_document(
             db=db,
             context_id=context.id,
             file_path=str(temp_path),
             title=context.name,
             context_type="PDF",
         )
-
-        text_content = None
-        if num_chunks > 0:
-            from backend.ingestion.parsers import PDFParser
-
-            parser = PDFParser()
-            text_content = parser.parse_file(str(temp_path))
 
         context.original_content = text_content
         context.processing_status = "COMPLETED" if num_chunks > 0 else "FAILED"
@@ -167,20 +160,13 @@ def _process_webscraper_upload(context: Context, url: str, db: Session) -> None:
     from backend.services.ingestion import ingest_document
 
     try:
-        num_chunks = ingest_document(
+        num_chunks, text_content = ingest_document(
             db=db,
             context_id=context.id,
             title=context.name,
             context_type="WEBSCRAPER",
             url=url,
         )
-
-        text_content = None
-        if num_chunks > 0:
-            from backend.ingestion.strategies import get_ingestion_strategy
-
-            strategy = get_ingestion_strategy("WEBSCRAPER")
-            text_content = strategy.parse(url)
 
         context.original_content = text_content
         context.processing_status = "COMPLETED" if num_chunks > 0 else "FAILED"

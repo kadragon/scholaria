@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, cast
 
@@ -118,6 +119,7 @@ class WebScraperParser:
             ValueError: If URL is invalid or scraping fails
             TimeoutError: If browser times out
         """
+        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
         from playwright.sync_api import sync_playwright
 
         if not url or not url.startswith("http"):
@@ -126,73 +128,75 @@ class WebScraperParser:
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
+                try:
+                    page = browser.new_page()
 
-                page.goto(url, wait_until="networkidle", timeout=180000)
+                    page.goto(url, wait_until="networkidle", timeout=180000)
 
-                has_iframe = page.locator("iframe#innerWrap").count() > 0
-                if has_iframe:
-                    iframe_src = page.evaluate(
-                        """() => {
-                        const iframe = document.querySelector('iframe#innerWrap');
-                        return iframe ? iframe.src : null;
+                    has_iframe = page.locator("iframe#innerWrap").count() > 0
+                    if has_iframe:
+                        iframe_src = page.evaluate(
+                            """() => {
+                            const iframe = document.querySelector('iframe#innerWrap');
+                            return iframe ? iframe.src : null;
+                        }"""
+                        )
+                        if iframe_src:
+                            page.goto(
+                                iframe_src, wait_until="networkidle", timeout=180000
+                            )
+
+                    page.evaluate(
+                        """async () => {
+                        let prev = 0, sameCount = 0, totalHeight = 0;
+                        while (true) {
+                            window.scrollBy(0, 300);
+                            await new Promise(r => setTimeout(r, 200));
+                            let sh = document.body.scrollHeight;
+                            totalHeight += 300;
+                            if (sh === prev) {
+                                sameCount++;
+                            } else {
+                                sameCount = 0;
+                                prev = sh;
+                            }
+                            if (sameCount >= 5) break;
+                            if (totalHeight > 1000000) break;
+                        }
+                        await new Promise(r => setTimeout(r, 2000));
                     }"""
                     )
-                    if iframe_src:
-                        page.goto(iframe_src, wait_until="networkidle", timeout=180000)
 
-                page.evaluate(
-                    """async () => {
-                    let prev = 0, sameCount = 0, totalHeight = 0;
-                    while (true) {
-                        window.scrollBy(0, 300);
-                        await new Promise(r => setTimeout(r, 200));
-                        let sh = document.body.scrollHeight;
-                        totalHeight += 300;
-                        if (sh === prev) {
-                            sameCount++;
-                        } else {
-                            sameCount = 0;
-                            prev = sh;
-                        }
-                        if (sameCount >= 5) break;
-                        if (totalHeight > 1000000) break;
-                    }
-                    await new Promise(r => setTimeout(r, 2000));
-                }"""
-                )
+                    selectors = [".synap-page", ".page", ".document-page"]
+                    texts = []
 
-                selectors = [".synap-page", ".page", ".document-page"]
-                texts = []
+                    for selector in selectors:
+                        nodes = page.locator(selector).all()
+                        if nodes:
+                            texts = [
+                                node.inner_text().strip()
+                                for node in nodes
+                                if node.inner_text().strip()
+                            ]
+                            if texts:
+                                break
 
-                for selector in selectors:
-                    nodes = page.locator(selector).all()
-                    if nodes:
-                        texts = [
-                            node.inner_text().strip()
-                            for node in nodes
-                            if node.inner_text().strip()
-                        ]
-                        if texts:
-                            break
+                    if not texts:
+                        body_text = page.evaluate("() => document.body.innerText")
+                        texts = [body_text] if body_text else []
 
-                if not texts:
-                    body_text = page.evaluate("() => document.body.innerText")
-                    texts = [body_text] if body_text else []
+                    final_text = "\n\n".join(texts)
+                    sanitized_text = re.sub(r"<[^>]*>", "", final_text)
 
-                import re
+                    if not sanitized_text:
+                        raise ValueError("No text extracted from URL")
 
-                final_text = "\n\n".join(texts)
-                sanitized_text = re.sub(r"<[^>]*>", "", final_text)
+                    return sanitized_text
 
-                browser.close()
+                finally:
+                    browser.close()
 
-                if not sanitized_text:
-                    raise ValueError("No text extracted from URL")
-
-                return sanitized_text
-
+        except PlaywrightTimeoutError as e:
+            raise TimeoutError(f"Browser timeout: {url}") from e
         except Exception as e:
-            if "timeout" in str(e).lower():
-                raise TimeoutError(f"Browser timeout: {url}") from e
             raise ValueError(f"Failed to scrape URL: {e}") from e

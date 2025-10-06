@@ -131,9 +131,9 @@ class WebScraperIngestionStrategy(BaseIngestionStrategy):
         self.parser = WebScraperParser()
         self.chunker = WebScraperChunker(chunk_size=chunk_size, overlap=overlap)
 
-    def parse(self, url: str) -> str:
-        """Parse web URL and extract text content using Puppeteer."""
-        return self.parser.parse_url(url)
+    def parse(self, file_path: str) -> str:
+        """Parse web URL and extract text content using Playwright."""
+        return self.parser.parse_url(file_path)
 
     def chunk(self, text: str) -> list[str]:
         """Chunk web-scraped text using web-aware chunking."""

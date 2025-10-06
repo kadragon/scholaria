@@ -76,7 +76,7 @@ def test_ingest_markdown_document(
     test_context.context_type = "MARKDOWN"
     db_session.commit()
 
-    num_chunks = ingest_document(
+    num_chunks, text_content = ingest_document(
         db=db_session,
         context_id=test_context.id,
         file_path=str(test_markdown_file),
@@ -85,6 +85,8 @@ def test_ingest_markdown_document(
     )
 
     assert num_chunks > 0
+    assert text_content is not None
+    assert len(text_content) > 0
 
     context_items = (
         db_session.query(ContextItem)

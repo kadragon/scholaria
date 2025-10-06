@@ -379,11 +379,11 @@ class WebScraperChunker(TextChunker):
             chunk_text = text[start:end]
 
             break_patterns = [
-                r"\\n\\n+",
-                r"\\n",
-                r"\\.\\s+",
-                r",\\s+",
-                r"\\s+",
+                r"\n\n+",
+                r"\n",
+                r"\.\s+",
+                r",\s+",
+                r"\s+",
             ]
 
             best_break = None
