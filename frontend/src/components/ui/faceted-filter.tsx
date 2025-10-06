@@ -43,7 +43,7 @@ export function FacetedFilter({
           {selectedValues.size > 0 && (
             <>
               <span className="mx-1">·</span>
-              <span className="rounded-sm bg-primary text-primary-foreground px-1 text-xs">
+              <span className="rounded-sm bg-primary-600 text-white px-1 text-xs">
                 {selectedValues.size}
               </span>
             </>

@@ -24,8 +24,9 @@ export const InlineEditCell = ({
   }, [isEditing]);
 
   const handleSave = () => {
-    if (editValue.trim() && editValue !== value) {
-      onSave(editValue.trim());
+    const trimmedValue = editValue.trim();
+    if (trimmedValue && trimmedValue !== value) {
+      onSave(trimmedValue);
     }
     setIsEditing(false);
   };

@@ -63,20 +63,19 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
             {children}
           </li>
         ),
-        code: ({ className, children }) => {
+        code: ({ className, children, ...props }) => {
           const isInline = !className;
-          return isInline ? (
-            <code className="bg-secondary-100 text-primary-700 px-1.5 py-0.5 rounded text-sm font-mono">
-              {children}
-            </code>
-          ) : (
-            <code className="block bg-secondary-900 text-secondary-100 p-4 rounded-lg overflow-x-auto my-4 text-sm font-mono">
-              {children}
-            </code>
-          );
+          if (isInline) {
+            return (
+              <code className="bg-secondary-100 text-primary-700 px-1.5 py-0.5 rounded text-sm font-mono">
+                {children}
+              </code>
+            );
+          }
+          return <code className={className} {...props}>{children}</code>;
         },
         pre: ({ children }) => (
-          <pre className="bg-secondary-900 text-secondary-100 p-4 rounded-lg overflow-x-auto my-4">
+          <pre className="bg-secondary-900 text-secondary-100 p-4 rounded-lg overflow-x-auto my-4 font-mono text-sm">
             {children}
           </pre>
         ),

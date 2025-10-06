@@ -6,6 +6,7 @@ interface DataTableToolbarProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
   filters?: React.ReactNode;
+  isFiltered: boolean;
   onReset: () => void;
   searchPlaceholder?: string;
 }
@@ -14,6 +15,7 @@ export function DataTableToolbar({
   searchValue,
   onSearchChange,
   filters,
+  isFiltered,
   onReset,
   searchPlaceholder = "검색...",
 }: DataTableToolbarProps) {
@@ -28,7 +30,7 @@ export function DataTableToolbar({
         />
         {filters}
       </div>
-      {(searchValue || filters) && (
+      {isFiltered && (
         <Button
           variant="ghost"
           onClick={onReset}

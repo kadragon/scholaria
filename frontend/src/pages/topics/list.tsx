@@ -205,6 +205,7 @@ export const TopicList = () => {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="토픽 검색..."
+            isFiltered={searchQuery !== "" || contextCountFilter.size > 0}
             onReset={handleResetFilters}
             filters={
               <FacetedFilter

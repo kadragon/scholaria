@@ -274,6 +274,7 @@ export const ContextList = () => {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="컨텍스트 검색..."
+            isFiltered={searchQuery !== "" || typeFilter.size > 0 || statusFilter.size > 0}
             onReset={handleResetFilters}
             filters={
               <>
