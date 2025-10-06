@@ -331,3 +331,77 @@ class PDFChunker(TextChunker):
                 start = max(start + len(chunk_text) - self.overlap, start + 1)
 
         return [chunk for chunk in chunks if chunk.strip()]
+
+
+class WebScraperChunker(TextChunker):
+    """Optimized chunker for web-scraped documents that handles HTML structure."""
+
+    def __init__(self, chunk_size: int = 1000, overlap: int = 150) -> None:
+        """
+        Initialize the WebScraper chunker with optimized defaults.
+
+        Args:
+            chunk_size: Maximum size of each chunk in characters
+            overlap: Number of overlapping characters between chunks
+        """
+        super().__init__(chunk_size, overlap)
+
+    def chunk_text(self, text: str) -> list[str]:
+        """
+        Split web-scraped text into chunks respecting document structure.
+
+        Args:
+            text: Web-scraped text to be chunked
+
+        Returns:
+            List of text chunks optimized for web document structure
+        """
+        if not text:
+            return []
+
+        if len(text) <= self.chunk_size:
+            return [text]
+
+        return self._web_aware_chunking(text)
+
+    def _web_aware_chunking(self, text: str) -> list[str]:
+        """Chunk text with web document structure awareness."""
+        chunks = []
+        start = 0
+
+        while start < len(text):
+            end = start + self.chunk_size
+
+            if end >= len(text):
+                chunks.append(text[start:])
+                break
+
+            chunk_text = text[start:end]
+
+            break_patterns = [
+                r"\\n\\n+",
+                r"\\n",
+                r"\\.\\s+",
+                r",\\s+",
+                r"\\s+",
+            ]
+
+            best_break = None
+            for pattern in break_patterns:
+                matches = list(re.finditer(pattern, chunk_text))
+                if matches:
+                    for match in reversed(matches):
+                        if match.start() > self.chunk_size * 0.4:
+                            best_break = start + match.end()
+                            break
+                    if best_break:
+                        break
+
+            if best_break:
+                chunks.append(text[start:best_break].strip())
+                start = max(best_break - self.overlap, start + 1)
+            else:
+                chunks.append(chunk_text.strip())
+                start = max(start + len(chunk_text) - self.overlap, start + 1)
+
+        return [chunk for chunk in chunks if chunk.strip()]

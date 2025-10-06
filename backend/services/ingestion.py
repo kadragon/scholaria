@@ -16,19 +16,21 @@ logger = logging.getLogger(__name__)
 def ingest_document(
     db: Session,
     context_id: int,
-    file_path: str,
     title: str,
     context_type: str,
+    file_path: str | None = None,
+    url: str | None = None,
 ) -> int:
     """
-    Ingest a document into the system (PDF/Markdown/FAQ).
+    Ingest a document into the system (PDF/Markdown/FAQ/WEBSCRAPER).
 
     Args:
         db: SQLAlchemy session
         context_id: ID of the Context to associate with
-        file_path: Path to the file
         title: Title for the document
-        context_type: Type of context (PDF, MARKDOWN, FAQ)
+        context_type: Type of context (PDF, MARKDOWN, FAQ, WEBSCRAPER)
+        file_path: Path to the file (required for PDF/MARKDOWN/FAQ)
+        url: URL to scrape (required for WEBSCRAPER)
 
     Returns:
         Number of chunks created
@@ -54,7 +56,19 @@ def ingest_document(
         raise
 
     try:
-        content = strategy.parse(file_path)
+        if context_type == "WEBSCRAPER":
+            if not url:
+                raise ValueError("URL is required for WEBSCRAPER context type")
+            content = strategy.parse(url)
+            source_ref = url
+        else:
+            if not file_path:
+                raise ValueError(
+                    f"file_path is required for {context_type} context type"
+                )
+            content = strategy.parse(file_path)
+            source_ref = file_path
+
         logger.info(
             f"{context_type} parsed successfully: {len(content) if content else 0} characters"
         )
@@ -62,22 +76,22 @@ def ingest_document(
         logger.error(f"{context_type} file not found: {file_path}")
         raise
     except Exception as e:
-        logger.error(f"{context_type} parsing failed for {file_path}: {e}")
+        logger.error(f"{context_type} parsing failed for {source_ref}: {e}")
         raise ValueError(f"{context_type} parsing failed: {e}") from e
 
     if not content:
-        logger.warning(f"Empty content from {context_type}: {file_path}")
+        logger.warning(f"Empty content from {context_type}: {source_ref}")
         return 0
 
     try:
         chunks = strategy.chunk(content)
         logger.info(f"{context_type} content chunked into {len(chunks)} pieces")
     except Exception as e:
-        logger.error(f"Chunking failed for {file_path}: {e}")
+        logger.error(f"Chunking failed for {source_ref}: {e}")
         raise ValueError(f"Text chunking failed: {e}") from e
 
     if not chunks:
-        logger.warning(f"No chunks created from {context_type}: {file_path}")
+        logger.warning(f"No chunks created from {context_type}: {source_ref}")
         return 0
 
     ingestion_timestamp = datetime.now(UTC).isoformat()
@@ -89,7 +103,7 @@ def ingest_document(
             title=f"{title} - Chunk {i}",
             content=chunk,
             context_id=context_id,
-            file_path=file_path,
+            file_path=source_ref if context_type != "WEBSCRAPER" else None,
             item_metadata=json.dumps(
                 {
                     "chunk_index": i,
@@ -97,6 +111,7 @@ def ingest_document(
                     "chunk_size": len(chunk),
                     "content_type": context_type.lower(),
                     "ingestion_timestamp": ingestion_timestamp,
+                    "source_url": url if context_type == "WEBSCRAPER" else None,
                 }
             ),
         )

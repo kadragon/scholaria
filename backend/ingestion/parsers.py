@@ -98,6 +98,65 @@ class FAQParser:
         if not content.strip():
             return ""
 
-        # Return the content as-is for now, preserving Q&A structure
-        # In the future, we could add formatting/parsing logic here
         return content.strip()
+
+
+class WebScraperParser:
+    """Parser for web pages using Puppeteer service."""
+
+    def __init__(self, puppeteer_url: str | None = None) -> None:
+        """
+        Initialize WebScraperParser.
+
+        Args:
+            puppeteer_url: URL of Puppeteer service (defaults to config)
+        """
+        if puppeteer_url is None:
+            from backend.config import settings
+
+            puppeteer_url = settings.PUPPETEER_URL
+
+        self.puppeteer_url = puppeteer_url
+
+    def parse_url(self, url: str) -> str:
+        """
+        Parse a web page URL and extract text content using Puppeteer.
+
+        Args:
+            url: URL to scrape
+
+        Returns:
+            Extracted text content as string
+
+        Raises:
+            ValueError: If URL is invalid or scraping fails
+            TimeoutError: If Puppeteer service times out
+        """
+        import requests
+
+        if not url or not url.startswith("http"):
+            raise ValueError(f"Invalid URL: {url}")
+
+        try:
+            response = requests.post(
+                f"{self.puppeteer_url}/scrape",
+                json={"url": url},
+                timeout=190,
+            )
+
+            if response.status_code != 200:
+                error_msg = response.json().get("error", "Unknown error")
+                raise ValueError(f"Puppeteer scraping failed: {error_msg}")
+
+            data = response.json()
+            text: str = str(data.get("text", ""))
+
+            if not text:
+                raise ValueError("No text extracted from URL")
+
+            return text
+
+        except requests.Timeout as e:
+            raise TimeoutError(f"Puppeteer service timeout: {url}") from e
+        except requests.RequestException as e:
+            raise ValueError(f"Failed to connect to Puppeteer service: {e}") from e
