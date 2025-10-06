@@ -44,3 +44,4 @@ admin-frontend/node_modules/
 admin-frontend/dist/
 admin-frontend/.vite/
 admin-frontend/.env.local
+services/puppeteer/node_modules/
