@@ -20,6 +20,7 @@ export const TopicEdit = () => {
   const { toast } = useToast();
 
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [contextIds, setContextIds] = useState<string[]>([]);
@@ -32,6 +33,7 @@ export const TopicEdit = () => {
   useEffect(() => {
     if (data?.data) {
       setName(data.data.name);
+      setSlug(data.data.slug || "");
       setDescription(data.data.description || "");
       setSystemPrompt(data.data.system_prompt || "");
       if (data.data.contexts && Array.isArray(data.data.contexts)) {
@@ -48,6 +50,7 @@ export const TopicEdit = () => {
         id: id!,
         values: {
           name,
+          slug,
           description,
           system_prompt: systemPrompt,
           context_ids: contextIds.map((id) => parseInt(id)),
@@ -91,6 +94,17 @@ export const TopicEdit = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="slug">슬러그</Label>
+              <Input
+                id="slug"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="topic-slug"
+                maxLength={50}
               />
             </div>
 

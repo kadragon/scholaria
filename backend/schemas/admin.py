@@ -12,6 +12,7 @@ class AdminTopicOut(BaseModel):
 
     id: int
     name: str
+    slug: str
     description: str
     system_prompt: str
     contexts_count: int = Field(description="Number of associated contexts")
@@ -25,6 +26,7 @@ class AdminTopicCreate(BaseModel):
     """Topic create schema for Admin API."""
 
     name: str = Field(min_length=1, max_length=200)
+    slug: str | None = Field(None, min_length=1, max_length=50)
     description: str = Field(default="")
     system_prompt: str = Field(min_length=1)
     context_ids: list[int] = Field(default_factory=list)
@@ -34,6 +36,7 @@ class AdminTopicUpdate(BaseModel):
     """Topic update schema for Admin API."""
 
     name: str | None = Field(None, min_length=1, max_length=200)
+    slug: str | None = Field(None, min_length=1, max_length=50)
     description: str | None = None
     system_prompt: str | None = Field(None, min_length=1)
     context_ids: list[int] | None = None

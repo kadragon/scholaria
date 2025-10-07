@@ -22,7 +22,7 @@ from backend.schemas.admin import (
 router = APIRouter(prefix="/contexts", tags=["Admin - Contexts"])
 
 
-@router.get("/", response_model=ContextListResponse)
+@router.get("", response_model=ContextListResponse)
 async def list_contexts(
     skip: int = 0,
     limit: int = 10,
@@ -105,7 +105,7 @@ async def get_context(
     )
 
 
-@router.post("/", response_model=AdminContextOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AdminContextOut, status_code=status.HTTP_201_CREATED)
 async def create_context(
     context_data: AdminContextCreate,
     db: Session = Depends(get_db),

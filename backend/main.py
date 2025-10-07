@@ -18,6 +18,7 @@ app = FastAPI(
     title="Scholaria RAG API",
     description="FastAPI implementation of Scholaria RAG System",
     version="0.1.0",
+    redirect_slashes=False,
 )
 
 app.add_middleware(

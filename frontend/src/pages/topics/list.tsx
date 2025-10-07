@@ -100,6 +100,32 @@ export const TopicList = () => {
     );
   };
 
+  const handleUpdateSlug = (id: number, newSlug: string) => {
+    updateTopic(
+      {
+        resource: "topics",
+        id,
+        values: { slug: newSlug },
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "성공",
+            description: "토픽 슬러그가 업데이트되었습니다.",
+          });
+          tableQueryResult.refetch();
+        },
+        onError: () => {
+          toast({
+            title: "오류",
+            description: "토픽 슬러그 업데이트에 실패했습니다.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 space-y-6">
@@ -227,6 +253,7 @@ export const TopicList = () => {
                 </TableHead>
                 <TableHead>ID</TableHead>
                 <TableHead>이름</TableHead>
+                <TableHead>슬러그</TableHead>
                 <TableHead>시스템 프롬프트</TableHead>
                 <TableHead>컨텍스트 수</TableHead>
                 <TableHead>작업</TableHead>
@@ -254,6 +281,16 @@ export const TopicList = () => {
                       />
                     ) : (
                       topic.name
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {typeof topic.id === 'number' ? (
+                      <InlineEditCell
+                        value={topic.slug}
+                        onSave={(newSlug) => handleUpdateSlug(topic.id as number, newSlug)}
+                      />
+                    ) : (
+                      topic.slug
                     )}
                   </TableCell>
                   <TableCell className="max-w-xs truncate">
