@@ -1,115 +1,31 @@
 # Tasks: Scholaria RAG System
 
-## 🎉 프로젝트 상태: MVP 완료 & 프로덕션 준비
+## 상태 스냅샷
+- MVP 완성, FastAPI + Refine 스택 프로덕션 준비 완료
+- 134개 테스트 통과, ruff/mypy 클린, Celery/Redis 비동기 인프라 운영 중
+- 세부 이력은 `docs/agents/tasks/_archive/` 및 `TASKS_ARCHIVE_INDEX.md` 참고
 
-✅ **134개 테스트 통과 | Django→FastAPI 전환 완료 | 배포 준비 완료**
+## 진행 중
+- [ ] **성능 벤치마크** — 프로덕션 데이터 기준 관련 인용 80% 이상, 응답 지연 3초 미만, 동시 사용자 부하 테스트 수행
 
----
+## 단기 백로그
+- [ ] **Frontend README 정리** — `frontend/README.md` TODO 목록을 최신 상태로 반영하고 완료 항목 체크
+- [ ] **Admin datetime 직렬화** — `backend/schemas/admin.py`의 `AdminTopicOut`, `AdminContextOut`에 ISO 포맷 직렬화 추가
+- [ ] **운영 데이터 백업/복원 가이드** — PostgreSQL 및 Qdrant 백업·복원 절차 수립, 자동화 스크립트와 복구 리허설 포함
+- [ ] **다크 모드** — UI 테마 토글 및 사용자 선호 저장
+- [ ] **다국어 지원** — 핵심 UI 번역 및 Q&A 프롬프트 대응
+- [ ] **SSO 통합** — 우선순위 공급자 결정 후 인증 흐름 통합
 
-## 📋 현재 활성 태스크
+## 선택적 향상안
+- [ ] **성능 관측 강화** — OpenTelemetry + 대시보드로 RAG 체인의 메트릭 가시화
+- [ ] **피드백 루프 확장** — 좋아요/싫어요 외에 자유 서술 피드백 수집 UX 추가
 
-### 사용자 경험 개선
-- [x] **사용자 Q&A 인터페이스** ✅ (`docs/agents/tasks/user-qa-interface/`) - SSE 스트리밍 채팅 UI, dc715bf
+## 최근 완료 하이라이트
+- FastAPI 전환, 인제스션 워크플로우, Refine 기반 Admin UI, 스트리밍 Q&A 인터페이스 제공 완료
+- Celery + Redis 재도입으로 임베딩 재생성 및 캐시 공유 인프라 복원
 
-### PDF 업로드 진행 상황 표시
-- [x] **PDF 업로드 진행 UI 개선** ✅ (`docs/agents/tasks/pdf-upload-progress/`) - Polling 구현, 963d8af
-
-### 관리 UI 개선
-- [x] **토픽-컨텍스트 연결 UI** ✅ (`docs/agents/tasks/topic-context-connection-ui/`) - 양방향 multi-select 추가, 148 tests passing
-
-### Analytics 데이터 파싱 검증
-- [x] **useCustom 응답 파싱 수정** ✅ (`docs/agents/tasks/analytics-data-parsing/`) - 타입 단언 제거, 안전한 파싱
-
-### 품질 보증
-- [x] **Context Item Update 테스트 수정** ✅ (`docs/agents/tasks/fix-context-item-update-tests/`) - 모킹 경로 수정, 134 tests passing
-
-### 관리 인터페이스 개선
-- [x] **청크 미리보기** ✅ (`docs/agents/tasks/chunk-preview-ui/`)
-- [x] **청크 편집** ✅ (`docs/agents/tasks/chunk-edit-feature/`)
-- [x] **청크 재정렬** ✅ (`docs/agents/tasks/chunk-reorder-ui/`)
-- [x] **타입별 청킹 전략** ✅ (`docs/agents/tasks/chunking-strategy-refactor/`) - 전략 패턴 리팩터링
-
----
-
-## ✅ 완료된 주요 마일스톤
-
-### Django → FastAPI 전환 ✅
-- **Phase 1-6**: 기반 구조, Read/Write API, 인증, Admin Panel, Docker/Nginx 통합 완료
-- **Phase 8**: Django 100% 제거, `backend/` + `frontend/` 모노레포 구조
-- **문서**: `docs/agents/tasks/django-to-fastapi-migration/`, `django-removal-and-refactoring/`
-
-### 컨텍스트 관리 시스템 ✅
-- **타입별 워크플로우**: PDF/FAQ/Markdown 전용 UI + 청킹 전략
-- **N:N 관계**: Topics ↔ Contexts 다대다 매핑
-- **청크 관리**: 미리보기 + 편집 기능
-
-### 프로덕션 준비 ✅
-- Docker Compose + Nginx 리버스 프록시
-- JWT 인증 + 환경변수 관리
-- Alembic 마이그레이션 + 백업 전략
-- 100% 테스트 커버리지 (134 tests passing)
-
-### 라이브러리 마이그레이션 ✅
-- Unstructured → Docling (PDF 파싱)
-- Pydantic v2 ConfigDict 전환
-- Django ORM → SQLAlchemy 완전 전환
-
----
-
-## 🚀 향후 개선사항 (Backlog)
-
-### 비동기 인프라 복원
-- [x] **Celery/비동기 큐 재도입** ✅ (`docs/agents/tasks/celery-async-queue/`) - 임베딩 재생성 비동기화
-- [x] **Redis 공유 캐시** ✅ (`docs/agents/tasks/redis-shared-cache/`) - 수평 확장 지원
-
-### 성능 검증 및 최적화
-- [ ] **실제 환경 성능 벤치마크** (프로덕션 배포 후):
-  - 테스트 쿼리의 80% 이상에서 관련 인용 반환 검증
-  - 일반적인 쿼리에 대해 답변 지연시간 3초 미만 보장
-  - 동시 사용자 부하 테스트 수행
-
-### 프론트엔드 디자인 개선
-- [x] **Command Palette (⌘K) 구현** ✅ (`docs/agents/tasks/command-palette/`)
-- [x] **Data Table with Faceted Filters** ✅ (`docs/agents/tasks/data-table-filters/`)
-- [x] **Bento Grid Layout** ✅ (`docs/agents/tasks/bento-grid-layout/`)
-- [x] **Glassmorphism UI** ✅ (`docs/agents/tasks/glassmorphism-ui/`)
-- [x] **Inline Editing + Optimistic UI** ✅ (`docs/agents/tasks/inline-editing-optimistic/`)
-- [x] **Skeleton Loading States** ✅ (`docs/agents/tasks/skeleton-loading/`)
-
-### 선택적 기능
-- [ ] 다크 모드
-- [x] **피드백 시스템 (좋아요/싫어요)** ✅ (`docs/agents/tasks/feedback-system/`)
-- [ ] 다국어 지원
-- [ ] SSO 통합
-
----
-
-## 🎯 Quick Start
-
-```bash
-# Quality checks
-uv run ruff check . && uv run mypy . && uv run pytest
-
-# Dev server
-uv run uvicorn backend.main:app --reload
-
-# Docker
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-
-# Migrations
-uv run alembic upgrade head
-```
-
-## 📊 Production Readiness
-- ✅ 134 tests passing | mypy strict | ruff clean
-- ✅ JWT auth + admin API
-- ✅ Docker + Nginx production config
-- ✅ FastAPI + SQLAlchemy + Refine + shadcn/ui
-- ✅ 전략 패턴 기반 인제스션 아키텍처
-- ✅ Celery + Redis 비동기 작업 큐
-
-## 🎯 다음 우선순위
-1. [x] **프로덕션 배포 준비** ✅ - Celery 워커 설정 완료 (`docs/agents/tasks/production-deployment/`)
-2. [x] **Celery 모니터링** ✅ - Flower 대시보드 추가 (`docs/agents/tasks/celery-monitoring/`, 0966ff5)
-3. [x] **사용자 Q&A 인터페이스** ✅ - SSE 스트리밍 채팅 UI (`docs/agents/tasks/user-qa-interface/`, dc715bf)
-4. **성능 벤치마크** - 실제 데이터로 검증 (프로덕션 배포 후) (선택적)
+## 운영 참고
+- 품질 점검: `uv run ruff check . && uv run mypy . && uv run pytest`
+- 개발 서버: `uv run uvicorn backend.main:app --reload`
+- Docker(dev): `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build`
+- 마이그레이션: `uv run alembic upgrade head`
