@@ -3,6 +3,8 @@ import re
 from korean_romanizer.romanizer import Romanizer
 from sqlalchemy.orm import Session
 
+SLUG_MAX_LENGTH = 50
+
 
 def generate_slug(name: str) -> str:
     if not name or not name.strip():
@@ -20,25 +22,35 @@ def generate_slug(name: str) -> str:
     if not slug:
         return "untitled"
 
-    max_length = 50
-    if len(slug) > max_length:
-        slug = slug[:max_length].rstrip("-")
+    if len(slug) > SLUG_MAX_LENGTH:
+        slug = slug[:SLUG_MAX_LENGTH].rstrip("-")
 
     return slug
 
 
-def ensure_unique_slug(base_slug: str, db: Session, max_length: int = 50) -> str:
+def ensure_unique_slug(base_slug: str, db: Session) -> str:
     from backend.models.topic import Topic
 
-    max_counter_digits = 3
-    max_suffix_len = 1 + max_counter_digits
-    safe_base = base_slug[: max_length - max_suffix_len]
+    existing = db.query(Topic.slug).filter(Topic.slug.startswith(base_slug)).all()
+    if not existing:
+        return base_slug
 
-    slug = base_slug
-    counter = 2
+    existing_slugs = {row[0] for row in existing}
+    if base_slug not in existing_slugs:
+        return base_slug
 
-    while db.query(Topic).filter(Topic.slug == slug).first():
-        slug = f"{safe_base}-{counter}"
-        counter += 1
+    MAX_ATTEMPTS = 1000
+    MAX_COUNTER_DIGITS = 4
+    max_suffix_len = 1 + MAX_COUNTER_DIGITS
+    safe_base = base_slug[: SLUG_MAX_LENGTH - max_suffix_len].rstrip("-")
 
-    return slug
+    for counter in range(2, MAX_ATTEMPTS + 2):
+        candidate = f"{safe_base}-{counter}"
+        if len(candidate) > SLUG_MAX_LENGTH:
+            raise ValueError(
+                f"Cannot generate unique slug: base '{safe_base}' too long"
+            )
+        if candidate not in existing_slugs:
+            return candidate
+
+    raise ValueError(f"Cannot generate unique slug after {MAX_ATTEMPTS} attempts")

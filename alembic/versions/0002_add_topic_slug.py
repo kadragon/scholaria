@@ -19,7 +19,12 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column("rag_topic", sa.Column("slug", sa.String(length=50), nullable=True))
+    from backend.services.slug_utils import SLUG_MAX_LENGTH
+
+    op.add_column(
+        "rag_topic",
+        sa.Column("slug", sa.String(length=SLUG_MAX_LENGTH), nullable=True),
+    )
 
     bind = op.get_bind()
     from sqlalchemy.orm import Session

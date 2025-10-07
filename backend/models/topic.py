@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from backend.models.context import Context
     from backend.models.history import QuestionHistory
 
+SLUG_MAX_LENGTH = 50
+
 
 class Topic(Base):
     __tablename__ = "rag_topic"
@@ -22,7 +24,7 @@ class Topic(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     slug: Mapped[str] = mapped_column(
-        String(50), nullable=False, unique=True, index=True
+        String(SLUG_MAX_LENGTH), nullable=False, unique=True, index=True
     )
     description: Mapped[str] = mapped_column(Text, nullable=False)
     system_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
