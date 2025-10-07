@@ -27,7 +27,7 @@ export const TopicSelector = ({
         const response = await fetch("/api/topics");
         if (!response.ok) throw new Error("Failed to fetch topics");
         const data = await response.json();
-        setTopics(data.data || []);
+        setTopics(Array.isArray(data) ? data : data.data || []);
         setIsError(false);
       } catch (error) {
         console.error("Error fetching topics:", error);
