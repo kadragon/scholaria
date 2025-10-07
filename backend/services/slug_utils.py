@@ -27,14 +27,18 @@ def generate_slug(name: str) -> str:
     return slug
 
 
-def ensure_unique_slug(base_slug: str, db: Session) -> str:
+def ensure_unique_slug(base_slug: str, db: Session, max_length: int = 50) -> str:
     from backend.models.topic import Topic
+
+    max_counter_digits = 3
+    max_suffix_len = 1 + max_counter_digits
+    safe_base = base_slug[: max_length - max_suffix_len]
 
     slug = base_slug
     counter = 2
 
     while db.query(Topic).filter(Topic.slug == slug).first():
-        slug = f"{base_slug}-{counter}"
+        slug = f"{safe_base}-{counter}"
         counter += 1
 
     return slug
