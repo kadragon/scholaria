@@ -120,7 +120,7 @@ class TestTopicsAdminCRUD:
         db_session.add(topic)
         db_session.commit()
 
-        response = client.get(f"/api/admin/topics{topic.id}", headers=admin_headers)
+        response = client.get(f"/api/admin/topics/{topic.id}", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert data["name"] == "Test Topic"
@@ -180,7 +180,7 @@ class TestTopicsAdminCRUD:
         db_session.commit()
 
         response = client.put(
-            f"/api/admin/topics{topic.id}",
+            f"/api/admin/topics/{topic.id}",
             headers=admin_headers,
             json={"name": "New Name", "description": "New Desc"},
         )
@@ -200,7 +200,7 @@ class TestTopicsAdminCRUD:
         db_session.commit()
 
         response = client.put(
-            f"/api/admin/topics{topic.id}",
+            f"/api/admin/topics/{topic.id}",
             headers=admin_headers,
             json={"context_ids": [ctx1.id, ctx2.id]},
         )
@@ -215,7 +215,7 @@ class TestTopicsAdminCRUD:
         db_session.commit()
         topic_id = topic.id
 
-        response = client.delete(f"/api/admin/topics{topic_id}", headers=admin_headers)
+        response = client.delete(f"/api/admin/topics/{topic_id}", headers=admin_headers)
         assert response.status_code == 204
 
         # Verify deletion
@@ -294,7 +294,7 @@ class TestTopicsAdminSlugUniqueness:
 
         # Try to update topic2 slug to topic1's slug
         response = client.put(
-            f"/api/admin/topics{topic2.id}",
+            f"/api/admin/topics/{topic2.id}",
             headers=admin_headers,
             json={"slug": "slug-one"},
         )
@@ -313,7 +313,7 @@ class TestTopicsAdminSlugUniqueness:
         db_session.commit()
 
         response = client.put(
-            f"/api/admin/topics{topic.id}",
+            f"/api/admin/topics/{topic.id}",
             headers=admin_headers,
             json={"slug": "existing-slug", "name": "Updated Name"},
         )
@@ -333,7 +333,7 @@ class TestTopicsAdminSlugUniqueness:
         db_session.commit()
 
         response = client.put(
-            f"/api/admin/topics{topic.id}",
+            f"/api/admin/topics/{topic.id}",
             headers=admin_headers,
             json={"slug": "new-unique-slug"},
         )

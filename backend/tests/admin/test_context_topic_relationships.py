@@ -86,7 +86,7 @@ class TestContextTopicRelationships:
         db_session.commit()
 
         response = client.get(
-            "/api/admin/contexts/",
+            "/api/admin/contexts",
             headers=admin_headers,
         )
 
