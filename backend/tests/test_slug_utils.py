@@ -70,7 +70,7 @@ def test_ensure_unique_slug_with_max_length_base(db_session: Session):
 
     new_slug = ensure_unique_slug(long_slug, db_session)
     assert len(new_slug) <= 50
-    assert new_slug == ("a" * 46) + "-2"
+    assert new_slug == ("a" * 48) + "-2"
 
 
 def test_ensure_unique_slug_with_max_length_multiple_collisions(db_session: Session):
@@ -81,16 +81,16 @@ def test_ensure_unique_slug_with_max_length_multiple_collisions(db_session: Sess
     t1 = Topic(name="L1", description="L1")
     t1.slug = long_slug
     t2 = Topic(name="L2", description="L2")
-    t2.slug = long_slug[:46] + "-2"
+    t2.slug = long_slug[:48] + "-2"
     t3 = Topic(name="L3", description="L3")
-    t3.slug = long_slug[:46] + "-3"
+    t3.slug = long_slug[:48] + "-3"
 
     db_session.add_all([t1, t2, t3])
     db_session.flush()
 
     new_slug = ensure_unique_slug(long_slug, db_session)
     assert len(new_slug) <= 50
-    assert new_slug == long_slug[:46] + "-4"
+    assert new_slug == long_slug[:48] + "-4"
 
 
 def test_ensure_unique_slug_with_49_char_base(db_session: Session):
@@ -104,4 +104,4 @@ def test_ensure_unique_slug_with_49_char_base(db_session: Session):
 
     new_slug = ensure_unique_slug(slug_49, db_session)
     assert len(new_slug) <= 50
-    assert new_slug == ("c" * 46) + "-2"
+    assert new_slug == ("c" * 48) + "-2"
