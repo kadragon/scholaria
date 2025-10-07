@@ -1239,6 +1239,15 @@ wheels = [
 ]
 
 [[package]]
+name = "korean-romanizer"
+version = "0.28.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/d9/eff21e638c14d54b688207db1cec93542150ebd24e759b55540d4d6e0fbe/korean_romanizer-0.28.0.tar.gz", hash = "sha256:27d9f27396fa70483356cb0da0bf17b9ade4d30637a610f563b646b0cb2e525d", size = 21134, upload-time = "2025-08-28T17:40:22.419Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/65/9e/e107e343909b99a9de61b25c60eb671eecbc96ced270fbac9ba72765de20/korean_romanizer-0.28.0-py3-none-any.whl", hash = "sha256:0077545c3ff8576c6296d9ea504f090746b57e2034479e0efe97ec9cf85a29e1", size = 19487, upload-time = "2025-08-28T17:40:21.614Z" },
+]
+
+[[package]]
 name = "latex2mathml"
 version = "3.78.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2940,6 +2949,7 @@ dependencies = [
     { name = "factory-boy" },
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "korean-romanizer" },
     { name = "llama-index" },
     { name = "mypy" },
     { name = "openai" },
@@ -2976,6 +2986,7 @@ requires-dist = [
     { name = "factory-boy", specifier = ">=3.3.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "httpx", specifier = ">=0.27.0" },
+    { name = "korean-romanizer", specifier = ">=0.28.0" },
     { name = "llama-index", specifier = ">=0.9.0" },
     { name = "mypy", specifier = ">=1.8.0" },
     { name = "openai", specifier = ">=1.0.0" },
