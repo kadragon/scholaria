@@ -13,6 +13,7 @@ export const TopicCreate = () => {
   const { toast } = useToast();
 
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
 
@@ -23,6 +24,7 @@ export const TopicCreate = () => {
         resource: "topics",
         values: {
           name,
+          slug: slug || undefined,
           description,
           system_prompt: systemPrompt,
         },
@@ -62,6 +64,20 @@ export const TopicCreate = () => {
                 onChange={(e) => setName(e.target.value)}
                 required
               />
+            </div>
+
+            <div>
+              <Label htmlFor="slug">슬러그 (선택사항)</Label>
+              <Input
+                id="slug"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="topic-slug (비워두면 자동 생성)"
+                maxLength={50}
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                비워두면 이름에서 자동으로 생성됩니다
+              </p>
             </div>
 
             <div>

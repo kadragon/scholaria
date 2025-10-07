@@ -22,7 +22,7 @@ from backend.schemas.admin import (
 router = APIRouter(prefix="/topics", tags=["Admin - Topics"])
 
 
-@router.get("/", response_model=TopicListResponse)
+@router.get("", response_model=TopicListResponse)
 async def list_topics(
     skip: int = 0,
     limit: int = 10,
@@ -68,6 +68,7 @@ async def list_topics(
         topic_dict = {
             "id": topic.id,
             "name": topic.name,
+            "slug": topic.slug,
             "description": topic.description,
             "system_prompt": topic.system_prompt or "",
             "contexts_count": len(topic.contexts),
@@ -95,6 +96,7 @@ async def get_topic(
     return AdminTopicOut(
         id=topic.id,
         name=topic.name,
+        slug=topic.slug,
         description=topic.description,
         system_prompt=topic.system_prompt or "",
         contexts_count=len(topic.contexts),
@@ -103,7 +105,7 @@ async def get_topic(
     )
 
 
-@router.post("/", response_model=AdminTopicOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AdminTopicOut, status_code=status.HTTP_201_CREATED)
 async def create_topic(
     topic_data: AdminTopicCreate,
     db: Session = Depends(get_db),
@@ -116,6 +118,12 @@ async def create_topic(
         description=topic_data.description,
         system_prompt=topic_data.system_prompt,
     )
+
+    # Set slug if provided, ensuring uniqueness
+    if topic_data.slug:
+        from backend.services.slug_utils import ensure_unique_slug
+
+        topic.slug = ensure_unique_slug(topic_data.slug, db)
 
     # Associate contexts if provided
     if topic_data.context_ids:
@@ -131,6 +139,7 @@ async def create_topic(
     return AdminTopicOut(
         id=topic.id,
         name=topic.name,
+        slug=topic.slug,
         description=topic.description,
         system_prompt=topic.system_prompt or "",
         contexts_count=len(topic.contexts),
@@ -157,6 +166,20 @@ async def update_topic(
     # Update fields
     if topic_data.name is not None:
         topic.name = topic_data.name
+    if topic_data.slug is not None:
+        # Check for slug conflicts only if slug is actually changing
+        if topic_data.slug != topic.slug:
+            existing = (
+                db.query(Topic)
+                .filter(Topic.slug == topic_data.slug, Topic.id != topic.id)
+                .first()
+            )
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Slug '{topic_data.slug}' is already in use by another topic",
+                )
+        topic.slug = topic_data.slug
     if topic_data.description is not None:
         topic.description = topic_data.description
     if topic_data.system_prompt is not None:
@@ -175,6 +198,7 @@ async def update_topic(
     return AdminTopicOut(
         id=topic.id,
         name=topic.name,
+        slug=topic.slug,
         description=topic.description,
         system_prompt=topic.system_prompt or "",
         contexts_count=len(topic.contexts),

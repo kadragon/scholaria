@@ -13,12 +13,12 @@ class TestContextsAdminList:
 
     def test_list_contexts_requires_admin(self):
         """Test that listing contexts requires admin authentication."""
-        response = client.get("/api/admin/contexts/")
+        response = client.get("/api/admin/contexts")
         assert response.status_code == 401
 
     def test_list_contexts_empty(self, admin_headers, db_session):
         """Test listing contexts when database is empty."""
-        response = client.get("/api/admin/contexts/", headers=admin_headers)
+        response = client.get("/api/admin/contexts", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -44,7 +44,7 @@ class TestContextsAdminList:
         db_session.add_all([ctx1, ctx2])
         db_session.commit()
 
-        response = client.get("/api/admin/contexts/", headers=admin_headers)
+        response = client.get("/api/admin/contexts", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 2
@@ -68,7 +68,7 @@ class TestContextsAdminList:
         db_session.commit()
 
         response = client.get(
-            "/api/admin/contexts/",
+            "/api/admin/contexts",
             params={"filter": '{"context_type": "MARKDOWN"}'},
             headers=admin_headers,
         )
@@ -89,7 +89,7 @@ class TestContextsAdminList:
         db_session.commit()
 
         response = client.get(
-            "/api/admin/contexts/",
+            "/api/admin/contexts",
             params={"skip": 2, "limit": 2},
             headers=admin_headers,
         )
@@ -121,13 +121,13 @@ class TestContextsAdminCRUD:
 
     def test_get_context_not_found(self, admin_headers):
         """Test getting non-existent context."""
-        response = client.get("/api/admin/contexts/99999", headers=admin_headers)
+        response = client.get("/api/admin/contexts99999", headers=admin_headers)
         assert response.status_code == 404
 
     def test_create_markdown_context(self, admin_headers, db_session):
         """Test creating a Markdown context."""
         response = client.post(
-            "/api/admin/contexts/",
+            "/api/admin/contexts",
             headers=admin_headers,
             json={
                 "name": "New Markdown",
@@ -145,7 +145,7 @@ class TestContextsAdminCRUD:
     def test_create_faq_context(self, admin_headers, db_session):
         """Test creating a FAQ context."""
         response = client.post(
-            "/api/admin/contexts/",
+            "/api/admin/contexts",
             headers=admin_headers,
             json={
                 "name": "New FAQ",
@@ -201,7 +201,7 @@ class TestContextsAdminCRUD:
 
     def test_delete_context_not_found(self, admin_headers):
         """Test deleting non-existent context."""
-        response = client.delete("/api/admin/contexts/99999", headers=admin_headers)
+        response = client.delete("/api/admin/contexts99999", headers=admin_headers)
         assert response.status_code == 404
 
 

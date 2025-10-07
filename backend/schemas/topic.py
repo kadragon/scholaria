@@ -14,6 +14,7 @@ class TopicBase(BaseModel):
     """Base Topic schema with common fields."""
 
     name: str
+    slug: str
     description: str
     system_prompt: str | None = None
 
