@@ -1,6 +1,6 @@
 """Association tables shared across SQLAlchemy models."""
 
-from sqlalchemy import Column, ForeignKey, Integer, Table
+from sqlalchemy import Column, ForeignKey, Table
 
 from backend.models.base import Base
 
@@ -8,10 +8,16 @@ from backend.models.base import Base
 topic_context_association = Table(
     "rag_topic_contexts",
     Base.metadata,
-    Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("topic_id", ForeignKey("rag_topic.id", ondelete="CASCADE"), nullable=False),
     Column(
-        "context_id", ForeignKey("rag_context.id", ondelete="CASCADE"), nullable=False
+        "topic_id",
+        ForeignKey("rag_topic.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
     ),
-    sqlite_autoincrement=True,
+    Column(
+        "context_id",
+        ForeignKey("rag_context.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    ),
 )

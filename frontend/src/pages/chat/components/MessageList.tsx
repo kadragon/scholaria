@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Message } from "../hooks/useChat";
@@ -148,6 +148,20 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
 
 export const MessageList = ({ messages, isStreaming }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [expandedCitations, setExpandedCitations] = useState<Set<string>>(new Set());
+
+  const toggleCitation = (messageId: string, citationIdx: number) => {
+    const key = `${messageId}-${citationIdx}`;
+    setExpandedCitations(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -186,30 +200,56 @@ export const MessageList = ({ messages, isStreaming }: MessageListProps) => {
                   참고 자료 ({message.citations.length})
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-3 space-y-2">
-                  {message.citations.map((citation, idx) => (
-                    <div
-                      key={idx}
-                      className="text-sm bg-gradient-to-br from-secondary-50 to-white p-3 rounded-lg border border-secondary-200 hover:border-primary-300 transition-colors"
-                    >
-                      <div className="font-semibold text-secondary-800">
-                        {citation.title}
-                      </div>
-                      <div className="text-secondary-600 text-xs mt-1.5 line-clamp-2">
-                        {citation.content}
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="flex-1 bg-secondary-200 rounded-full h-1.5">
-                          <div
-                            className="bg-primary-500 h-1.5 rounded-full transition-all"
-                            style={{ width: `${citation.score * 100}%` }}
+                  {message.citations.map((citation, idx) => {
+                    const citationKey = `${message.id}-${idx}`;
+                    const isExpanded = expandedCitations.has(citationKey);
+
+                    return (
+                      <div
+                        key={citationKey}
+                        role="button"
+                        tabIndex={0}
+                        className="text-sm bg-gradient-to-br from-secondary-50 to-white p-3 rounded-lg border border-secondary-200 hover:border-primary-300 transition-colors cursor-pointer"
+                        onClick={() => toggleCitation(message.id, idx)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleCitation(message.id, idx);
+                          }
+                        }}
+                      >
+                        <div className="font-semibold text-secondary-800 flex items-center justify-between">
+                          <span>{citation.title}</span>
+                          <ChevronDown
+                            className={`h-4 w-4 text-secondary-400 transition-transform ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`}
                           />
                         </div>
-                        <span className="text-secondary-500 text-xs font-medium">
-                          {(citation.score * 100).toFixed(0)}%
-                        </span>
+                        <div className={`text-secondary-600 text-xs mt-1.5 ${
+                          isExpanded ? '' : 'line-clamp-2'
+                        }`}>
+                          {citation.content}
+                        </div>
+                        {isExpanded && (
+                          <div className="text-primary-600 text-xs mt-1 font-medium">
+                            클릭하여 접기
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="flex-1 bg-secondary-200 rounded-full h-1.5">
+                            <div
+                              className="bg-primary-500 h-1.5 rounded-full transition-all"
+                              style={{ width: `${citation.score * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-secondary-500 text-xs font-medium">
+                            {(citation.score * 100).toFixed(0)}%
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </CollapsibleContent>
               </Collapsible>
             )}
