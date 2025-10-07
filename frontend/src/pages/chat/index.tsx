@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { TopicSelector } from "./components/TopicSelector";
 import { MessageList } from "./components/MessageList";
@@ -7,6 +8,8 @@ import { useChat } from "./hooks/useChat";
 import { useToast } from "../../hooks/use-toast";
 
 export const ChatPage = () => {
+  const { topicId: topicIdParam } = useParams<{ topicId?: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [sessionId] = useState(() => {
@@ -31,8 +34,26 @@ export const ChatPage = () => {
   });
 
   useEffect(() => {
+    document.title = "Scholaria - AI 질문답변";
+  }, []);
+
+  useEffect(() => {
+    if (topicIdParam) {
+      const topicId = parseInt(topicIdParam, 10);
+      if (!isNaN(topicId)) {
+        setSelectedTopicId(topicId);
+      }
+    }
+  }, [topicIdParam]);
+
+  useEffect(() => {
     clearMessages();
   }, [selectedTopicId, clearMessages]);
+
+  const handleTopicSelect = (topicId: number) => {
+    setSelectedTopicId(topicId);
+    navigate(`/chat/${topicId}`, { replace: true });
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-secondary-50 to-secondary-100">
@@ -51,7 +72,7 @@ export const ChatPage = () => {
             </h2>
             <TopicSelector
               selectedTopicId={selectedTopicId}
-              onSelectTopic={setSelectedTopicId}
+              onSelectTopic={handleTopicSelect}
             />
           </aside>
 

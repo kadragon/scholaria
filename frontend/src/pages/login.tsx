@@ -25,6 +25,7 @@ export const LoginPage = () => {
   }, [navigate]);
 
   useEffect(() => {
+    document.title = "Scholaria Admin - 로그인";
     checkSetupStatus();
   }, [checkSetupStatus]);
 
