@@ -206,9 +206,17 @@ export const MessageList = ({ messages, isStreaming }: MessageListProps) => {
 
                     return (
                       <div
-                        key={idx}
+                        key={citationKey}
+                        role="button"
+                        tabIndex={0}
                         className="text-sm bg-gradient-to-br from-secondary-50 to-white p-3 rounded-lg border border-secondary-200 hover:border-primary-300 transition-colors cursor-pointer"
                         onClick={() => toggleCitation(message.id, idx)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleCitation(message.id, idx);
+                          }
+                        }}
                       >
                         <div className="font-semibold text-secondary-800 flex items-center justify-between">
                           <span>{citation.title}</span>

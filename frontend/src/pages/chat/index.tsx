@@ -42,7 +42,11 @@ export const ChatPage = () => {
       const topicId = parseInt(topicIdParam, 10);
       if (!isNaN(topicId)) {
         setSelectedTopicId(topicId);
+      } else {
+        setSelectedTopicId(null);
       }
+    } else {
+      setSelectedTopicId(null);
     }
   }, [topicIdParam]);
 
