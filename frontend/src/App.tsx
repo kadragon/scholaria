@@ -68,6 +68,7 @@ function App() {
           {/* Public routes */}
           <Route path="/" element={<ChatPage />} />
           <Route path="/chat" element={<ChatPage />} />
+          <Route path="/chat/:topicId" element={<ChatPage />} />
 
           {/* Admin routes */}
           <Route path="/admin">
