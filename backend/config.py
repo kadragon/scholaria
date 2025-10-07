@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     REDIS_PORT: str = Field(default="6379")
     REDIS_DB: str = Field(default="0")
 
+    QDRANT_HOST: str = Field(default="localhost")
+    QDRANT_PORT: int = Field(default=6333)
+    QDRANT_COLLECTION_NAME: str = Field(default="context_items")
+
     FASTAPI_ALLOWED_ORIGINS: str = Field(
         default="http://localhost:8000,http://localhost:3000,http://localhost:5173"
     )
