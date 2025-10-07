@@ -119,9 +119,11 @@ async def create_topic(
         system_prompt=topic_data.system_prompt,
     )
 
-    # Set slug if provided
+    # Set slug if provided, ensuring uniqueness
     if topic_data.slug:
-        topic.slug = topic_data.slug
+        from backend.services.slug_utils import ensure_unique_slug
+
+        topic.slug = ensure_unique_slug(topic_data.slug, db)
 
     # Associate contexts if provided
     if topic_data.context_ids:
@@ -165,6 +167,18 @@ async def update_topic(
     if topic_data.name is not None:
         topic.name = topic_data.name
     if topic_data.slug is not None:
+        # Check for slug conflicts only if slug is actually changing
+        if topic_data.slug != topic.slug:
+            existing = (
+                db.query(Topic)
+                .filter(Topic.slug == topic_data.slug, Topic.id != topic.id)
+                .first()
+            )
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Slug '{topic_data.slug}' is already in use by another topic",
+                )
         topic.slug = topic_data.slug
     if topic_data.description is not None:
         topic.description = topic_data.description

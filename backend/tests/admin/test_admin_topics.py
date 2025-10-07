@@ -14,12 +14,12 @@ class TestTopicsAdminList:
 
     def test_list_topics_requires_admin(self):
         """Test that listing topics requires admin authentication."""
-        response = client.get("/api/admin/topics/")
+        response = client.get("/api/admin/topics")
         assert response.status_code == 401
 
     def test_list_topics_empty(self, admin_headers, db_session):
         """Test listing topics when database is empty."""
-        response = client.get("/api/admin/topics/", headers=admin_headers)
+        response = client.get("/api/admin/topics", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -43,7 +43,7 @@ class TestTopicsAdminList:
         db_session.add_all([topic1, topic2])
         db_session.commit()
 
-        response = client.get("/api/admin/topics/", headers=admin_headers)
+        response = client.get("/api/admin/topics", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 2
@@ -61,7 +61,7 @@ class TestTopicsAdminList:
         db_session.commit()
 
         response = client.get(
-            "/api/admin/topics/",
+            "/api/admin/topics",
             params={"filter": '{"name": "Python"}'},
             headers=admin_headers,
         )
@@ -78,7 +78,7 @@ class TestTopicsAdminList:
         db_session.commit()
 
         response = client.get(
-            "/api/admin/topics/",
+            "/api/admin/topics",
             params={"sort": "name_asc"},
             headers=admin_headers,
         )
@@ -97,7 +97,7 @@ class TestTopicsAdminList:
         db_session.commit()
 
         response = client.get(
-            "/api/admin/topics/",
+            "/api/admin/topics",
             params={"skip": 2, "limit": 2},
             headers=admin_headers,
         )
@@ -120,7 +120,7 @@ class TestTopicsAdminCRUD:
         db_session.add(topic)
         db_session.commit()
 
-        response = client.get(f"/api/admin/topics/{topic.id}", headers=admin_headers)
+        response = client.get(f"/api/admin/topics{topic.id}", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert data["name"] == "Test Topic"
@@ -128,13 +128,13 @@ class TestTopicsAdminCRUD:
 
     def test_get_topic_not_found(self, admin_headers):
         """Test getting non-existent topic."""
-        response = client.get("/api/admin/topics/99999", headers=admin_headers)
+        response = client.get("/api/admin/topics99999", headers=admin_headers)
         assert response.status_code == 404
 
     def test_create_topic(self, admin_headers, db_session):
         """Test creating a topic."""
         response = client.post(
-            "/api/admin/topics/",
+            "/api/admin/topics",
             headers=admin_headers,
             json={
                 "name": "New Topic",
@@ -158,7 +158,7 @@ class TestTopicsAdminCRUD:
         db_session.commit()
 
         response = client.post(
-            "/api/admin/topics/",
+            "/api/admin/topics",
             headers=admin_headers,
             json={
                 "name": "Topic with Contexts",
@@ -180,7 +180,7 @@ class TestTopicsAdminCRUD:
         db_session.commit()
 
         response = client.put(
-            f"/api/admin/topics/{topic.id}",
+            f"/api/admin/topics{topic.id}",
             headers=admin_headers,
             json={"name": "New Name", "description": "New Desc"},
         )
@@ -200,7 +200,7 @@ class TestTopicsAdminCRUD:
         db_session.commit()
 
         response = client.put(
-            f"/api/admin/topics/{topic.id}",
+            f"/api/admin/topics{topic.id}",
             headers=admin_headers,
             json={"context_ids": [ctx1.id, ctx2.id]},
         )
@@ -215,7 +215,7 @@ class TestTopicsAdminCRUD:
         db_session.commit()
         topic_id = topic.id
 
-        response = client.delete(f"/api/admin/topics/{topic_id}", headers=admin_headers)
+        response = client.delete(f"/api/admin/topics{topic_id}", headers=admin_headers)
         assert response.status_code == 204
 
         # Verify deletion
@@ -224,5 +224,119 @@ class TestTopicsAdminCRUD:
 
     def test_delete_topic_not_found(self, admin_headers):
         """Test deleting non-existent topic."""
-        response = client.delete("/api/admin/topics/99999", headers=admin_headers)
+        response = client.delete("/api/admin/topics99999", headers=admin_headers)
         assert response.status_code == 404
+
+
+class TestTopicsAdminSlugUniqueness:
+    """Test slug uniqueness handling in admin operations."""
+
+    def test_create_topic_with_custom_slug(self, admin_headers, db_session):
+        """Test creating a topic with a custom slug."""
+        response = client.post(
+            "/api/admin/topics",
+            headers=admin_headers,
+            json={
+                "name": "Custom Slug Topic",
+                "slug": "my-custom-slug",
+                "description": "Description",
+                "system_prompt": "Prompt",
+            },
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["slug"] == "my-custom-slug"
+
+    def test_create_topic_with_duplicate_slug_auto_resolves(
+        self, admin_headers, db_session
+    ):
+        """Test that creating a topic with duplicate slug auto-resolves using ensure_unique_slug."""
+        # Create first topic
+        topic1 = SQLTopic(
+            name="First Topic",
+            slug="duplicate-slug",
+            description="Desc",
+            system_prompt="Prompt",
+        )
+        db_session.add(topic1)
+        db_session.commit()
+
+        # Try to create second topic with same slug
+        response = client.post(
+            "/api/admin/topics",
+            headers=admin_headers,
+            json={
+                "name": "Second Topic",
+                "slug": "duplicate-slug",
+                "description": "Description",
+                "system_prompt": "Prompt",
+            },
+        )
+        assert response.status_code == 201
+        data = response.json()
+        # Should auto-resolve to unique slug (e.g., duplicate-slug-2)
+        assert data["slug"] != "duplicate-slug"
+        assert data["slug"].startswith("duplicate-slug")
+
+    def test_update_topic_slug_to_duplicate_returns_409(
+        self, admin_headers, db_session
+    ):
+        """Test that updating a topic slug to an existing slug returns 409 Conflict."""
+        # Create two topics
+        topic1 = SQLTopic(
+            name="Topic 1", slug="slug-one", description="Desc", system_prompt="Prompt"
+        )
+        topic2 = SQLTopic(
+            name="Topic 2", slug="slug-two", description="Desc", system_prompt="Prompt"
+        )
+        db_session.add_all([topic1, topic2])
+        db_session.commit()
+
+        # Try to update topic2 slug to topic1's slug
+        response = client.put(
+            f"/api/admin/topics{topic2.id}",
+            headers=admin_headers,
+            json={"slug": "slug-one"},
+        )
+        assert response.status_code == 409
+        assert "already in use" in response.json()["detail"]
+
+    def test_update_topic_slug_to_same_value_succeeds(self, admin_headers, db_session):
+        """Test that updating a topic slug to its current value succeeds."""
+        topic = SQLTopic(
+            name="Topic",
+            slug="existing-slug",
+            description="Desc",
+            system_prompt="Prompt",
+        )
+        db_session.add(topic)
+        db_session.commit()
+
+        response = client.put(
+            f"/api/admin/topics{topic.id}",
+            headers=admin_headers,
+            json={"slug": "existing-slug", "name": "Updated Name"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["slug"] == "existing-slug"
+        assert data["name"] == "Updated Name"
+
+    def test_update_topic_slug_to_new_unique_value_succeeds(
+        self, admin_headers, db_session
+    ):
+        """Test that updating a topic slug to a new unique value succeeds."""
+        topic = SQLTopic(
+            name="Topic", slug="old-slug", description="Desc", system_prompt="Prompt"
+        )
+        db_session.add(topic)
+        db_session.commit()
+
+        response = client.put(
+            f"/api/admin/topics{topic.id}",
+            headers=admin_headers,
+            json={"slug": "new-unique-slug"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["slug"] == "new-unique-slug"
