@@ -1,3 +1,20 @@
+x-common-env: &common-env
+  DEBUG: 'True'
+  DB_ENGINE: postgresql
+  DB_NAME: ${POSTGRES_DB:-scholaria}
+  DB_USER: ${POSTGRES_USER:-postgres}
+  DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+  DB_HOST: postgres
+  DB_PORT: 5432
+  REDIS_URL: redis://redis:6379/0
+  QDRANT_HOST: qdrant
+  QDRANT_PORT: 6333
+  QDRANT_COLLECTION_NAME: ${QDRANT_COLLECTION_NAME:-scholaria_documents}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-changeme}
+  OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-large}
+  OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-4o-mini}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-jwt-secret}
+
 services:
   backend:
     build:
@@ -7,23 +24,9 @@ services:
     ports:
       - "${FASTAPI_PORT:-8001}:8001"
     environment:
-      - DEBUG=True
-      - DB_ENGINE=postgresql
-      - DB_NAME=${POSTGRES_DB:-scholaria}
-      - DB_USER=${POSTGRES_USER:-postgres}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - REDIS_URL=redis://redis:6379/0
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
-      - QDRANT_COLLECTION_NAME=${QDRANT_COLLECTION_NAME:-scholaria_documents}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-changeme}
-      - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-large}
-      - OPENAI_CHAT_MODEL=${OPENAI_CHAT_MODEL:-gpt-4o-mini}
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-jwt-secret}
-      - FASTAPI_ALLOWED_ORIGINS=${FASTAPI_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      <<: *common-env
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
+      FASTAPI_ALLOWED_ORIGINS: ${FASTAPI_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     volumes:
       - .:/app
       - uploads:/app/uploads
@@ -83,20 +86,7 @@ services:
       target: development
     command: celery -A backend.celery_app worker --loglevel=info
     environment:
-      - DEBUG=True
-      - DB_ENGINE=postgresql
-      - DB_NAME=${POSTGRES_DB:-scholaria}
-      - DB_USER=${POSTGRES_USER:-postgres}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - REDIS_URL=redis://redis:6379/0
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-changeme}
-      - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-large}
-      - OPENAI_CHAT_MODEL=${OPENAI_CHAT_MODEL:-gpt-4o-mini}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-jwt-secret}
+      <<: *common-env
     volumes:
       - .:/app
     depends_on:
