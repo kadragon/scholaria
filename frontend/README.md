@@ -49,14 +49,25 @@ npm run build
 ## Project Structure
 
 ```
-admin-frontend/
+frontend/
 ├── src/
 │   ├── pages/
 │   │   ├── topics/       # Topics CRUD
+│   │   ├── contexts/     # Contexts CRUD (type-specific forms)
+│   │   ├── chat/         # Q&A chat interface
+│   │   ├── analytics.tsx # System metrics dashboard
+│   │   ├── setup.tsx     # Initial setup wizard
 │   │   └── login.tsx     # Login page
+│   ├── components/
+│   │   ├── ui/           # shadcn/ui components (22)
+│   │   ├── CommandPalette.tsx
+│   │   ├── InlineEditCell.tsx
+│   │   └── Sidebar.tsx
 │   ├── providers/
 │   │   ├── authProvider.ts    # JWT auth
 │   │   └── dataProvider.ts    # REST API client
+│   ├── hooks/            # Custom hooks (useChat, useCommandPalette)
+│   ├── lib/              # Utilities (apiClient, utils)
 │   ├── App.tsx           # Refine setup + routes
 │   └── main.tsx
 ├── .env.example
@@ -65,29 +76,35 @@ admin-frontend/
 
 ## Features
 
-### Implemented (Step 6.2.1)
+### Implemented
 - ✅ JWT authentication (login/logout)
-- ✅ Topics CRUD (List/Create/Edit)
-- ✅ Responsive layout with navigation
+- ✅ Topics CRUD (List/Create/Edit/Show) with slug-based URLs
+- ✅ Contexts CRUD with type-specific forms (Markdown/PDF/FAQ/WebScraper)
+- ✅ File upload for PDF contexts (max 100MB)
+- ✅ Processing status polling for async operations
+- ✅ shadcn/ui integration (22 components: button, dialog, form, table, toast, etc.)
+- ✅ Chat interface with topic selector and streaming responses
+- ✅ Analytics dashboard with system metrics
+- ✅ Setup wizard for initial configuration
+- ✅ Command palette (keyboard shortcuts)
+- ✅ Inline editing for table cells
+- ✅ Responsive layout with sidebar navigation
 - ✅ Production build
 
-### TODO (Step 6.2.2+)
-- [ ] shadcn/ui integration
-- [ ] Contexts CRUD with type-specific forms
-- [ ] File upload for PDF contexts
-- [ ] Bulk operations UI
-- [ ] Processing status polling
-- [ ] Users management
+### TODO
+- [ ] Users management (admin user CRUD)
+- [ ] Bulk operations UI (multi-select for contexts/topics)
 
 ## Testing
 
 Currently no E2E tests. Manual testing workflow:
 
-1. Start FastAPI backend (`uv run uvicorn api.main:app --reload --port 8001`)
+1. Start FastAPI backend (`uv run uvicorn backend.main:app --reload --port 8001`)
 2. Start frontend (`npm run dev`)
 3. Login with admin credentials (email/password)
-4. Test Topics CRUD operations
-5. Verify API calls in Network tab
+4. Test CRUD operations (Topics/Contexts)
+5. Test Chat interface with sample topics
+6. Verify API calls in Network tab
 
 ## Known Issues
 
