@@ -46,7 +46,7 @@
 - **Title:** Frontend README Update
 - **Status:** Complete
 - **Dates:** 2025-10-08
-- **Keep Level:** summary
+- **Keep Level:** full
 - **Commits:** 1f14ce6, 533176d
 - **Tests:** N/A (documentation)
-- **Artifacts:** `_archive/2025/Q4/frontend-readme-update/TASK_SUMMARY.md`
+- **Artifacts:** `_archive/2025/Q4/frontend-readme-update/`
