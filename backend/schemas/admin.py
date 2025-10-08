@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from backend.schemas.utils import to_local_iso
 
 
 class AdminTopicOut(BaseModel):
@@ -21,6 +23,10 @@ class AdminTopicOut(BaseModel):
     )
     created_at: datetime
     updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def serialize_datetime(self, value: datetime) -> str:
+        return to_local_iso(value)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -64,6 +70,10 @@ class AdminContextOut(BaseModel):
     topics_count: int = Field(default=0, description="Number of associated topics")
     created_at: datetime
     updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def serialize_datetime(self, value: datetime) -> str:
+        return to_local_iso(value)
 
     model_config = ConfigDict(from_attributes=True)
 

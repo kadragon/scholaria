@@ -73,12 +73,11 @@ uv run pytest
 - 데이터베이스 비밀번호는 반드시 환경 변수로 지정해야 하며, 설정에서 기본값을 제공하지 않는다. 미지정 시 URL은 비밀번호 없이 구성된다.
 - 관리자 UI는 `frontend/` (Refine) 프로젝트로 제공되며 JWT 토큰을 localStorage에 저장해 API 요청에 첨부.
 
-### Pydantic 스키마 패턴 (2025-10-01)
+### Pydantic 스키마 패턴 (2025-10-01, updated 2025-10-08)
 - 모든 스키마는 `backend/schemas/` 디렉터리에 모듈별로 분리 (`admin.py`, `context.py`, `topic.py`, `history.py`, `rag.py`, `utils.py`)
 - **ORM 매핑**: 모든 `*Out` 스키마는 `ConfigDict(from_attributes=True)` 사용 (SQLAlchemy → Pydantic 자동 변환)
 - **Datetime 직렬화**: `@field_serializer` + `backend.schemas.utils.to_local_iso()`로 timezone-aware ISO 8601 형식 변환
-  - 적용 완료: `ContextOut`, `ContextItemOut`, `TopicOut`, `QuestionHistoryOut`
-  - 미적용 (backlog): `AdminTopicOut`, `AdminContextOut` (Breaking change)
+  - 적용 완료: `ContextOut`, `ContextItemOut`, `TopicOut`, `QuestionHistoryOut`, `AdminTopicOut`, `AdminContextOut`
 - **Field 검증**: `Field(...)` 제약으로 입력 검증 (`min_length`, `max_length`, `gt`, `default_factory`)
 - **Alias 패턴**: `Field(alias=...)` + `ConfigDict(populate_by_name=True)` (현재 `QuestionHistoryOut.topic` 사용)
 - **Base 스키마**: 공통 필드는 `*Base` 클래스로 재사용 (`ContextBase`, `TopicBase`)
