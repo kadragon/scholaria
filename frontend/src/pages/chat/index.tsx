@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
-import { TopicSelector } from "./components/TopicSelector";
+import { TopicSelector, type Topic } from "./components/TopicSelector";
 import { MessageList } from "./components/MessageList";
 import { MessageInput } from "./components/MessageInput";
 import { useChat } from "./hooks/useChat";
 import { useToast } from "../../hooks/use-toast";
+import { apiClient } from "../../lib/apiClient";
 
 export const ChatPage = () => {
-  const { topicId: topicIdParam } = useParams<{ topicId?: string }>();
+  const { slug } = useParams<{ slug?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
@@ -38,25 +39,46 @@ export const ChatPage = () => {
   }, []);
 
   useEffect(() => {
-    if (topicIdParam) {
-      const topicId = parseInt(topicIdParam, 10);
-      if (!isNaN(topicId)) {
-        setSelectedTopicId(topicId);
-      } else {
-        setSelectedTopicId(null);
-      }
-    } else {
+    if (!slug) {
       setSelectedTopicId(null);
+      return;
     }
-  }, [topicIdParam]);
+
+    const controller = new AbortController();
+
+    const fetchTopic = async () => {
+      try {
+        const response = await apiClient.get(`/topics/slug/${slug}`, {
+          signal: controller.signal,
+        });
+        setSelectedTopicId(response.data.id);
+      } catch (error) {
+        if (error instanceof Error && error.name !== "CanceledError") {
+          console.error("Error fetching topic by slug:", error);
+          toast({
+            title: "오류",
+            description: "토픽을 찾을 수 없습니다.",
+            variant: "destructive",
+          });
+          setSelectedTopicId(null);
+        }
+      }
+    };
+
+    fetchTopic();
+
+    return () => {
+      controller.abort();
+    };
+  }, [slug, toast]);
 
   useEffect(() => {
     clearMessages();
   }, [selectedTopicId, clearMessages]);
 
-  const handleTopicSelect = (topicId: number) => {
-    setSelectedTopicId(topicId);
-    navigate(`/chat/${topicId}`, { replace: true });
+  const handleTopicSelect = (topic: Topic) => {
+    setSelectedTopicId(topic.id);
+    navigate(`/chat/${topic.slug}`, { replace: true });
   };
 
   return (

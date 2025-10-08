@@ -1,15 +1,16 @@
 
 import { useState, useEffect } from "react";
 
-interface Topic {
+export interface Topic {
   id: number;
   name: string;
+  slug: string;
   description: string;
 }
 
 interface TopicSelectorProps {
   selectedTopicId: number | null;
-  onSelectTopic: (topicId: number) => void;
+  onSelectTopic: (topic: Topic) => void;
 }
 
 export const TopicSelector = ({
@@ -59,7 +60,7 @@ export const TopicSelector = ({
       {topics.map((topic) => (
         <button
           key={topic.id}
-          onClick={() => onSelectTopic(topic.id)}
+          onClick={() => onSelectTopic(topic)}
           className={`w-full text-left px-3 py-2 rounded-lg transition-colors border-2 ${
             selectedTopicId === topic.id
               ? "bg-primary-600 text-white font-semibold border-primary-600 shadow-md"
