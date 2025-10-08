@@ -16,6 +16,9 @@ class AdminTopicOut(BaseModel):
     description: str
     system_prompt: str
     contexts_count: int = Field(description="Number of associated contexts")
+    context_ids: list[int] = Field(
+        default_factory=list, description="IDs of associated contexts"
+    )
     created_at: datetime
     updated_at: datetime
 
