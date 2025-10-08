@@ -32,7 +32,7 @@ def test_cors_preflight_request_allowed_origin(client: TestClient) -> None:
 def test_cors_actual_request_with_origin(client: TestClient) -> None:
     """Actual GET request with Origin header should return CORS headers."""
     response = client.get(
-        "/api/topics/",
+        "/api/topics",
         headers={
             "Origin": "http://localhost:5173",
         },

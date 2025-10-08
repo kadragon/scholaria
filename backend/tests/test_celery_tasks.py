@@ -13,18 +13,22 @@ def test_regenerate_embedding_task_success(db_session):
 
     with (
         patch("backend.tasks.embeddings.Session") as mock_session_maker,
-        patch(
-            "backend.services.ingestion.generate_context_item_embedding"
-        ) as mock_generate,
+        patch("backend.retrieval.embeddings.EmbeddingService"),
+        patch("backend.retrieval.qdrant.QdrantService"),
     ):
         mock_db = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_db
-        mock_generate.return_value = True
+
+        mock_context_item = MagicMock()
+        mock_context_item.id = context_item_id
+        mock_context_item.content = "Test content"
+        mock_context_item.item_metadata = None
+        mock_db.scalar.return_value = mock_context_item
 
         result = regenerate_embedding_task(context_item_id)
 
         assert result is True
-        mock_generate.assert_called_once_with(mock_db, context_item_id)
+        mock_db.scalar.assert_called_once()
 
 
 def test_regenerate_embedding_task_retry_on_failure(db_session):

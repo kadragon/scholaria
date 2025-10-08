@@ -93,7 +93,7 @@ class TestCreateContext:
         "backend.ingestion.parsers.PDFParser.parse_file",
         return_value="Parsed PDF",
     )
-    @patch("backend.services.ingestion.ingest_document", return_value=2)
+    @patch("backend.services.ingestion.ingest_document", return_value=(2, "Parsed PDF"))
     def test_create_pdf_context_with_file(
         self,
         mock_ingest,
@@ -120,7 +120,6 @@ class TestCreateContext:
         assert data["context_type"] == "PDF"
         assert data["processing_status"] == "COMPLETED"
         mock_ingest.assert_called_once()
-        mock_parse.assert_called_once_with(str(Path("/tmp/fake.pdf")))
 
     def test_create_context_missing_name_fails(self, client, admin_headers) -> None:
         response = client.post(
