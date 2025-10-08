@@ -22,9 +22,9 @@
    # Edit .env with your configuration
    ```
 
-3. **Start services:**
+3. **Start services (Docker):**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 4. **Run migrations:**
@@ -39,18 +39,18 @@
 
 6. **Start development server:**
    ```bash
-   # FastAPI backend
+   # 로컬 개발 (빠른 iteration)
    uv run uvicorn backend.main:app --reload --port 8001
 
-   # Or using Docker
-   docker compose -f docker-compose.dev.yml up
+   # 또는 Docker 개발 환경
+   docker compose up -d
    ```
 
    Access:
    - API Docs: http://localhost:8001/docs
-   - Admin Panel: http://localhost:8001/admin
+   - Admin Panel: http://localhost:5173 (Docker) or http://localhost:8001/admin
    - Health Check: http://localhost:8001/health
-   - Flower (Celery monitoring): http://localhost:5555 (admin/flower)
+   - Flower (Celery): http://localhost:5555
 
 ## 🛠️ Development Commands
 
@@ -180,25 +180,35 @@ db.commit()
 
 ## 🐳 Docker Deployment
 
-### Development
+### Development (기본)
 ```bash
-docker compose -f docker-compose.dev.yml up
+# 개발용 환경 (hot reload, volume mount)
+docker compose up -d
+
+# 마이그레이션
+docker compose exec backend alembic upgrade head
 ```
+
+Access:
+- Backend API: http://localhost:8001
+- Frontend: http://localhost:5173
+- Flower: http://localhost:5555
 
 ### Production
 ```bash
-# Copy and configure environment
-cp .env.prod.example .env.prod
+# 프로덕션 설정 복사
+cp .env.example .env
+# .env 파일 수정 (JWT_SECRET_KEY, DB_PASSWORD 등 필수)
 
-# Start services
+# 프로덕션 환경 실행
 docker compose -f docker-compose.prod.yml up -d
 
-# Run migrations
+# 마이그레이션
 docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
 ```
 
 Access:
-- API: http://localhost/api
+- API: http://localhost/api (via nginx)
 - Admin: http://localhost/admin
 - Docs: http://localhost/docs
 

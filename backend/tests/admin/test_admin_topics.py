@@ -1,5 +1,7 @@
 """Tests for Topics Admin API."""
 
+from datetime import datetime
+
 from fastapi.testclient import TestClient
 
 from backend.main import app
@@ -340,3 +342,33 @@ class TestTopicsAdminSlugUniqueness:
         assert response.status_code == 200
         data = response.json()
         assert data["slug"] == "new-unique-slug"
+
+
+class TestTopicsDatetimeSerialization:
+    """Test AdminTopicOut datetime field serialization."""
+
+    def test_admin_topic_out_datetime_serialization_format(
+        self, admin_headers, db_session
+    ):
+        """Test created_at and updated_at are serialized as ISO 8601 strings with timezone."""
+        topic = SQLTopic(
+            name="Test Topic",
+            description="Test Description",
+            system_prompt="Test Prompt",
+        )
+        db_session.add(topic)
+        db_session.commit()
+
+        response = client.get(f"/api/admin/topics/{topic.id}", headers=admin_headers)
+        assert response.status_code == 200
+        data = response.json()
+
+        assert "created_at" in data
+        assert "updated_at" in data
+        assert isinstance(data["created_at"], str)
+        assert isinstance(data["updated_at"], str)
+
+        created_dt = datetime.fromisoformat(data["created_at"])
+        updated_dt = datetime.fromisoformat(data["updated_at"])
+        assert created_dt.tzinfo is not None
+        assert updated_dt.tzinfo is not None

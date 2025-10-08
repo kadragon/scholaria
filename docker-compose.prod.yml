@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
-  # FastAPI Backend
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
+      target: production
     restart: unless-stopped
     environment:
       - DEBUG=False
@@ -58,7 +56,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -92,7 +89,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Redis Cache & Message Broker
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -121,7 +117,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Qdrant Vector Database
   qdrant:
     image: qdrant/qdrant:v1.7.4
     restart: unless-stopped
@@ -153,7 +148,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Refine Admin Frontend
   frontend:
     build:
       context: .
@@ -183,11 +177,11 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Celery Worker for Async Tasks
   celery-worker:
     build:
       context: .
       dockerfile: Dockerfile.backend
+      target: production
     restart: unless-stopped
     command: celery -A backend.celery_app worker --loglevel=info
     environment:
@@ -236,7 +230,25 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Nginx Reverse Proxy (Optional - for production with SSL)
+  flower:
+    image: mher/flower:2.0
+    restart: unless-stopped
+    command: celery --broker=redis://redis:6379/0 flower --port=5555
+    expose:
+      - "5555"
+    environment:
+      - FLOWER_BASIC_AUTH=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-flower}
+    depends_on:
+      - redis
+      - celery-worker
+    networks:
+      - scholaria-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   nginx:
     image: nginx:1.25-alpine
     restart: unless-stopped
@@ -270,8 +282,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    profiles:
-      - nginx  # Optional service, enable with --profile nginx
 
 volumes:
   postgres_data:
