@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
-import { TopicSelector } from "./components/TopicSelector";
+import { TopicSelector, type Topic } from "./components/TopicSelector";
 import { MessageList } from "./components/MessageList";
 import { MessageInput } from "./components/MessageInput";
 import { useChat } from "./hooks/useChat";
 import { useToast } from "../../hooks/use-toast";
+import { apiClient } from "../../lib/apiClient";
 
 export const ChatPage = () => {
   const { slug } = useParams<{ slug?: string }>();
@@ -38,16 +39,21 @@ export const ChatPage = () => {
   }, []);
 
   useEffect(() => {
-    if (slug) {
-      fetch(`/api/topics/slug/${slug}`)
-        .then((res) => {
-          if (!res.ok) throw new Error("Topic not found");
-          return res.json();
-        })
-        .then((topic) => {
-          setSelectedTopicId(topic.id);
-        })
-        .catch((error) => {
+    if (!slug) {
+      setSelectedTopicId(null);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchTopic = async () => {
+      try {
+        const response = await apiClient.get(`/topics/slug/${slug}`, {
+          signal: controller.signal,
+        });
+        setSelectedTopicId(response.data.id);
+      } catch (error) {
+        if (error instanceof Error && error.name !== "CanceledError") {
           console.error("Error fetching topic by slug:", error);
           toast({
             title: "오류",
@@ -55,18 +61,24 @@ export const ChatPage = () => {
             variant: "destructive",
           });
           setSelectedTopicId(null);
-        });
-    } else {
-      setSelectedTopicId(null);
-    }
+        }
+      }
+    };
+
+    fetchTopic();
+
+    return () => {
+      controller.abort();
+    };
   }, [slug, toast]);
 
   useEffect(() => {
     clearMessages();
   }, [selectedTopicId, clearMessages]);
 
-  const handleTopicSelect = (slug: string) => {
-    navigate(`/chat/${slug}`, { replace: true });
+  const handleTopicSelect = (topic: Topic) => {
+    setSelectedTopicId(topic.id);
+    navigate(`/chat/${topic.slug}`, { replace: true });
   };
 
   return (
