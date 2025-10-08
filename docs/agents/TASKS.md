@@ -10,7 +10,6 @@
 
 ## 단기 백로그
 - [ ] **성능 벤치마크 확장** — Golden Dataset 통합 테스트 (Qdrant 실제 호출), 관련 인용 80% 검증
-- [ ] **Admin datetime 직렬화** — `backend/schemas/admin.py`의 `AdminTopicOut`, `AdminContextOut`에 ISO 포맷 직렬화 추가
 - [ ] **다크 모드** — UI 테마 토글 및 사용자 선호 저장
 - [ ] **다국어 지원** — 핵심 UI 번역 및 Q&A 프롬프트 대응
 - [ ] **SSO 통합** — 우선순위 공급자 결정 후 인증 흐름 통합
@@ -20,6 +19,7 @@
 - [ ] **피드백 루프 확장** — 좋아요/싫어요 외에 자유 서술 피드백 수집 UX 추가
 
 ## 최근 완료 하이라이트
+- **Admin datetime 직렬화** — `AdminTopicOut`, `AdminContextOut`에 ISO 8601 timezone-aware 직렬화 추가 (2025-10-08)
 - **운영 데이터 백업/복원 가이드** — 5가지 재해 복구 시나리오, 리허설 자동화 스크립트, 트러블슈팅 포함 (2025-10-08)
 - **Frontend README 정리** — 실제 구현 상태 반영 (13개 기능 완료, 2개 TODO 유지) (2025-10-08)
 - **성능 벤치마크 (초기)** — Mock 기반 응답 지연 & 동시성 테스트 3개, Golden Dataset 인프라 구축 (2025-10-08)
