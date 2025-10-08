@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { apiClient } from "../../../lib/apiClient";
 
 export interface Message {
   id: string;
@@ -66,29 +67,15 @@ export const useChat = ({
       ]);
 
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("인증 토큰이 없습니다");
-        }
-
-        const response = await fetch("/api/rag/stream", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            topic_id: topicId,
-            question: content.trim(),
-            session_id: sessionId,
-          }),
+        const response = await apiClient.post("/rag/stream", {
+          topic_id: topicId,
+          question: content.trim(),
+          session_id: sessionId,
+        }, {
+          responseType: "stream",
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const reader = response.body?.getReader();
+        const reader = response.data?.getReader();
         const decoder = new TextDecoder();
 
         if (!reader) {

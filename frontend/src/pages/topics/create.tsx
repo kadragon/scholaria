@@ -90,12 +90,13 @@ export const TopicCreate = () => {
             </div>
 
             <div>
-              <Label htmlFor="systemPrompt">시스템 프롬프트</Label>
+              <Label htmlFor="systemPrompt">시스템 프롬프트 *</Label>
               <Textarea
                 id="systemPrompt"
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 rows={6}
+                required
               />
             </div>
 

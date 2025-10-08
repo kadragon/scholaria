@@ -7,9 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api";
+import { apiClient } from "../../lib/apiClient";
 const MAX_FILE_SIZE_MB = 100;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
@@ -30,7 +28,6 @@ export const ContextCreate = () => {
   const pollingIntervalRef = useRef<number | null>(null);
 
   const pollContextStatus = async (contextId: number) => {
-    const token = localStorage.getItem("token");
     const maxAttempts = 60;
     let attempts = 0;
 
@@ -52,9 +49,7 @@ export const ContextCreate = () => {
       }
 
       try {
-        const response = await axios.get(`${API_URL}/contexts/${contextId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiClient.get(`/contexts/${contextId}`);
 
         const status = response.data.processing_status;
         setProcessingStatus(status);
@@ -146,13 +141,7 @@ export const ContextCreate = () => {
         formData.append("url", webUrl);
       }
 
-      const token = localStorage.getItem("token");
-      const response = await axios.post(`${API_URL}/contexts`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.post("/contexts", formData);
 
       if (contextType === "PDF" || contextType === "WEBSCRAPER") {
         const contextId = response.data.id;
@@ -167,9 +156,15 @@ export const ContextCreate = () => {
         setIsSubmitting(false);
       }
     } catch (error: unknown) {
-      const errorMessage =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        "컨텍스트 생성에 실패했습니다.";
+      let errorMessage = "컨텍스트 생성에 실패했습니다.";
+      const detail = (error as { response?: { data?: { detail?: string | Array<{ msg?: string }> } } })?.response?.data?.detail;
+
+      if (typeof detail === "string") {
+        errorMessage = detail;
+      } else if (Array.isArray(detail)) {
+        errorMessage = detail.map((err) => err.msg || JSON.stringify(err)).join(", ");
+      }
+
       toast({
         title: "오류",
         description: errorMessage,

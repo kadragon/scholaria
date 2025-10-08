@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiClient } from "../../lib/apiClient";
 import { useOne, useNavigation } from "@refinedev/core";
 import { useParams } from "react-router-dom";
 import { useCallback } from "react";
@@ -114,6 +115,10 @@ export const ContextShow = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [addQADialogOpen, setAddQADialogOpen] = useState(false);
+  const [qaTitle, setQATitle] = useState("");
+  const [qaContent, setQAContent] = useState("");
+  const [addingQA, setAddingQA] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -124,16 +129,9 @@ export const ContextShow = () => {
 
   const fetchItems = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/contexts/${id}/items`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        },
-      );
-      if (response.ok) {
-        const data = await response.json();
+      const response = await apiClient.get(`/contexts/${id}/items`);
+      if (response.status === 200) {
+        const data = response.data;
         const sortedData = data.sort((a: ContextItem, b: ContextItem) =>
           a.order_index - b.order_index
         );
@@ -163,30 +161,80 @@ export const ContextShow = () => {
 
     setSaving(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/contexts/${id}/items/${editingItem.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ content: editContent }),
-        },
-      );
+      const response = await apiClient.patch(`/contexts/${id}/items/${editingItem.id}`, {
+        content: editContent,
+      });
 
-      if (response.ok) {
+      if (response.status === 200) {
         setEditDialogOpen(false);
         setEditingItem(null);
         setEditContent("");
         fetchItems();
+        toast({
+          title: "저장 성공",
+          description: "청크가 업데이트되었습니다.",
+        });
       } else {
-        console.error("Failed to update item");
+        toast({
+          title: "저장 실패",
+          description: "청크 업데이트에 실패했습니다.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error updating item:", error);
+      toast({
+        title: "오류",
+        description: "청크 업데이트 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddQA = async () => {
+    if (!qaTitle.trim() || !qaContent.trim()) {
+      toast({
+        title: "입력 필요",
+        description: "질문과 답변을 모두 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAddingQA(true);
+    try {
+      const response = await apiClient.post(`/contexts/${id}/qa`, {
+        title: qaTitle,
+        content: qaContent,
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        setAddQADialogOpen(false);
+        setQATitle("");
+        setQAContent("");
+        fetchItems();
+        toast({
+          title: "Q&A 추가 성공",
+          description: "Q&A가 추가되었습니다.",
+        });
+      } else {
+        toast({
+          title: "추가 실패",
+          description: "Q&A 추가에 실패했습니다.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding Q&A:", error);
+      toast({
+        title: "오류",
+        description: "Q&A 추가 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setAddingQA(false);
     }
   };
 
@@ -214,24 +262,12 @@ export const ContextShow = () => {
       const updatePromises = updates
         .filter((update, index) => update.order_index !== previousItems[index]?.order_index)
         .map((update) =>
-          fetch(
-            `${import.meta.env.VITE_API_URL}/contexts/${id}/items/${update.id}`,
-            {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-              body: JSON.stringify({ order_index: update.order_index }),
-            }
-          )
+          apiClient.patch(`/contexts/${id}/items/${update.id}`, {
+            order_index: update.order_index,
+          })
         );
 
-      const responses = await Promise.all(updatePromises);
-
-      if (responses.some((res) => !res.ok)) {
-        throw new Error("Failed to update some items");
-      }
+      await Promise.all(updatePromises);
 
       toast({
         title: "순서 변경 완료",
@@ -298,8 +334,13 @@ export const ContextShow = () => {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>청크 목록 ({items.length})</CardTitle>
+          {context?.context_type === "FAQ" && (
+            <Button onClick={() => setAddQADialogOpen(true)}>
+              Q&A 추가
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {itemsLoading ? (
@@ -373,6 +414,56 @@ export const ContextShow = () => {
             </Button>
             <Button onClick={handleSaveEdit} disabled={saving}>
               {saving ? "저장 중..." : "저장"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={addQADialogOpen} onOpenChange={setAddQADialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Q&A 추가</DialogTitle>
+            <DialogDescription>
+              FAQ 컨텍스트에 질문과 답변을 추가합니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="qa-title">질문 (Question)</Label>
+              <Textarea
+                id="qa-title"
+                value={qaTitle}
+                onChange={(e) => setQATitle(e.target.value)}
+                rows={2}
+                placeholder="질문을 입력하세요..."
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="qa-content">답변 (Answer)</Label>
+              <Textarea
+                id="qa-content"
+                value={qaContent}
+                onChange={(e) => setQAContent(e.target.value)}
+                rows={8}
+                className="resize-y"
+                placeholder="답변을 입력하세요..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAddQADialogOpen(false);
+                setQATitle("");
+                setQAContent("");
+              }}
+              disabled={addingQA}
+            >
+              취소
+            </Button>
+            <Button onClick={handleAddQA} disabled={addingQA}>
+              {addingQA ? "추가 중..." : "추가"}
             </Button>
           </DialogFooter>
         </DialogContent>

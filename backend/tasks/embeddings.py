@@ -6,6 +6,7 @@ from celery import Task
 
 from backend.celery_app import celery_app
 from backend.models.base import Session
+from backend.services.ingestion import generate_context_item_embedding
 
 logger = logging.getLogger(__name__)
 
@@ -14,8 +15,6 @@ logger = logging.getLogger(__name__)
 def regenerate_embedding_task(self: Task, context_item_id: int) -> bool:
     with Session() as db:
         try:
-            from backend.services.ingestion import generate_context_item_embedding
-
             result = generate_context_item_embedding(db, context_item_id)
             logger.info(
                 f"Successfully regenerated embedding for ContextItem {context_item_id}"
