@@ -197,7 +197,7 @@ docker compose -f docker-compose.prod.yml stop celery-worker
 
 # 4. 캐시 검증
 docker compose -f docker-compose.prod.yml exec redis redis-cli DBSIZE
-docker compose -f docker-compose.prod.yml exec redis redis-cli KEYS "embedding_cache:*" | wc -l
+docker compose -f docker-compose.prod.yml exec redis redis-cli --scan --pattern "embedding_cache:*" | wc -l
 
 # 5. Celery 워커 재시작
 docker compose -f docker-compose.prod.yml up -d celery-worker
