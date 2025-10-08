@@ -89,6 +89,13 @@ class AdminContextItemUpdate(BaseModel):
     content: str | None = Field(None, min_length=1)
 
 
+class AdminFaqQaCreate(BaseModel):
+    """FAQ Q&A create schema for Admin API."""
+
+    title: str = Field(min_length=1)
+    content: str = Field(min_length=1)
+
+
 class ContextListResponse(BaseModel):
     """Context list response for Refine (data + total format)."""
 

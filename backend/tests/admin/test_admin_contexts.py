@@ -129,7 +129,7 @@ class TestContextsAdminCRUD:
         response = client.post(
             "/api/admin/contexts",
             headers=admin_headers,
-            json={
+            data={
                 "name": "New Markdown",
                 "description": "Description",
                 "context_type": "MARKDOWN",
@@ -147,7 +147,7 @@ class TestContextsAdminCRUD:
         response = client.post(
             "/api/admin/contexts",
             headers=admin_headers,
-            json={
+            data={
                 "name": "New FAQ",
                 "description": "FAQ Description",
                 "context_type": "FAQ",

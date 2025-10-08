@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api";
+
+const directAxios = axios.create();
 const MAX_FILE_SIZE_MB = 100;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
@@ -52,7 +54,7 @@ export const ContextCreate = () => {
       }
 
       try {
-        const response = await axios.get(`${API_URL}/contexts/${contextId}`, {
+        const response = await directAxios.get(`${API_URL}/contexts/${contextId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -147,9 +149,8 @@ export const ContextCreate = () => {
       }
 
       const token = localStorage.getItem("token");
-      const response = await axios.post(`${API_URL}/contexts`, formData, {
+      const response = await directAxios.post(`${API_URL}/contexts`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
       });
@@ -167,9 +168,15 @@ export const ContextCreate = () => {
         setIsSubmitting(false);
       }
     } catch (error: unknown) {
-      const errorMessage =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        "컨텍스트 생성에 실패했습니다.";
+      let errorMessage = "컨텍스트 생성에 실패했습니다.";
+      const detail = (error as { response?: { data?: { detail?: any } } })?.response?.data?.detail;
+
+      if (typeof detail === "string") {
+        errorMessage = detail;
+      } else if (Array.isArray(detail)) {
+        errorMessage = detail.map((err: any) => err.msg || JSON.stringify(err)).join(", ");
+      }
+
       toast({
         title: "오류",
         description: errorMessage,
