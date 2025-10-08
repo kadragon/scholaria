@@ -41,3 +41,12 @@
 - **summary**: `TASK_SUMMARY.md`만 보존
 - **plan**: `PLAN.md` + `TASK_SUMMARY.md` 보존
 - **full**: 모든 문서(RESEARCH/PLAN/PROGRESS) 보존
+
+## performance-benchmark (2025-10-08)
+- **Title:** Performance Benchmark (Initial)
+- **Status:** Initial implementation complete
+- **Dates:** 2025-10-08
+- **Keep Level:** summary
+- **Commits:** 8f249ef, bc04488
+- **Tests:** 4 passed, 2 skipped (6 new tests)
+- **Artifacts:** `_archive/2025/Q4/performance-benchmark/TASK_SUMMARY.md`
