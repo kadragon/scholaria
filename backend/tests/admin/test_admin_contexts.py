@@ -352,3 +352,47 @@ class TestContextItemUpdate:
         db_session.expire_all()
         updated_item = db_session.query(ContextItem).filter_by(id=item_id).first()
         assert updated_item.content == "New content for embedding"
+
+    def test_update_context_item_order_index_success(self, admin_headers, db_session):
+        """Test updating context item order_index successfully."""
+        from backend.models.context import ContextItem
+
+        ctx = SQLContext(
+            name="Test Context",
+            description="Test",
+            context_type="MARKDOWN",
+        )
+        db_session.add(ctx)
+        db_session.commit()
+
+        item1 = ContextItem(
+            title="Item 1",
+            content="Content 1",
+            context_id=ctx.id,
+            order_index=0,
+        )
+        item2 = ContextItem(
+            title="Item 2",
+            content="Content 2",
+            context_id=ctx.id,
+            order_index=1,
+        )
+        db_session.add_all([item1, item2])
+        db_session.commit()
+
+        # Update item1 to order_index=5
+        response = client.patch(
+            f"/api/admin/contexts/{ctx.id}/items/{item1.id}",
+            json={"order_index": 5},
+            headers=admin_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == item1.id
+        assert data["order_index"] == 5
+
+        # Verify in DB
+        db_session.expire_all()
+        updated = db_session.query(ContextItem).filter_by(id=item1.id).first()
+        assert updated.order_index == 5

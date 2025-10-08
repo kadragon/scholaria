@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
+import { apiClient } from "../../lib/apiClient";
 import { useOne, useNavigation } from "@refinedev/core";
 import { useParams } from "react-router-dom";
 import { useCallback } from "react";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -42,29 +42,6 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api";
-
-const axiosInstance = axios.create();
-
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/admin/login";
-    }
-    return Promise.reject(error);
-  }
-);
 
 interface ContextItem {
   id: number;
@@ -152,7 +129,7 @@ export const ContextShow = () => {
 
   const fetchItems = useCallback(async () => {
     try {
-      const response = await axiosInstance.get(`${API_URL}/contexts/${id}/items`);
+      const response = await apiClient.get(`/contexts/${id}/items`);
       const sortedData = response.data.sort((a: ContextItem, b: ContextItem) =>
         a.order_index - b.order_index
       );
@@ -181,10 +158,9 @@ export const ContextShow = () => {
 
     setSaving(true);
     try {
-      await axiosInstance.patch(
-        `${API_URL}/contexts/${id}/items/${editingItem.id}`,
-        { content: editContent }
-      );
+      await apiClient.patch(`/contexts/${id}/items/${editingItem.id}`, {
+        content: editContent,
+      });
 
       setEditDialogOpen(false);
       setEditingItem(null);
@@ -218,10 +194,10 @@ export const ContextShow = () => {
 
     setAddingQA(true);
     try {
-      await axiosInstance.post(
-        `${API_URL}/contexts/${id}/qa`,
-        { title: qaTitle, content: qaContent }
-      );
+      await apiClient.post(`/contexts/${id}/qa`, {
+        title: qaTitle,
+        content: qaContent,
+      });
 
       setAddQADialogOpen(false);
       setQATitle("");
@@ -267,10 +243,9 @@ export const ContextShow = () => {
       const updatePromises = updates
         .filter((update, index) => update.order_index !== previousItems[index]?.order_index)
         .map((update) =>
-          axiosInstance.patch(
-            `${API_URL}/contexts/${id}/items/${update.id}`,
-            { order_index: update.order_index }
-          )
+          apiClient.patch(`/contexts/${id}/items/${update.id}`, {
+            order_index: update.order_index,
+          })
         );
 
       await Promise.all(updatePromises);

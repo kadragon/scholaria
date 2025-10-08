@@ -1,4 +1,5 @@
 import type { AuthProvider } from "@refinedev/core";
+import { apiClient } from "../lib/apiClient";
 
 const API_URL = import.meta.env.VITE_API_URL?.replace('/admin', '') || "http://localhost:8001/api";
 
@@ -57,16 +58,12 @@ export const authProvider: AuthProvider = {
       return null;
     }
 
-    const response = await fetch(`${API_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
+    try {
+      const response = await apiClient.get("/auth/me");
+      return response.data;
+    } catch {
       return null;
     }
-
-    const user = await response.json();
-    return user;
   },
 
   onError: async (error) => {

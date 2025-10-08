@@ -87,6 +87,7 @@ class AdminContextItemUpdate(BaseModel):
     """ContextItem update schema for Admin API."""
 
     content: str | None = Field(None, min_length=1)
+    order_index: int | None = Field(None, ge=0)
 
 
 class AdminFaqQaCreate(BaseModel):

@@ -68,6 +68,7 @@ class ContextItem(Base):
     context_id: Mapped[int] = mapped_column(
         ForeignKey("rag_context.id"), nullable=False, index=True
     )
+    order_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     # Note: Django field name is 'metadata' but it's reserved in SQLAlchemy
     # We map to the same DB column name

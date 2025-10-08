@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { apiClient } from "../../lib/apiClient";
 import { useTable, useNavigation, useDelete, useList, useUpdate } from "@refinedev/core";
 import {
   Table,
@@ -160,24 +161,12 @@ export const ContextList = () => {
 
     setIsAssigning(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/admin/bulk/assign-context-to-topic`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            topic_id: parseInt(selectedTopicId),
-            context_ids: Array.from(selectedIds),
-          }),
-        },
-      );
+      const response = await apiClient.post("/admin/bulk/assign-context-to-topic", {
+        topic_id: parseInt(selectedTopicId),
+        context_ids: Array.from(selectedIds),
+      });
 
-      if (!response.ok) throw new Error("Failed to assign contexts");
-
-      const result = await response.json();
+      const result = response.data;
       toast({
         title: "성공",
         description: `${result.assigned_count}개 컨텍스트가 토픽에 할당되었습니다.`,
@@ -202,23 +191,11 @@ export const ContextList = () => {
 
     setIsRegenerating(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/admin/bulk/regenerate-embeddings`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            context_ids: Array.from(selectedIds),
-          }),
-        },
-      );
+      const response = await apiClient.post("/admin/bulk/regenerate-embeddings", {
+        context_ids: Array.from(selectedIds),
+      });
 
-      if (!response.ok) throw new Error("Failed to regenerate embeddings");
-
-      const result = await response.json();
+      const result = response.data;
       toast({
         title: "성공",
         description: `${result.queued_count}개 컨텍스트의 임베딩 재생성이 대기열에 추가되었습니다.`,

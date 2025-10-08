@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status
 from sqlalchemy import func
@@ -21,6 +20,8 @@ from backend.schemas.admin import (
     AdminFaqQaCreate,
     ContextListResponse,
 )
+from backend.schemas.context import ContextItemOut
+from backend.tasks.embeddings import regenerate_embedding_task
 
 router = APIRouter(prefix="/contexts", tags=["Admin - Contexts"])
 
@@ -224,12 +225,12 @@ async def delete_context(
     db.commit()
 
 
-@router.get("/{id}/items")
+@router.get("/{id}/items", response_model=list[ContextItemOut])
 async def get_context_items(
     id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
-) -> list:
+) -> list[ContextItem]:
     """Get all items for a specific context."""
     ctx = db.query(Context).filter(Context.id == id).first()
     if not ctx:
@@ -241,13 +242,15 @@ async def get_context_items(
     return items
 
 
-@router.post("/{id}/qa", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{id}/qa", response_model=ContextItemOut, status_code=status.HTTP_201_CREATED
+)
 async def add_faq_qa(
     id: int,
     qa_data: AdminFaqQaCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
-) -> Any:
+) -> ContextItem:
     """Add a Q&A pair to a FAQ context."""
     ctx = db.query(Context).filter(Context.id == id).first()
     if not ctx:
@@ -274,14 +277,14 @@ async def add_faq_qa(
     return qa_item
 
 
-@router.patch("/{context_id}/items/{item_id}")
+@router.patch("/{context_id}/items/{item_id}", response_model=ContextItemOut)
 async def update_context_item(
     context_id: int,
     item_id: int,
     update_data: AdminContextItemUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
-) -> Any:
+) -> ContextItem:
     """Update a context item."""
     ctx = db.query(Context).filter(Context.id == context_id).first()
     if not ctx:
@@ -302,12 +305,13 @@ async def update_context_item(
     if update_data.content is not None:
         item.content = update_data.content
 
+    if update_data.order_index is not None:
+        item.order_index = update_data.order_index
+
     db.commit()
     db.refresh(item)
 
     if update_data.content is not None:
-        from backend.tasks.embeddings import regenerate_embedding_task
-
         regenerate_embedding_task.delay(item.id)
 
     return item
