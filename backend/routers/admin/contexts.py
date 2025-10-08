@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status
 from sqlalchemy import func
@@ -226,12 +225,12 @@ async def delete_context(
     db.commit()
 
 
-@router.get("/{id}/items")
+@router.get("/{id}/items", response_model=list[ContextItemOut])
 async def get_context_items(
     id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
-) -> list:
+) -> list[ContextItem]:
     """Get all items for a specific context."""
     ctx = db.query(Context).filter(Context.id == id).first()
     if not ctx:
@@ -243,13 +242,15 @@ async def get_context_items(
     return items
 
 
-@router.post("/{id}/qa", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{id}/qa", response_model=ContextItemOut, status_code=status.HTTP_201_CREATED
+)
 async def add_faq_qa(
     id: int,
     qa_data: AdminFaqQaCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
-) -> Any:
+) -> ContextItem:
     """Add a Q&A pair to a FAQ context."""
     ctx = db.query(Context).filter(Context.id == id).first()
     if not ctx:
