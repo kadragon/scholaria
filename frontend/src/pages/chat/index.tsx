@@ -87,35 +87,46 @@ export const ChatPage = () => {
     <div className="flex h-screen bg-gradient-to-br from-secondary-50 to-secondary-100">
       <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full shadow-2xl bg-white">
         <header className="border-b-2 border-primary-100 bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6 shadow-lg flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">AI 질문 답변</h1>
-            <p className="text-sm text-primary-100 mt-2">
-              토픽을 선택하고 궁금한 점을 질문하세요
-            </p>
-          </div>
-          {selectedTopicId && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="text-white hover:bg-primary-500 transition-colors"
-              title={isSidebarVisible ? "사이드바 숨기기" : "사이드바 표시"}
-            >
-              {isSidebarVisible ? (
-                <PanelLeftClose className="h-6 w-6" />
-              ) : (
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-white">AI 질문 답변</h1>
+              <p className="text-sm text-primary-100 mt-2">
+                토픽을 선택하고 궁금한 점을 질문하세요
+              </p>
+            </div>
+            {selectedTopicId && !isSidebarVisible && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="text-white hover:bg-primary-500 transition-colors"
+                title="사이드바 표시"
+              >
                 <PanelLeftOpen className="h-6 w-6" />
-              )}
-            </Button>
-          )}
+              </Button>
+            )}
+          </div>
         </header>
 
         <div className="flex-1 flex overflow-hidden">
           {(isSidebarVisible || !selectedTopicId) && (
             <aside className="w-72 border-r-2 border-secondary-200 bg-gradient-to-b from-white to-secondary-50 p-6 shadow-inner transition-all duration-300">
-              <h2 className="text-sm font-bold text-secondary-800 mb-4 uppercase tracking-wider">
-                토픽 선택
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-bold text-secondary-800 uppercase tracking-wider">
+                  토픽 선택
+                </h2>
+                {selectedTopicId && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSidebar}
+                    className="text-secondary-600 hover:bg-secondary-200 transition-colors h-8 w-8"
+                    title="사이드바 숨기기"
+                  >
+                    <PanelLeftClose className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
               <TopicSelector
                 selectedTopicId={selectedTopicId}
                 onSelectTopic={handleTopicSelect}
