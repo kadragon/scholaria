@@ -287,7 +287,7 @@ ls -lh ${BACKUP_DIR}/scholaria_backup_*/ | grep "$(date -d '2 hours ago' +%Y%m%d
 # 3. 임시 환경에서 복원 (프로덕션 영향 없음)
 docker compose -f docker-compose.dev.yml up -d
 export BACKUP_DIR=/var/backups/scholaria
-./scripts/restore.sh --force /backup/scholaria_backup_20241008_100000
+./scripts/restore.sh --force ${BACKUP_DIR}/scholaria_backup_20241008_100000
 
 # 4. 데이터 추출
 docker compose -f docker-compose.dev.yml exec postgres pg_dump -U postgres -d scholaria -t topics -t context_items > /tmp/deleted_data.sql
