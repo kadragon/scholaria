@@ -100,6 +100,7 @@ async def get_topic(
         description=topic.description,
         system_prompt=topic.system_prompt or "",
         contexts_count=len(topic.contexts),
+        context_ids=[ctx.id for ctx in topic.contexts],
         created_at=topic.created_at,
         updated_at=topic.updated_at,
     )
@@ -143,6 +144,7 @@ async def create_topic(
         description=topic.description,
         system_prompt=topic.system_prompt or "",
         contexts_count=len(topic.contexts),
+        context_ids=[ctx.id for ctx in topic.contexts],
         created_at=topic.created_at,
         updated_at=topic.updated_at,
     )
@@ -202,6 +204,7 @@ async def update_topic(
         description=topic.description,
         system_prompt=topic.system_prompt or "",
         contexts_count=len(topic.contexts),
+        context_ids=[ctx.id for ctx in topic.contexts],
         created_at=topic.created_at,
         updated_at=topic.updated_at,
     )
