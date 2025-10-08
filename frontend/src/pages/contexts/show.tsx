@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useOne, useNavigation } from "@refinedev/core";
 import { useParams } from "react-router-dom";
 import { useCallback } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -41,6 +42,29 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api";
+
+const axiosInstance = axios.create();
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/admin/login";
+    }
+    return Promise.reject(error);
+  }
+);
 
 interface ContextItem {
   id: number;
@@ -128,21 +152,11 @@ export const ContextShow = () => {
 
   const fetchItems = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/contexts/${id}/items`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        },
+      const response = await axiosInstance.get(`${API_URL}/contexts/${id}/items`);
+      const sortedData = response.data.sort((a: ContextItem, b: ContextItem) =>
+        a.order_index - b.order_index
       );
-      if (response.ok) {
-        const data = await response.json();
-        const sortedData = data.sort((a: ContextItem, b: ContextItem) =>
-          a.order_index - b.order_index
-        );
-        setItems(sortedData);
-      }
+      setItems(sortedData);
     } catch (error) {
       console.error("Failed to fetch items:", error);
     } finally {
@@ -167,39 +181,24 @@ export const ContextShow = () => {
 
     setSaving(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/contexts/${id}/items/${editingItem.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ content: editContent }),
-        },
+      await axiosInstance.patch(
+        `${API_URL}/contexts/${id}/items/${editingItem.id}`,
+        { content: editContent }
       );
 
-      if (response.ok) {
-        setEditDialogOpen(false);
-        setEditingItem(null);
-        setEditContent("");
-        fetchItems();
-        toast({
-          title: "저장 성공",
-          description: "청크가 업데이트되었습니다.",
-        });
-      } else {
-        toast({
-          title: "저장 실패",
-          description: "청크 업데이트에 실패했습니다.",
-          variant: "destructive",
-        });
-      }
+      setEditDialogOpen(false);
+      setEditingItem(null);
+      setEditContent("");
+      fetchItems();
+      toast({
+        title: "저장 성공",
+        description: "청크가 업데이트되었습니다.",
+      });
     } catch (error) {
       console.error("Error updating item:", error);
       toast({
-        title: "오류",
-        description: "청크 업데이트 중 오류가 발생했습니다.",
+        title: "저장 실패",
+        description: "청크 업데이트에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -219,39 +218,24 @@ export const ContextShow = () => {
 
     setAddingQA(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/contexts/${id}/qa`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ title: qaTitle, content: qaContent }),
-        },
+      await axiosInstance.post(
+        `${API_URL}/contexts/${id}/qa`,
+        { title: qaTitle, content: qaContent }
       );
 
-      if (response.ok) {
-        setAddQADialogOpen(false);
-        setQATitle("");
-        setQAContent("");
-        fetchItems();
-        toast({
-          title: "Q&A 추가 성공",
-          description: "Q&A가 추가되었습니다.",
-        });
-      } else {
-        toast({
-          title: "추가 실패",
-          description: "Q&A 추가에 실패했습니다.",
-          variant: "destructive",
-        });
-      }
+      setAddQADialogOpen(false);
+      setQATitle("");
+      setQAContent("");
+      fetchItems();
+      toast({
+        title: "Q&A 추가 성공",
+        description: "Q&A가 추가되었습니다.",
+      });
     } catch (error) {
       console.error("Error adding Q&A:", error);
       toast({
-        title: "오류",
-        description: "Q&A 추가 중 오류가 발생했습니다.",
+        title: "추가 실패",
+        description: "Q&A 추가에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -283,24 +267,13 @@ export const ContextShow = () => {
       const updatePromises = updates
         .filter((update, index) => update.order_index !== previousItems[index]?.order_index)
         .map((update) =>
-          fetch(
-            `${import.meta.env.VITE_API_URL}/contexts/${id}/items/${update.id}`,
-            {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-              body: JSON.stringify({ order_index: update.order_index }),
-            }
+          axiosInstance.patch(
+            `${API_URL}/contexts/${id}/items/${update.id}`,
+            { order_index: update.order_index }
           )
         );
 
-      const responses = await Promise.all(updatePromises);
-
-      if (responses.some((res) => !res.ok)) {
-        throw new Error("Failed to update some items");
-      }
+      await Promise.all(updatePromises);
 
       toast({
         title: "순서 변경 완료",
