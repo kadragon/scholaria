@@ -4,25 +4,36 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from backend.schemas.utils import to_local_iso
 
 
-class AdminTopicOut(BaseModel):
-    """Topic output schema for Admin API."""
+class AdminBaseOut(BaseModel):
+    """Base schema for Admin API output with common fields."""
 
     id: int
     name: str
-    slug: str
     description: str
+    created_at: datetime
+    updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def serialize_datetime(self, value: datetime) -> str:
+        return to_local_iso(value)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminTopicOut(AdminBaseOut):
+    """Topic output schema for Admin API."""
+
+    slug: str
     system_prompt: str
     contexts_count: int = Field(description="Number of associated contexts")
     context_ids: list[int] = Field(
         default_factory=list, description="IDs of associated contexts"
     )
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class AdminTopicCreate(BaseModel):
@@ -52,20 +63,13 @@ class TopicListResponse(BaseModel):
     total: int
 
 
-class AdminContextOut(BaseModel):
+class AdminContextOut(AdminBaseOut):
     """Context output schema for Admin API."""
 
-    id: int
-    name: str
-    description: str
     context_type: str
     chunk_count: int
     processing_status: str
     topics_count: int = Field(default=0, description="Number of associated topics")
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class AdminContextCreate(BaseModel):

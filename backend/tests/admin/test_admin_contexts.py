@@ -1,5 +1,7 @@
 """Tests for Contexts Admin API."""
 
+from datetime import datetime
+
 from fastapi.testclient import TestClient
 
 from backend.main import app
@@ -396,3 +398,37 @@ class TestContextItemUpdate:
         db_session.expire_all()
         updated = db_session.query(ContextItem).filter_by(id=item1.id).first()
         assert updated.order_index == 5
+
+
+class TestContextsDatetimeSerialization:
+    """Test AdminContextOut datetime field serialization."""
+
+    def test_admin_context_out_datetime_serialization_format(
+        self, admin_headers, db_session
+    ):
+        """Test created_at and updated_at are serialized as ISO 8601 strings with timezone."""
+        context = SQLContext(
+            name="Test Context",
+            description="Test Description",
+            context_type="MARKDOWN",
+            original_content="# Test Content",
+            chunk_count=1,
+        )
+        db_session.add(context)
+        db_session.commit()
+
+        response = client.get(
+            f"/api/admin/contexts/{context.id}", headers=admin_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+
+        assert "created_at" in data
+        assert "updated_at" in data
+        assert isinstance(data["created_at"], str)
+        assert isinstance(data["updated_at"], str)
+
+        created_dt = datetime.fromisoformat(data["created_at"])
+        updated_dt = datetime.fromisoformat(data["updated_at"])
+        assert created_dt.tzinfo is not None
+        assert updated_dt.tzinfo is not None
