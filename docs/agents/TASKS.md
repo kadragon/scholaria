@@ -10,7 +10,6 @@
 
 ## 단기 백로그
 - [ ] **성능 벤치마크 확장** — Golden Dataset 통합 테스트 (Qdrant 실제 호출), 관련 인용 80% 검증
-- [ ] **Frontend README 정리** — `frontend/README.md` TODO 목록을 최신 상태로 반영하고 완료 항목 체크
 - [ ] **Admin datetime 직렬화** — `backend/schemas/admin.py`의 `AdminTopicOut`, `AdminContextOut`에 ISO 포맷 직렬화 추가
 - [ ] **운영 데이터 백업/복원 가이드** — PostgreSQL 및 Qdrant 백업·복원 절차 수립, 자동화 스크립트와 복구 리허설 포함
 - [ ] **다크 모드** — UI 테마 토글 및 사용자 선호 저장
@@ -22,6 +21,7 @@
 - [ ] **피드백 루프 확장** — 좋아요/싫어요 외에 자유 서술 피드백 수집 UX 추가
 
 ## 최근 완료 하이라이트
+- **Frontend README 정리** — 실제 구현 상태 반영 (13개 기능 완료, 2개 TODO 유지) (2025-10-08)
 - **성능 벤치마크 (초기)** — Mock 기반 응답 지연 & 동시성 테스트 3개, Golden Dataset 인프라 구축 (2025-10-08)
 - FastAPI 전환, 인제스션 워크플로우, Refine 기반 Admin UI, 스트리밍 Q&A 인터페이스 제공 완료
 - Celery + Redis 재도입으로 임베딩 재생성 및 캐시 공유 인프라 복원

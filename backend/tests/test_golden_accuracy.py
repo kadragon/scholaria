@@ -11,9 +11,8 @@ class TestGoldenDatasetAccuracy:
         """Golden dataset should be loaded successfully."""
         assert isinstance(golden_dataset, list)
         assert len(golden_dataset) > 0
-        assert all("question" in item for item in golden_dataset)
-        assert all("expected_context_ids" in item for item in golden_dataset)
-        assert all("topic_id" in item for item in golden_dataset)
+        required_keys = {"question", "expected_context_ids", "topic_id"}
+        assert all(required_keys.issubset(item.keys()) for item in golden_dataset)
 
     @pytest.mark.skip(reason="Requires Qdrant integration - deferred to Step 5")
     @pytest.mark.asyncio
