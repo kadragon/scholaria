@@ -267,11 +267,7 @@ export const ContextShow = () => {
           })
         );
 
-      const responses = await Promise.all(updatePromises);
-
-      if (responses.some((res) => !res.ok)) {
-        throw new Error("Failed to update some items");
-      }
+      await Promise.all(updatePromises);
 
       toast({
         title: "순서 변경 완료",
