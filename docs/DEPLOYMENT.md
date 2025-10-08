@@ -132,7 +132,7 @@ FastAPI → PostgreSQL (5432)
 
 ## Environment Variables
 
-> 📋 **참고**: 전체 환경 변수 목록은 `.env.example` (개발), `.env.example` (프로덕션) 참조.
+> 📋 **참고**: 전체 환경 변수 목록은 `.env.example` 파일을 참조하세요.
 
 ### 필수 변수 (JWT & Auth)
 
@@ -364,7 +364,7 @@ Monitor these key metrics:
 docker system info
 
 # Validate compose file
-docker compose config
+docker compose -f docker-compose.prod.yml config
 
 # Check logs
 docker compose -f docker-compose.prod.yml logs
@@ -419,7 +419,7 @@ docker compose -f docker-compose.prod.yml restart backend
 
 # Rebuild and restart
 docker compose -f docker-compose.prod.yml down
-docker compose up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 
 # Restore database from backup
 docker compose -f docker-compose.prod.yml exec -i postgres psql -U postgres scholaria < backup.sql
@@ -452,7 +452,7 @@ docker compose -f docker-compose.prod.yml pull
 
 # Apply updates
 docker compose -f docker-compose.prod.yml down
-docker compose up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 
 # Run migrations
 docker compose -f docker-compose.prod.yml exec backend alembic upgrade head

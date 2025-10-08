@@ -20,11 +20,13 @@ RUN uv sync --frozen --no-dev
 # Development stage
 FROM python:3.13-slim as development
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     curl \
     git \
     postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
