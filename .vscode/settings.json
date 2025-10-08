@@ -25,15 +25,6 @@
     "files.associations": {
         "*.py": "python"
     },
-    "python.analysis.typeCheckingMode": "basic",
     "python.analysis.autoImportCompletions": true,
-    "python.analysis.extraPaths": [
-        "${workspaceFolder}",
-        "${workspaceFolder}/.venv/lib/python3.13/site-packages"
-    ],
-    "python.analysis.diagnosticSeverityOverrides": {
-        "reportMissingImports": "none",
-        "reportMissingModuleSource": "none"
-    },
     "python.languageServer": "Pylance"
 }
