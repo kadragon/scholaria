@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { apiClient } from "../../lib/apiClient";
 import { useTable, useNavigation, useDelete, useUpdate } from "@refinedev/core";
 import {
   Table,
@@ -164,24 +165,12 @@ export const TopicList = () => {
 
     setIsUpdating(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/admin/bulk/update-system-prompt`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            topic_ids: Array.from(selectedIds),
-            system_prompt: systemPrompt,
-          }),
-        },
-      );
+      const response = await apiClient.post("/admin/bulk/update-system-prompt", {
+        topic_ids: Array.from(selectedIds),
+        system_prompt: systemPrompt,
+      });
 
-      if (!response.ok) throw new Error("Failed to update system prompts");
-
-      const result = await response.json();
+      const result = response.data;
       toast({
         title: "성공",
         description: `${result.updated_count}개 토픽이 업데이트되었습니다.`,

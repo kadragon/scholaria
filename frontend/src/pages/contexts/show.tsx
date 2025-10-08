@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiClient } from "../../lib/apiClient";
 import { useOne, useNavigation } from "@refinedev/core";
 import { useParams } from "react-router-dom";
 import { useCallback } from "react";
@@ -128,16 +129,9 @@ export const ContextShow = () => {
 
   const fetchItems = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/contexts/${id}/items`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        },
-      );
-      if (response.ok) {
-        const data = await response.json();
+      const response = await apiClient.get(`/contexts/${id}/items`);
+      if (response.status === 200) {
+        const data = response.data;
         const sortedData = data.sort((a: ContextItem, b: ContextItem) =>
           a.order_index - b.order_index
         );
@@ -167,19 +161,11 @@ export const ContextShow = () => {
 
     setSaving(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/contexts/${id}/items/${editingItem.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ content: editContent }),
-        },
-      );
+      const response = await apiClient.patch(`/contexts/${id}/items/${editingItem.id}`, {
+        content: editContent,
+      });
 
-      if (response.ok) {
+      if (response.status === 200) {
         setEditDialogOpen(false);
         setEditingItem(null);
         setEditContent("");
@@ -219,19 +205,12 @@ export const ContextShow = () => {
 
     setAddingQA(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/contexts/${id}/qa`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ title: qaTitle, content: qaContent }),
-        },
-      );
+      const response = await apiClient.post(`/contexts/${id}/qa`, {
+        title: qaTitle,
+        content: qaContent,
+      });
 
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         setAddQADialogOpen(false);
         setQATitle("");
         setQAContent("");
@@ -283,17 +262,9 @@ export const ContextShow = () => {
       const updatePromises = updates
         .filter((update, index) => update.order_index !== previousItems[index]?.order_index)
         .map((update) =>
-          fetch(
-            `${import.meta.env.VITE_API_URL}/contexts/${id}/items/${update.id}`,
-            {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-              body: JSON.stringify({ order_index: update.order_index }),
-            }
-          )
+          apiClient.patch(`/contexts/${id}/items/${update.id}`, {
+            order_index: update.order_index,
+          })
         );
 
       const responses = await Promise.all(updatePromises);
