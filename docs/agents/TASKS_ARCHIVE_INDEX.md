@@ -41,3 +41,12 @@
 - **summary**: `TASK_SUMMARY.md`만 보존
 - **plan**: `PLAN.md` + `TASK_SUMMARY.md` 보존
 - **full**: 모든 문서(RESEARCH/PLAN/PROGRESS) 보존
+
+## frontend-readme-update (2025-10-08)
+- **Title:** Frontend README Update
+- **Status:** Complete
+- **Dates:** 2025-10-08
+- **Keep Level:** summary
+- **Commits:** 1f14ce6, 533176d
+- **Tests:** N/A (documentation)
+- **Artifacts:** `_archive/2025/Q4/frontend-readme-update/TASK_SUMMARY.md`
