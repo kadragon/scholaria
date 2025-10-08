@@ -90,7 +90,7 @@ EOF
         -H "Content-Type: application/json" \
         -d '{
             "vectors": {
-                "size": 1536,
+                "size": 3,
                 "distance": "Cosine"
             }
         }' > /dev/null 2>&1 || error_exit "Failed to create Qdrant collection"

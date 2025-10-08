@@ -71,8 +71,9 @@ docker compose -f docker-compose.prod.yml exec postgres bash -c "
   /scripts/backup.sh
 "
 
-# 백업 파일을 호스트로 복사
-docker cp postgres:/backup/scholaria_backup_YYYYMMDD_HHMMSS ./backups/
+# 백업 파일을 호스트로 복사 (최신 백업 자동 탐색)
+LATEST_BACKUP=$(docker compose -f docker-compose.prod.yml exec postgres ls -t /backup | head -n 1)
+docker cp "postgres:/backup/${LATEST_BACKUP}" ./backups/
 ```
 
 ## 복원 절차
@@ -128,10 +129,10 @@ curl -f http://localhost:8001/health
 ls -lh ${BACKUP_DIR}/scholaria_backup_*/
 
 # 2. 특정 백업 선택
-./scripts/restore.sh /backup/scholaria_backup_20241001_020000
+./scripts/restore.sh ${BACKUP_DIR}/scholaria_backup_20241001_020000
 
 # 3. 강제 복원 (프롬프트 생략)
-./scripts/restore.sh --force /backup/scholaria_backup_20241001_020000
+./scripts/restore.sh --force ${BACKUP_DIR}/scholaria_backup_20241001_020000
 ```
 
 ### 드라이런 모드 (테스트)
@@ -163,7 +164,7 @@ docker compose -f docker-compose.prod.yml stop backend celery-worker
 
 # 4. 스키마 검증
 docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -d scholaria -c "\dt"
-docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -d scholaria -c "SELECT COUNT(*) FROM topics, context_items;"
+docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -d scholaria -c "SELECT COUNT(*) FROM topics;" -c "SELECT COUNT(*) FROM context_items;"
 
 # 5. 마이그레이션 확인 (Alembic)
 docker compose -f docker-compose.prod.yml exec backend alembic current
@@ -429,7 +430,7 @@ sha256sum -c SHA256SUMS
 #### 증상 2: PostgreSQL 복원 중 "role does not exist" 에러
 ```bash
 # 사용자 생성
-docker compose exec postgres psql -U postgres -c "CREATE ROLE scholaria WITH LOGIN PASSWORD 'password';"
+docker compose exec postgres psql -U postgres -c "CREATE ROLE scholaria WITH LOGIN PASSWORD 'your-secure-password';"
 
 # 재시도
 ./scripts/restore.sh --component postgres latest
