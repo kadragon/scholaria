@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.dependencies.auth import require_admin
+from backend.models.associations import topic_context_association
 from backend.models.base import get_db
 from backend.models.context import Context
 from backend.models.topic import Topic
@@ -93,6 +95,14 @@ async def get_topic(
             status_code=status.HTTP_404_NOT_FOUND, detail="Topic not found"
         )
 
+    context_ids = list(
+        db.scalars(
+            select(topic_context_association.c.context_id).where(
+                topic_context_association.c.topic_id == topic.id
+            )
+        ).all()
+    )
+
     return AdminTopicOut(
         id=topic.id,
         name=topic.name,
@@ -100,6 +110,7 @@ async def get_topic(
         description=topic.description,
         system_prompt=topic.system_prompt or "",
         contexts_count=len(topic.contexts),
+        context_ids=context_ids,
         created_at=topic.created_at,
         updated_at=topic.updated_at,
     )
@@ -136,6 +147,14 @@ async def create_topic(
     db.commit()
     db.refresh(topic)
 
+    context_ids = list(
+        db.scalars(
+            select(topic_context_association.c.context_id).where(
+                topic_context_association.c.topic_id == topic.id
+            )
+        ).all()
+    )
+
     return AdminTopicOut(
         id=topic.id,
         name=topic.name,
@@ -143,6 +162,7 @@ async def create_topic(
         description=topic.description,
         system_prompt=topic.system_prompt or "",
         contexts_count=len(topic.contexts),
+        context_ids=context_ids,
         created_at=topic.created_at,
         updated_at=topic.updated_at,
     )
@@ -195,6 +215,14 @@ async def update_topic(
     db.commit()
     db.refresh(topic)
 
+    context_ids = list(
+        db.scalars(
+            select(topic_context_association.c.context_id).where(
+                topic_context_association.c.topic_id == topic.id
+            )
+        ).all()
+    )
+
     return AdminTopicOut(
         id=topic.id,
         name=topic.name,
@@ -202,6 +230,7 @@ async def update_topic(
         description=topic.description,
         system_prompt=topic.system_prompt or "",
         contexts_count=len(topic.contexts),
+        context_ids=context_ids,
         created_at=topic.created_at,
         updated_at=topic.updated_at,
     )
