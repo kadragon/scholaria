@@ -1,60 +1,96 @@
 # Research: Performance Benchmark
 
-**Goal:** 프로덕션 데이터 기준으로 관련 인용 80% 이상, 응답 지연 3초 미만, 동시 사용자 부하 테스트 수행
+## Goal
+프로덕션 환경 기준으로 RAG 시스템의 성능을 정량적으로 측정하고 검증합니다.
 
-**Scope:** RAG 시스템 성능 측정 및 벤치마크 프레임워크 구축
+## Scope
+- **관련 인용 정확도**: 검색된 context가 질문과 관련성 80% 이상
+- **응답 지연**: E2E 응답 시간 3초 미만
+- **동시 사용자 부하**: 병렬 요청 처리 안정성
 
-## Related Files
-- `backend/routers/rag.py` — RAG 엔드포인트
-- `backend/routers/rag_streaming.py` — 스트리밍 RAG 엔드포인트
-- `backend/services/rag_service.py` — RAG 비즈니스 로직
-- `backend/retrieval/` — 검색·리랭킹·임베딩 모듈
-- `backend/tests/test_rag_*.py` — 기존 RAG 테스트
+## Related Files/Flows
+
+### RAG Pipeline
+- `backend/services/rag_service.py:79-177` - `AsyncRAGService.query()` 메인 파이프라인
+  - Step 1: 임베딩 생성 (119-121)
+  - Step 2: Qdrant 벡터 검색 (124-129)
+  - Step 3: BGE Reranker 재순위 (143-148)
+  - Step 4: 컨텍스트 준비 (151)
+  - Step 5: OpenAI LLM 응답 생성 (154)
+- `backend/routers/rag.py:51-119` - REST 엔드포인트
+- `backend/routers/rag_streaming.py:41-59` - SSE 스트리밍 엔드포인트
+
+### Performance-Critical Components
+- `backend/retrieval/embeddings.py` - OpenAI 임베딩 생성 (캐시 지원)
+- `backend/retrieval/qdrant.py` - 벡터 검색 (Qdrant 호출)
+- `backend/retrieval/reranking.py` - BGE 재순위 모델 (CPU/GPU 바운드)
+- `backend/retrieval/cache.py` - Redis 임베딩 캐시 (15분 TTL)
+
+### Existing Tests
+- `backend/tests/test_rag_endpoint.py` - 6개 단위 테스트 (mock 기반, 기능 검증)
+- `backend/tests/test_rag_streaming.py` - 2개 스키마 테스트 (엔드포인트 등록 검증)
+- **Missing:** 성능/부하/정확도 테스트 없음
 
 ## Hypotheses
-1. 현재 응답 시간 메트릭이 없음 (측정 인프라 필요)
-2. 관련성 평가를 위한 Ground Truth 데이터셋 필요
-3. 부하 테스트는 locust 또는 pytest-benchmark 사용 가능
-4. 성능 병목: 임베딩 생성, Qdrant 검색, LLM 응답 생성
+
+### H1: 응답 지연 3초 미만 달성 가능
+- **근거:** Redis 캐시 적중 시 임베딩 생성 생략 가능
+- **검증:** E2E 타이머로 각 단계 측정
+
+### H2: 관련 인용 80% 목표는 Golden Dataset 필요
+- **근거:** 재순위 모델(BGE)이 이미 적용되어 있으나 정량 측정 필요
+- **검증:** 수동 라벨링된 질문-컨텍스트 쌍으로 정확도 측정
+
+### H3: 동시 사용자 부하는 AsyncIO 기반으로 확장 가능
+- **근거:** `AsyncRAGService`와 Redis 공유 캐시 구조
+- **검증:** locust/k6 또는 pytest-asyncio로 병렬 요청 시뮬레이션
 
 ## Evidence
-1. **모니터링 인프라 존재**: `backend/retrieval/monitoring.py` — `OpenAIUsageMonitor` 클래스로 토큰·비용·요청 추적
-2. **메트릭 수집**: `get_metrics()`, `get_cost_breakdown()`, `track_request_timestamp()` 메서드 제공
-3. **기존 RAG 테스트**: `test_rag_endpoint.py`, `test_rag_streaming.py` — 기능 테스트만 존재 (성능 측정 없음)
-4. **부하 테스트 도구 미설치**: locust, pytest-benchmark, k6 등 없음
-5. **응답 시간 추적 없음**: 현재 모니터링은 API 사용량·비용만 추적, latency 메트릭 없음
 
-## Assumptions
-- 프로덕션 데이터는 실제 사용자 쿼리 로그 또는 샘플 질문 세트
-- 관련성 평가는 수동 레이블링 또는 LLM-as-judge 방식
-- 벤치마크는 CI에 통합하지 않고 수동 실행 (초기 단계)
+### Current Setup
+- Python 3.13 + asyncio native (`asyncio.to_thread` 사용)
+- Redis 캐시: TTL 15분, 임베딩 TTL 30일
+- Qdrant 벡터 DB: 검색 제한 10개, 재순위 상위 5개
 
-## Open Questions
-- Ground Truth 데이터셋 구축 방법? (수동 레이블링 vs 자동 생성)
-- 부하 테스트 환경? (로컬 vs 스테이징 서버)
-- 메트릭 저장 방식? (로그 파일 vs DB vs 대시보드)
+### pytest Markers
+`pytest.ini:13-14`에 성능 테스트 마커 정의됨:
+```ini
+markers =
+    performance: marks tests as performance benchmarks
+    golden: marks tests as golden dataset validation
+```
+
+### Config
+- `backend/config.py:48-49` - `RAG_SEARCH_LIMIT=10`, `RAG_RERANK_TOP_K=5`
+- 환경변수로 조정 가능
+
+## Assumptions/Open Qs
+
+### Assumptions
+1. **Golden Dataset 부재**: 현재 프로덕션 데이터가 없으므로 샘플 데이터셋 생성 필요
+2. **외부 API 의존**: OpenAI 호출 지연은 제어 불가 (mock으로 대체 필요)
+3. **부하 테스트 인프라**: Docker Compose 환경에서 실행 가능
+
+### Open Questions
+1. **Golden Dataset 크기**: 몇 개의 질문-컨텍스트 쌍으로 신뢰 가능?
+   - 제안: 최소 20-30개 (다양한 난이도, 토픽 분포)
+2. **부하 테스트 대상**: 단일 엔드포인트 vs. 전체 파이프라인?
+   - 제안: `/api/rag/ask` 엔드포인트 중심 (실제 사용 패턴)
+3. **성능 임계값**: 3초는 P50, P95, P99 중 무엇?
+   - 제안: P95 3초 미만 (대부분 요청 커버)
+4. **부하 테스트 규모**: 동시 사용자 수 목표?
+   - 제안: 10-50 동시 요청 (학교 규모 가정)
+
+## Sub-agent Findings
+N/A (Research 단계에서 직접 조사 완료)
 
 ## Risks
-- Ground Truth 데이터 품질이 낮으면 벤치마크 신뢰도 저하
-- 부하 테스트 중 실제 서비스 영향 (스테이징 환경 필수)
-- LLM API 비용 증가 (대량 테스트 시)
-
-## Findings
-- 성능 벤치마크는 **대규모 작업**이며 다음 구성 요소 필요:
-  1. **응답 시간 측정**: `OpenAIUsageMonitor`에 latency 추적 추가
-  2. **Ground Truth 데이터셋**: 관련성 평가를 위한 샘플 Q&A 세트
-  3. **부하 테스트 도구**: locust 설치 및 시나리오 작성
-  4. **평가 스크립트**: 관련성·정확도 측정 (LLM-as-judge 또는 수동)
-  5. **보고서 생성**: 결과 집계 및 시각화
-
-## Recommendation
-이 태스크는 **복잡도가 높고 여러 하위 태스크로 분할 필요**합니다:
-1. **Latency 측정 인프라** (작은 태스크)
-2. **Ground Truth 데이터셋 구축** (중간 태스크)
-3. **부하 테스트 시나리오** (중간 태스크)
-4. **평가 메트릭 및 보고서** (중간 태스크)
-
-**제안**: 더 작은 태스크부터 시작 (예: "Admin datetime 직렬화" 또는 "Frontend README 정리")하거나, 벤치마크 태스크를 세분화하여 단계별 진행
+1. **OpenAI API 비용**: 대량 테스트 시 API 호출 증가
+   - 완화: Mock 또는 캐시 적중 시나리오 우선
+2. **Docker 환경 오버헤드**: 로컬 vs. 컨테이너 성능 차이
+   - 완화: Docker Compose 기반 통합 테스트로 일관성 확보
+3. **Golden Dataset 품질**: 수동 라벨링 오류 가능
+   - 완화: 소규모 검증 후 점진적 확장
 
 ## Next
-Plan 작성 보류 — 사용자에게 태스크 선택 재확인 또는 분할 제안
+Plan 단계로 진행 - 테스트 파일 설계 및 구현 계획 수립

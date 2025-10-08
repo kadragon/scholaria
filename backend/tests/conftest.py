@@ -114,3 +114,13 @@ def redis_client():
         pytest.skip("Redis not available for integration tests")
     finally:
         client.close()
+
+
+@pytest.fixture(scope="session")
+def golden_dataset():
+    """Load golden dataset for accuracy tests."""
+    import json
+
+    dataset_path = Path(__file__).parent / "fixtures" / "golden_dataset.json"
+    with open(dataset_path) as f:
+        return json.load(f)

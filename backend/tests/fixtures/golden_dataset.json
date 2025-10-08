@@ -1,0 +1,37 @@
+[
+  {
+    "question": "What is the school's admission policy?",
+    "expected_context_ids": [1, 3],
+    "topic_id": 1,
+    "difficulty": "easy",
+    "notes": "Direct match with admission FAQ context"
+  },
+  {
+    "question": "How do I apply for financial aid?",
+    "expected_context_ids": [5],
+    "topic_id": 1,
+    "difficulty": "medium",
+    "notes": "Requires understanding of financial aid procedures"
+  },
+  {
+    "question": "What extracurricular activities are available?",
+    "expected_context_ids": [7, 9],
+    "topic_id": 2,
+    "difficulty": "easy",
+    "notes": "Student life topic"
+  },
+  {
+    "question": "What are the graduation requirements?",
+    "expected_context_ids": [10],
+    "topic_id": 1,
+    "difficulty": "hard",
+    "notes": "Detailed academic policy"
+  },
+  {
+    "question": "How can I contact the student support office?",
+    "expected_context_ids": [2, 4],
+    "topic_id": 3,
+    "difficulty": "easy",
+    "notes": "Contact information query"
+  }
+]
