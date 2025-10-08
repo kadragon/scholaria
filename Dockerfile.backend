@@ -1,70 +1,82 @@
-# Multi-stage production Dockerfile for Scholaria Backend (FastAPI)
+# Multi-stage Dockerfile for Scholaria Backend (FastAPI)
+
+# Builder stage
 FROM python:3.13-slim as builder
 
-# Install system dependencies for building
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-# Set working directory
 WORKDIR /app
 
-# Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies into virtual environment
 RUN uv sync --frozen --no-dev
+
+# Development stage
+FROM python:3.13-slim as development
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+
+RUN uv sync --frozen
+
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+EXPOSE 8001
+
+CMD ["uvicorn", "backend.main:app", "--reload", "--host", "0.0.0.0", "--port", "8001"]
 
 # Production stage
 FROM python:3.13-slim as production
 
-# Install runtime system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Create non-root user
 RUN groupadd -r scholaria && useradd -r -g scholaria scholaria
 
-# Set working directory
 WORKDIR /app
 
-# Copy virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
 
-# Add virtual environment to PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy application code
 COPY --chown=scholaria:scholaria backend/ /app/backend/
 COPY --chown=scholaria:scholaria alembic/ /app/alembic/
 COPY --chown=scholaria:scholaria alembic.ini /app/
 COPY --chown=scholaria:scholaria pyproject.toml /app/
 
-# Create necessary directories
 RUN mkdir -p uploads logs && \
     chown -R scholaria:scholaria /app
 
-# Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Expose port
 EXPOSE 8001
 
-# Switch to non-root user
 USER scholaria
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8001/health || exit 1
 
-# Default command
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "4"]

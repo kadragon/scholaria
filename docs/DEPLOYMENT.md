@@ -7,7 +7,7 @@
 > - [ADMIN_GUIDE.md](ADMIN_GUIDE.md) - 관리 패널 사용법
 > - [backup-strategy.md](backup-strategy.md) - 백업/복원 전략
 > - [ARCHITECTURE_DECISIONS.md](ARCHITECTURE_DECISIONS.md) - 기술 스택 선택 배경
-> - `.env.prod.example` - 프로덕션 환경 변수 전체 목록
+> - `.env.example` - 프로덕션 환경 변수 전체 목록
 
 ## Prerequisites
 
@@ -35,14 +35,14 @@ uv sync
 
 ### 2. Environment Configuration
 
-Create a `.env` file from the production example:
+Create a `.env` file from the example:
 
 ```bash
-# Copy the production environment template
-cp .env.prod.example .env.prod
+# Copy the environment template
+cp .env.example .env
 
 # Edit with your production values
-nano .env.prod
+nano .env
 ```
 
 ### 3. Start Services (Production)
@@ -132,7 +132,7 @@ FastAPI → PostgreSQL (5432)
 
 ## Environment Variables
 
-> 📋 **참고**: 전체 환경 변수 목록은 `.env.example` (개발), `.env.prod.example` (프로덕션) 참조.
+> 📋 **참고**: 전체 환경 변수 목록은 `.env.example` 파일을 참조하세요.
 
 ### 필수 변수 (JWT & Auth)
 
@@ -216,7 +216,7 @@ FASTAPI_ALLOWED_ORIGINS=https://yourdomain.com
 
 > 🔒 **보안**: `JWT_SECRET_KEY`, `DB_PASSWORD`, `OPENAI_API_KEY`는 반드시 프로덕션 환경에서 설정 필요. 기본값 사용 금지.
 
-상세 환경 변수 설명은 `.env.prod.example` 참조.
+상세 환경 변수 설명은 `.env.example` 참조.
 
 ## Database Management
 
@@ -458,19 +458,41 @@ docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
 ```
 
-## Local Development with Docker
+## Local Development
 
-For local testing with production-like environment:
+### Option 1: Docker Development Environment (권장)
+
+전체 스택을 Docker로 실행 (hot reload 지원):
 
 ```bash
-# Use development compose file
-docker compose -f docker-compose.dev.yml up -d
+# 개발 환경 실행
+docker compose up -d
 
-# Apply migrations
-docker compose -f docker-compose.dev.yml exec backend alembic upgrade head
+# 로그 확인
+docker compose logs -f backend
 
-# View logs
-docker compose -f docker-compose.dev.yml logs -f backend
+# 마이그레이션
+docker compose exec backend alembic upgrade head
+```
+
+Access:
+- Backend: http://localhost:8001
+- Frontend: http://localhost:5173
+- Flower: http://localhost:5555
+
+### Option 2: 로컬 실행 (빠른 iteration)
+
+인프라만 Docker, 앱은 로컬 실행:
+
+```bash
+# 인프라만 실행
+docker compose up -d postgres redis qdrant
+
+# Backend 로컬 실행
+uv run uvicorn backend.main:app --reload --port 8001
+
+# Celery worker 로컬 실행
+uv run celery -A backend.celery_app worker --loglevel=info
 ```
 
 ## 추가 참조

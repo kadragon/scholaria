@@ -1,10 +1,50 @@
+x-common-env: &common-env
+  DEBUG: 'True'
+  DB_ENGINE: postgresql
+  DB_NAME: ${POSTGRES_DB:-scholaria}
+  DB_USER: ${POSTGRES_USER:-postgres}
+  DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+  DB_HOST: postgres
+  DB_PORT: 5432
+  REDIS_URL: redis://redis:6379/0
+  QDRANT_HOST: qdrant
+  QDRANT_PORT: 6333
+  QDRANT_COLLECTION_NAME: ${QDRANT_COLLECTION_NAME:-scholaria_documents}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-changeme}
+  OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-large}
+  OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-4o-mini}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-jwt-secret}
+
 services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: development
+    ports:
+      - "${FASTAPI_PORT:-8001}:8001"
+    environment:
+      <<: *common-env
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
+      FASTAPI_ALLOWED_ORIGINS: ${FASTAPI_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+    volumes:
+      - .:/app
+      - uploads:/app/uploads
+      - media:/app/media
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
+
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_DB: scholaria
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-scholaria}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
@@ -26,30 +66,33 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8001/api/admin
+      - VITE_BASE_PATH=/admin/
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+
   celery-worker:
     build:
       context: .
       dockerfile: Dockerfile.backend
+      target: development
     command: celery -A backend.celery_app worker --loglevel=info
     environment:
-      - DB_ENGINE=postgresql
-      - DB_NAME=scholaria
-      - DB_USER=postgres
-      - DB_PASSWORD=${DB_PASSWORD:-postgres}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_DB=0
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      <<: *common-env
+    volumes:
+      - .:/app
     depends_on:
       - postgres
       - redis
       - qdrant
-    volumes:
-      - ./backend:/app/backend
-    healthcheck:
-      disable: true
 
   flower:
     image: mher/flower:2.0
@@ -66,3 +109,6 @@ volumes:
   postgres_data:
   redis_data:
   qdrant_data:
+  uploads:
+  media:
+  frontend_node_modules:
