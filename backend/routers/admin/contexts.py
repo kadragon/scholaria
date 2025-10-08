@@ -21,6 +21,8 @@ from backend.schemas.admin import (
     AdminFaqQaCreate,
     ContextListResponse,
 )
+from backend.schemas.context import ContextItemOut
+from backend.tasks.embeddings import regenerate_embedding_task
 
 router = APIRouter(prefix="/contexts", tags=["Admin - Contexts"])
 
@@ -274,14 +276,14 @@ async def add_faq_qa(
     return qa_item
 
 
-@router.patch("/{context_id}/items/{item_id}")
+@router.patch("/{context_id}/items/{item_id}", response_model=ContextItemOut)
 async def update_context_item(
     context_id: int,
     item_id: int,
     update_data: AdminContextItemUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
-) -> Any:
+) -> ContextItem:
     """Update a context item."""
     ctx = db.query(Context).filter(Context.id == context_id).first()
     if not ctx:
@@ -302,12 +304,13 @@ async def update_context_item(
     if update_data.content is not None:
         item.content = update_data.content
 
+    if update_data.order_index is not None:
+        item.order_index = update_data.order_index
+
     db.commit()
     db.refresh(item)
 
     if update_data.content is not None:
-        from backend.tasks.embeddings import regenerate_embedding_task
-
         regenerate_embedding_task.delay(item.id)
 
     return item

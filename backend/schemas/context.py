@@ -18,6 +18,7 @@ class ContextItemOut(BaseModel):
     title: str
     content: str
     context_id: int
+    order_index: int = 0
     file_path: str | None = None
     created_at: datetime
     updated_at: datetime
