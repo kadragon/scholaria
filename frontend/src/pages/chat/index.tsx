@@ -8,7 +8,7 @@ import { useChat } from "./hooks/useChat";
 import { useToast } from "../../hooks/use-toast";
 
 export const ChatPage = () => {
-  const { topicId: topicIdParam } = useParams<{ topicId?: string }>();
+  const { slug } = useParams<{ slug?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
@@ -38,25 +38,35 @@ export const ChatPage = () => {
   }, []);
 
   useEffect(() => {
-    if (topicIdParam) {
-      const topicId = parseInt(topicIdParam, 10);
-      if (!isNaN(topicId)) {
-        setSelectedTopicId(topicId);
-      } else {
-        setSelectedTopicId(null);
-      }
+    if (slug) {
+      fetch(`/api/topics/slug/${slug}`)
+        .then((res) => {
+          if (!res.ok) throw new Error("Topic not found");
+          return res.json();
+        })
+        .then((topic) => {
+          setSelectedTopicId(topic.id);
+        })
+        .catch((error) => {
+          console.error("Error fetching topic by slug:", error);
+          toast({
+            title: "오류",
+            description: "토픽을 찾을 수 없습니다.",
+            variant: "destructive",
+          });
+          setSelectedTopicId(null);
+        });
     } else {
       setSelectedTopicId(null);
     }
-  }, [topicIdParam]);
+  }, [slug, toast]);
 
   useEffect(() => {
     clearMessages();
   }, [selectedTopicId, clearMessages]);
 
-  const handleTopicSelect = (topicId: number) => {
-    setSelectedTopicId(topicId);
-    navigate(`/chat/${topicId}`, { replace: true });
+  const handleTopicSelect = (slug: string) => {
+    navigate(`/chat/${slug}`, { replace: true });
   };
 
   return (
