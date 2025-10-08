@@ -130,13 +130,10 @@ export const ContextShow = () => {
   const fetchItems = useCallback(async () => {
     try {
       const response = await apiClient.get(`/contexts/${id}/items`);
-      if (response.status === 200) {
-        const data = response.data;
-        const sortedData = data.sort((a: ContextItem, b: ContextItem) =>
-          a.order_index - b.order_index
-        );
-        setItems(sortedData);
-      }
+      const sortedData = response.data.sort((a: ContextItem, b: ContextItem) =>
+        a.order_index - b.order_index
+      );
+      setItems(sortedData);
     } catch (error) {
       console.error("Failed to fetch items:", error);
     } finally {
@@ -161,31 +158,23 @@ export const ContextShow = () => {
 
     setSaving(true);
     try {
-      const response = await apiClient.patch(`/contexts/${id}/items/${editingItem.id}`, {
+      await apiClient.patch(`/contexts/${id}/items/${editingItem.id}`, {
         content: editContent,
       });
 
-      if (response.status === 200) {
-        setEditDialogOpen(false);
-        setEditingItem(null);
-        setEditContent("");
-        fetchItems();
-        toast({
-          title: "저장 성공",
-          description: "청크가 업데이트되었습니다.",
-        });
-      } else {
-        toast({
-          title: "저장 실패",
-          description: "청크 업데이트에 실패했습니다.",
-          variant: "destructive",
-        });
-      }
+      setEditDialogOpen(false);
+      setEditingItem(null);
+      setEditContent("");
+      fetchItems();
+      toast({
+        title: "저장 성공",
+        description: "청크가 업데이트되었습니다.",
+      });
     } catch (error) {
       console.error("Error updating item:", error);
       toast({
-        title: "오류",
-        description: "청크 업데이트 중 오류가 발생했습니다.",
+        title: "저장 실패",
+        description: "청크 업데이트에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -205,32 +194,24 @@ export const ContextShow = () => {
 
     setAddingQA(true);
     try {
-      const response = await apiClient.post(`/contexts/${id}/qa`, {
+      await apiClient.post(`/contexts/${id}/qa`, {
         title: qaTitle,
         content: qaContent,
       });
 
-      if (response.status === 200 || response.status === 201) {
-        setAddQADialogOpen(false);
-        setQATitle("");
-        setQAContent("");
-        fetchItems();
-        toast({
-          title: "Q&A 추가 성공",
-          description: "Q&A가 추가되었습니다.",
-        });
-      } else {
-        toast({
-          title: "추가 실패",
-          description: "Q&A 추가에 실패했습니다.",
-          variant: "destructive",
-        });
-      }
+      setAddQADialogOpen(false);
+      setQATitle("");
+      setQAContent("");
+      fetchItems();
+      toast({
+        title: "Q&A 추가 성공",
+        description: "Q&A가 추가되었습니다.",
+      });
     } catch (error) {
       console.error("Error adding Q&A:", error);
       toast({
-        title: "오류",
-        description: "Q&A 추가 중 오류가 발생했습니다.",
+        title: "추가 실패",
+        description: "Q&A 추가에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
