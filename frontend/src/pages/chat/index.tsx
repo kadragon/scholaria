@@ -1,17 +1,23 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { TopicSelector } from "./components/TopicSelector";
 import { MessageList } from "./components/MessageList";
 import { MessageInput } from "./components/MessageInput";
 import { useChat } from "./hooks/useChat";
 import { useToast } from "../../hooks/use-toast";
+import { Button } from "../../components/ui/button";
 
 export const ChatPage = () => {
   const { slug } = useParams<{ slug?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
+  const [isSidebarVisible, setIsSidebarVisible] = useState<boolean>(() => {
+    const stored = localStorage.getItem("chat_sidebar_visible");
+    return stored === null ? true : stored === "true";
+  });
   const [sessionId] = useState(() => {
     const stored = sessionStorage.getItem("chat_session_id");
     if (stored) return stored;
@@ -69,26 +75,53 @@ export const ChatPage = () => {
     navigate(`/chat/${slug}`, { replace: true });
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarVisible((prev) => {
+      const newValue = !prev;
+      localStorage.setItem("chat_sidebar_visible", String(newValue));
+      return newValue;
+    });
+  };
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-secondary-50 to-secondary-100">
       <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full shadow-2xl bg-white">
-        <header className="border-b-2 border-primary-100 bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6 shadow-lg">
-          <h1 className="text-3xl font-bold text-white">AI 질문 답변</h1>
-          <p className="text-sm text-primary-100 mt-2">
-            토픽을 선택하고 궁금한 점을 질문하세요
-          </p>
+        <header className="border-b-2 border-primary-100 bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6 shadow-lg flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">AI 질문 답변</h1>
+            <p className="text-sm text-primary-100 mt-2">
+              토픽을 선택하고 궁금한 점을 질문하세요
+            </p>
+          </div>
+          {selectedTopicId && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="text-white hover:bg-primary-500 transition-colors"
+              title={isSidebarVisible ? "사이드바 숨기기" : "사이드바 표시"}
+            >
+              {isSidebarVisible ? (
+                <PanelLeftClose className="h-6 w-6" />
+              ) : (
+                <PanelLeftOpen className="h-6 w-6" />
+              )}
+            </Button>
+          )}
         </header>
 
         <div className="flex-1 flex overflow-hidden">
-          <aside className="w-72 border-r-2 border-secondary-200 bg-gradient-to-b from-white to-secondary-50 p-6 shadow-inner">
-            <h2 className="text-sm font-bold text-secondary-800 mb-4 uppercase tracking-wider">
-              토픽 선택
-            </h2>
-            <TopicSelector
-              selectedTopicId={selectedTopicId}
-              onSelectTopic={handleTopicSelect}
-            />
-          </aside>
+          {(isSidebarVisible || !selectedTopicId) && (
+            <aside className="w-72 border-r-2 border-secondary-200 bg-gradient-to-b from-white to-secondary-50 p-6 shadow-inner transition-all duration-300">
+              <h2 className="text-sm font-bold text-secondary-800 mb-4 uppercase tracking-wider">
+                토픽 선택
+              </h2>
+              <TopicSelector
+                selectedTopicId={selectedTopicId}
+                onSelectTopic={handleTopicSelect}
+              />
+            </aside>
+          )}
 
           <main className="flex-1 flex flex-col bg-white">
             {messages.length === 0 && !selectedTopicId ? (
