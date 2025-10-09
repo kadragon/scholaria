@@ -64,7 +64,7 @@ uv run pytest
 - **데이터베이스**: original_content, chunk_count, processing_status 필드 추가
 - **라이브러리 마이그레이션**: Unstructured → Docling으로 PDF 파싱 개선
 
-### FastAPI 운영 메모 (2025-10-01)
+### FastAPI 운영 메모 (2025-10-01, updated 2025-10-09)
 - SQLAlchemy 모델이 PostgreSQL 스키마를 직접 관리하며 Alembic이 이관 후 마이그레이션을 담당.
 - `backend/services/rag_service.AsyncRAGService`는 Redis 캐시와 Qdrant를 사용하며 모든 의존성은 FastAPI 설정(`backend.config.Settings`)에서 로드.
 - 테스트는 기본적으로 `uv run pytest backend/tests -q` 명령으로 실행하며, pytest 픽스처가 워커별 SQLite 파일을 자동 부트스트랩한다. Postgres 연동이 필요한 시나리오에서는 `docker-compose.dev.yml` 오버레이로 데이터베이스를 기동한다.
@@ -72,6 +72,16 @@ uv run pytest
 - 개발 Docker Compose는 FastAPI 단일 서비스(`backend`)를 기동하며 Django 컨테이너는 제거됨.
 - 데이터베이스 비밀번호는 반드시 환경 변수로 지정해야 하며, 설정에서 기본값을 제공하지 않는다. 미지정 시 URL은 비밀번호 없이 구성된다.
 - 관리자 UI는 `frontend/` (Refine) 프로젝트로 제공되며 JWT 토큰을 localStorage에 저장해 API 요청에 첨부.
+
+### Alembic 마이그레이션 가이드 (2025-10-09)
+- **마이그레이션 생성**: `uv run alembic revision -m "description"`로 자동 생성 시도. Mako 템플릿 오류 발생 시 수동 작성 (기존 마이그레이션 파일 참고).
+- **네이밍 규칙**: `0001`, `0002` 등 숫자 프리픽스 사용. down_revision은 이전 마이그레이션 ID 연결.
+- **인덱스 추가**: `op.create_index("ix_{table}_{column}", "{table}", ["{column}"])`, 제거 시 `op.drop_index("ix_{table}_{column}", "{table}")`
+- **테스트 필수**: `backend/tests/test_alembic_migrations.py`에 업그레이드/다운그레이드/멱등성 검증 추가
+- **적용**: Docker 환경에서 `docker compose exec backend uv run alembic upgrade head`로 적용
+- **롤백**: `docker compose exec backend uv run alembic downgrade -1`로 한 단계 되돌리기
+- **현재 상태**: `docker compose exec backend uv run alembic current`로 확인
+- **주의**: 프로덕션 마이그레이션은 데이터 백업 후 실행, 인덱스 생성은 대용량 테이블에서 지연 발생 가능
 
 ### Pydantic 스키마 패턴 (2025-10-01, updated 2025-10-08)
 - 모든 스키마는 `backend/schemas/` 디렉터리에 모듈별로 분리 (`admin.py`, `context.py`, `topic.py`, `history.py`, `rag.py`, `utils.py`)
