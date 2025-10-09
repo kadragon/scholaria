@@ -12,7 +12,36 @@ export const handlers = [
   }),
 
   http.get(`${API_BASE_URL}/topics`, () => {
-    return HttpResponse.json({ data: [], total: 0 });
+    return HttpResponse.json({
+      data: [
+        {
+          id: 1,
+          name: "테스트 토픽",
+          slug: "test-topic",
+          description: "테스트용 토픽입니다",
+        },
+      ],
+      total: 1,
+    });
+  }),
+
+  http.get("/api/topics", () => {
+    return HttpResponse.json({
+      data: [
+        {
+          id: 1,
+          name: "테스트 토픽",
+          slug: "test-topic",
+          description: "테스트용 토픽입니다",
+        },
+        {
+          id: 2,
+          name: "두번째 토픽",
+          slug: "second-topic",
+          description: "두번째 테스트 토픽",
+        },
+      ],
+    });
   }),
 
   http.get(`${API_BASE_URL}/contexts`, () => {
@@ -51,4 +80,30 @@ export const handlers = [
       });
     },
   ),
+
+  http.get(`${API_BASE_URL}/setup/check`, () => {
+    return HttpResponse.json({ needs_setup: true, admin_exists: false });
+  }),
+
+  http.post(`${API_BASE_URL}/setup/init`, async ({ request }) => {
+    const body = (await request.json()) as {
+      username: string;
+      email: string;
+      password: string;
+    };
+
+    if (body.email === "existing@test.com") {
+      return HttpResponse.json(
+        { detail: "이미 존재하는 이메일입니다." },
+        { status: 400 },
+      );
+    }
+
+    return HttpResponse.json({
+      id: 1,
+      username: body.username,
+      email: body.email,
+      created_at: new Date().toISOString(),
+    });
+  }),
 ];

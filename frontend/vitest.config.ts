@@ -23,7 +23,14 @@ export default defineConfig({
         "**/*.config.*",
         "**/mockServiceWorker.js",
         "**/__mocks__/**",
+        "dist/**",
       ],
+      thresholds: {
+        lines: 45,
+        functions: 45,
+        branches: 45,
+        statements: 45,
+      },
     },
   },
 });
