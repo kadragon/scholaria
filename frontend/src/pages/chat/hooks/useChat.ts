@@ -67,20 +67,34 @@ export const useChat = ({
       ]);
 
       try {
-        const response = await apiClient.post("/rag/stream", {
-          topic_id: topicId,
-          question: content.trim(),
-          session_id: sessionId,
-        }, {
-          responseType: "stream",
+        const token = localStorage.getItem("token");
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+        };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL?.replace('/admin', '') || "http://localhost:8001/api"}/rag/stream`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            topic_id: topicId,
+            question: content.trim(),
+            session_id: sessionId,
+          }),
         });
 
-        const reader = response.data?.getReader();
-        const decoder = new TextDecoder();
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
 
-        if (!reader) {
+        if (!response.body) {
           throw new Error("스트림을 읽을 수 없습니다");
         }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
 
         while (true) {
           const { done, value } = await reader.read();
@@ -95,40 +109,42 @@ export const useChat = ({
             const data = line.slice(6).trim();
             if (!data) continue;
 
+            let event;
             try {
-              const event = JSON.parse(data);
-
-              if (event.type === "answer_chunk") {
-                currentAssistantMessageRef.current += event.content;
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === assistantMessageId
-                      ? {
-                          ...msg,
-                          content: currentAssistantMessageRef.current,
-                        }
-                      : msg
-                  )
-                );
-              } else if (event.type === "citations") {
-                currentCitationsRef.current = event.citations;
-              } else if (event.type === "done") {
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === assistantMessageId
-                      ? {
-                          ...msg,
-                          citations: currentCitationsRef.current,
-                        }
-                      : msg
-                  )
-                );
-                break;
-              } else if (event.type === "error") {
-                throw new Error(event.message || "스트리밍 중 오류 발생");
-              }
+              event = JSON.parse(data);
             } catch (parseError) {
               console.error("SSE 파싱 오류:", parseError);
+              continue;
+            }
+
+            if (event.type === "answer_chunk") {
+              currentAssistantMessageRef.current += event.content;
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? {
+                        ...msg,
+                        content: currentAssistantMessageRef.current,
+                      }
+                    : msg
+                )
+              );
+            } else if (event.type === "citations") {
+              currentCitationsRef.current = event.citations;
+            } else if (event.type === "done") {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? {
+                        ...msg,
+                        citations: currentCitationsRef.current,
+                      }
+                    : msg
+                )
+              );
+              break;
+            } else if (event.type === "error") {
+              throw new Error(event.message || "스트리밍 중 오류 발생");
             }
           }
         }
