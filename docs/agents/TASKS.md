@@ -12,7 +12,7 @@
 
 ## 단기 백로그
 
-- [ ] **다크 모드** — UI 테마 토글 및 사용자 선호 저장
+없음
 
 ## 선택적 향상안
 
@@ -21,7 +21,7 @@
 
 ## Frontend 테스트 계획
 
-- [ ] **Phase 0 – 테스트 인프라 도입** — Vitest + React Testing Library + MSW 설치, `package.json`에 `test`, `test:watch`, `coverage` 스크립트 추가, `setupTests.ts`에서 Refine/React Router 모킹 및 JSDOM 환경 설정, GitHub Actions 워크플로에 프런트엔드 테스트 잡 추가
+- [x] **Phase 0 – 테스트 인프라 도입** — Vitest + React Testing Library + MSW 설치, `package.json`에 `test`, `test:watch`, `coverage` 스크립트 추가, `setupTests.ts`에서 Refine/React Router 모킹 및 JSDOM 환경 설정, GitHub Actions 워크플로에 프런트엔드 테스트 잡 추가
 - [ ] **Phase 1 – 유틸/훅 단위 테스트** — `src/lib/apiClient.ts` 인터셉터와 401 리다이렉션, `src/providers/authProvider.ts`의 로그인/로그아웃/토큰 만료 흐름, `src/pages/chat/hooks/useChat.ts`의 SSE 스트림, 에러 핸들링, 메시지 버퍼 초기화 로직을 MSW 기반으로 검증
 - [ ] **Phase 2 – 공용 컴포넌트 상호작용 테스트** — `src/components/InlineEditCell.tsx`, `src/components/CommandPalette.tsx`, `src/components/TableSkeleton.tsx`, `src/components/ui/*` 토글류 컴포넌트의 키보드·접근성 동작과 토스트(`src/hooks/use-toast.ts`) 호출 여부를 사용자 동작 중심으로 확인
 - [ ] **Phase 3 – 페이지 시나리오 테스트** — `src/pages/login.tsx`, `src/pages/setup.tsx`, `src/pages/topics/*.tsx`, `src/pages/contexts/*.tsx`, `src/pages/chat/index.tsx`에 대해 Refine 훅과 라우팅을 모킹하여 필터링/일괄 편집/컨텍스트 업로드/채팅 스트리밍 등 핵심 플로우를 검증하고 주요 회귀 버그 사례를 재현하는 테스트 추가
@@ -29,6 +29,7 @@
 
 ## 최근 완료 하이라이트
 
+- **다크 모드 완료** — CSS 변수 기반 테마 시스템, light/dark/system 토글, localStorage 저장, FOUC 방지, 37개 테스트 통과 (2025-10-09)
 - **Golden Dataset 통합 테스트 완료** — Qdrant 벡터 검색 100% 정확도 달성, BGE 리랭킹 유지 확인 (2025-10-09)
 - **Admin datetime 직렬화** — `AdminTopicOut`, `AdminContextOut`에 ISO 8601 timezone-aware 직렬화 추가 (2025-10-08)
 - **운영 데이터 백업/복원 가이드** — 5가지 재해 복구 시나리오, 리허설 자동화 스크립트, 트러블슈팅 포함 (2025-10-08)
