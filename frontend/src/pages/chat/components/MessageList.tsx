@@ -8,10 +8,16 @@ import {
   CollapsibleTrigger,
 } from "../../../components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { FeedbackControls } from "./FeedbackControls";
 
 interface MessageListProps {
   messages: Message[];
   isStreaming: boolean;
+  onFeedbackChange?: (
+    historyId: number,
+    score: number,
+    comment: string | null,
+  ) => void;
 }
 
 interface MarkdownContentProps {
@@ -146,7 +152,11 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
   );
 };
 
-export const MessageList = ({ messages, isStreaming }: MessageListProps) => {
+export const MessageList = ({
+  messages,
+  isStreaming,
+  onFeedbackChange,
+}: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [expandedCitations, setExpandedCitations] = useState<Set<string>>(new Set());
 
@@ -252,6 +262,20 @@ export const MessageList = ({ messages, isStreaming }: MessageListProps) => {
                   })}
                 </CollapsibleContent>
               </Collapsible>
+            )}
+
+            {message.role === "assistant" && message.historyId && (
+              <div className="mt-4 border-t border-secondary-200 pt-4">
+                <FeedbackControls
+                  historyId={message.historyId}
+                  initialScore={message.feedbackScore ?? 0}
+                  initialComment={message.feedbackComment ?? ""}
+                  disabled={isStreaming}
+                  onChange={(score, comment) =>
+                    onFeedbackChange?.(message.historyId as number, score, comment)
+                  }
+                />
+              </div>
             )}
           </div>
         </div>

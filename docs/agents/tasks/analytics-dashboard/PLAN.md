@@ -23,6 +23,7 @@
    - `GET /admin/analytics/topics` - 토픽별 통계
    - `GET /admin/analytics/questions/trend?days=7` - 질문 추세 (기간별)
    - `GET /admin/analytics/feedback/distribution` - 피드백 점수 분포
+   - `GET /admin/analytics/feedback/comments?topic_id=&limit=` - 최신 피드백 코멘트
 
 3. **`backend/routers/admin/__init__.py`** - analytics_router export
 
@@ -43,6 +44,7 @@
    - 질문 추세 차트 (Line Chart)
    - 토픽별 활동 차트 (Bar Chart)
    - 피드백 분포 차트 (Pie Chart)
+   - 최신 피드백 코멘트 리스트 + 토픽 필터, 로딩 상태
 
 8. **`frontend/src/App.tsx`** - `/analytics` 라우트 추가
 
@@ -54,6 +56,8 @@
 - `test_analytics_topics_stats` - 토픽별 질문 수, 평균 피드백 검증
 - `test_analytics_questions_trend_7days` - 7일간 일자별 집계
 - `test_analytics_feedback_distribution` - 피드백 점수 분포 (positive/negative/neutral)
+- `test_feedback_comments_empty` - 피드백 코멘트가 없을 때 빈 배열 반환
+- `test_feedback_comments_with_data` - 토픽 필터/정렬/제한 검증
 - `test_analytics_require_admin` - 비관리자 접근 시 403
 
 ### Frontend Validation
@@ -61,14 +65,15 @@
 - 차트 데이터 바인딩 (Recharts 컴포넌트)
 - 빈 데이터 시 placeholder 메시지
 - 날짜 범위 필터 (7일/30일 선택)
+- 피드백 코멘트 리스트 로딩/필터링 동작
 
 ## Steps
 
 ### Backend (TDD)
 1. [ ] **[Structural]** Schemas: `backend/schemas/admin.py`에 Analytics 스키마 추가
-2. [ ] **[Behavioral]** Router: `backend/routers/admin/analytics.py` 생성 + 4개 엔드포인트
+2. [ ] **[Behavioral]** Router: `backend/routers/admin/analytics.py` 생성 + 5개 엔드포인트
 3. [ ] **[Structural]** Register: `backend/routers/admin/__init__.py`, `backend/main.py` 라우터 등록
-4. [ ] **[Behavioral]** Tests: `backend/tests/admin/test_analytics.py` 6개 테스트 작성 + 검증
+4. [ ] **[Behavioral]** Tests: `backend/tests/admin/test_analytics.py` 8개 테스트 작성 + 검증
 
 ### Frontend
 5. [ ] **[Structural]** Dependencies: recharts 설치 (`pnpm add recharts`)
@@ -97,5 +102,5 @@
 - [x] Step 5: Dependencies (recharts)
 - [x] Step 6: Frontend page
 - [x] Step 7: Routing
-- [ ] Step 8: Integration check (수동 검증 필요)
+- [x] Step 8: Integration check (수동 검증 필요)
 - [x] Step 9: Quality checks (ruff + mypy 통과, analytics 테스트 통과)

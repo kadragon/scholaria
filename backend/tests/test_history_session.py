@@ -6,12 +6,55 @@ from fastapi.testclient import TestClient
 
 from backend.main import app
 from backend.models.history import QuestionHistory
+from backend.models.topic import Topic
 
 client = TestClient(app)
 
 
 class TestSessionHistoryEndpoint:
     """Test session-based conversation history retrieval."""
+
+    def test_create_history_record(self, db_session) -> None:
+        """POST /history should persist question/answer pair."""
+        topic = Topic(
+            name="Sample Topic",
+            slug="sample-topic",
+            description="Desc",
+            system_prompt="Prompt",
+        )
+        db_session.add(topic)
+        db_session.commit()
+
+        payload = {
+            "topic_id": topic.id,
+            "question": "What is the schedule?",
+            "answer": "Classes start at 9 AM.",
+            "session_id": "sess-123",
+        }
+
+        response = client.post("/api/history", json=payload)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["question"] == payload["question"]
+        assert data["answer"] == payload["answer"]
+        assert data["session_id"] == payload["session_id"]
+        topic_value = data.get("topic") or data.get("topic_id")
+        assert topic_value == topic.id
+        assert data["feedback_score"] == 0
+        assert data["feedback_comment"] is None
+
+    def test_create_history_requires_valid_topic(self, db_session) -> None:
+        """POST /history should return 404 when topic does not exist."""
+        payload = {
+            "topic_id": 999,
+            "question": "Missing topic?",
+            "answer": "No topic.",
+            "session_id": "sess-404",
+        }
+
+        response = client.post("/api/history", json=payload)
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Topic not found"
 
     def test_get_session_history_empty(self, db_session) -> None:
         """Should return empty list for non-existent session."""

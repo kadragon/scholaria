@@ -49,6 +49,22 @@ describe("useChat", () => {
         });
       })
     );
+    server.use(
+      http.post(`${API_URL}/history`, async ({ request }) => {
+        const body = await request.json();
+        return HttpResponse.json({
+          id: 42,
+          topic_id: body.topic_id,
+          question: body.question,
+          answer: body.answer,
+          session_id: body.session_id,
+          feedback_score: 0,
+          feedback_comment: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      })
+    );
 
     const { result } = renderHook(() =>
       useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() })
@@ -68,6 +84,9 @@ describe("useChat", () => {
     expect(result.current.messages[1].citations).toEqual([
       { context_item_id: 1, title: "Test", content: "Test content", score: 0.9, context_type: "markdown" },
     ]);
+    expect(result.current.messages[1].historyId).toBe(42);
+    expect(result.current.messages[1].feedbackScore).toBe(0);
+    expect(result.current.messages[1].feedbackComment).toBeNull();
   });
 
   it("should handle error event from stream", async () => {

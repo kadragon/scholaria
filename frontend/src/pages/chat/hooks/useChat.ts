@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { API_BASE_URL, getAuthHeaders } from "../../../lib/apiConfig";
+import { apiClient } from "../../../lib/apiClient";
 
 export interface Message {
   id: string;
@@ -13,6 +14,9 @@ export interface Message {
     context_type: string;
   }>;
   timestamp: Date;
+  historyId?: number;
+  feedbackScore?: number;
+  feedbackComment?: string | null;
 }
 
 interface UseChatOptions {
@@ -26,6 +30,7 @@ interface UseChatReturn {
   isStreaming: boolean;
   sendMessage: (content: string) => Promise<void>;
   clearMessages: () => void;
+  updateMessageFeedback: (historyId: number, score: number, comment: string | null) => void;
 }
 
 export const useChat = ({
@@ -42,10 +47,11 @@ export const useChat = ({
     async (content: string) => {
       if (!topicId || !content.trim() || isStreaming) return;
 
+      const questionText = content.trim();
       const userMessage: Message = {
         id: `user-${Date.now()}`,
         role: "user",
-        content: content.trim(),
+        content: questionText,
         timestamp: new Date(),
       };
 
@@ -66,13 +72,47 @@ export const useChat = ({
         },
       ]);
 
+      const updateAssistantMessage = (
+        updater: (message: Message) => Message,
+      ) => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId ? updater(msg) : msg,
+          ),
+        );
+      };
+
+      const persistHistory = async (finalAnswer: string) => {
+        if (!topicId) return;
+        try {
+          const response = await apiClient.post("/history", {
+            topic_id: topicId,
+            question: questionText,
+            answer: finalAnswer,
+            session_id: sessionId,
+          });
+          const record = response.data;
+          updateAssistantMessage((msg) => ({
+            ...msg,
+            historyId: record.id,
+            feedbackScore: record.feedback_score,
+            feedbackComment: record.feedback_comment,
+          }));
+        } catch (error) {
+          const err =
+            error instanceof Error ? error : new Error(String(error));
+          console.error("Failed to persist history:", err);
+          onError?.(err);
+        }
+      };
+
       try {
         const response = await fetch(`${API_BASE_URL}/rag/stream`, {
           method: "POST",
           headers: getAuthHeaders(),
           body: JSON.stringify({
             topic_id: topicId,
-            question: content.trim(),
+            question: questionText,
             session_id: sessionId,
           }),
         });
@@ -111,29 +151,19 @@ export const useChat = ({
 
             if (event.type === "answer_chunk") {
               currentAssistantMessageRef.current += event.content;
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? {
-                        ...msg,
-                        content: currentAssistantMessageRef.current,
-                      }
-                    : msg
-                )
-              );
+              updateAssistantMessage((msg) => ({
+                ...msg,
+                content: currentAssistantMessageRef.current,
+              }));
             } else if (event.type === "citations") {
               currentCitationsRef.current = event.citations;
             } else if (event.type === "done") {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? {
-                        ...msg,
-                        citations: currentCitationsRef.current,
-                      }
-                    : msg
-                )
-              );
+              updateAssistantMessage((msg) => ({
+                ...msg,
+                citations: currentCitationsRef.current,
+              }));
+              const finalAnswer = currentAssistantMessageRef.current;
+              await persistHistory(finalAnswer);
               break;
             } else if (event.type === "error") {
               throw new Error(event.message || "스트리밍 중 오류 발생");
@@ -166,10 +196,24 @@ export const useChat = ({
     setMessages([]);
   }, []);
 
+  const updateMessageFeedback = useCallback(
+    (historyId: number, score: number, comment: string | null) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.historyId === historyId
+            ? { ...msg, feedbackScore: score, feedbackComment: comment }
+            : msg,
+        ),
+      );
+    },
+    [],
+  );
+
   return {
     messages,
     isStreaming,
     sendMessage,
     clearMessages,
+    updateMessageFeedback,
   };
 };

@@ -21,7 +21,7 @@ export const ChatPage = () => {
     return newId;
   });
 
-  const { messages, isStreaming, sendMessage, clearMessages } = useChat({
+  const { messages, isStreaming, sendMessage, clearMessages, updateMessageFeedback } = useChat({
     topicId: selectedTopicId,
     sessionId,
     onError: (error) => {
@@ -128,7 +128,11 @@ export const ChatPage = () => {
                 </div>
               </div>
             ) : (
-              <MessageList messages={messages} isStreaming={isStreaming} />
+              <MessageList
+                messages={messages}
+                isStreaming={isStreaming}
+                onFeedbackChange={updateMessageFeedback}
+              />
             )}
 
             <MessageInput

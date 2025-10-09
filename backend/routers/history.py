@@ -1,4 +1,4 @@
-"""FastAPI router for question history endpoints (read-only)."""
+"""FastAPI router for question history endpoints."""
 
 from __future__ import annotations
 
@@ -7,9 +7,43 @@ from sqlalchemy.orm import Session
 
 from backend.models.base import get_db
 from backend.models.history import QuestionHistory
-from backend.schemas.history import FeedbackRequest, QuestionHistoryOut
+from backend.models.topic import Topic
+from backend.schemas.history import (
+    FeedbackRequest,
+    QuestionHistoryCreate,
+    QuestionHistoryOut,
+)
 
 router = APIRouter()
+
+
+@router.post(
+    "/history",
+    response_model=QuestionHistoryOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_history(
+    request: QuestionHistoryCreate,
+    db: Session = Depends(get_db),
+) -> QuestionHistory:
+    """Create a new question history record."""
+    topic_exists = db.query(Topic.id).filter(Topic.id == request.topic_id).first()
+    if not topic_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Topic not found",
+        )
+
+    history = QuestionHistory(
+        topic_id=request.topic_id,
+        question=request.question,
+        answer=request.answer,
+        session_id=request.session_id,
+    )
+    db.add(history)
+    db.commit()
+    db.refresh(history)
+    return history
 
 
 @router.get("/history", response_model=list[QuestionHistoryOut])
@@ -49,6 +83,15 @@ def update_feedback(
         )
 
     history.feedback_score = request.feedback_score
+
+    if "feedback_comment" in request.model_fields_set:
+        comment = request.feedback_comment
+        if comment is not None:
+            cleaned = comment.strip()
+            history.feedback_comment = cleaned or None
+        else:
+            history.feedback_comment = None
+
     db.commit()
     db.refresh(history)
     return history

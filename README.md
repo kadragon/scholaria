@@ -69,14 +69,19 @@ uv run ruff check . && uv run ruff format --check . && uv run mypy . && uv run p
 
 ### Testing
 ```bash
-# All tests
-uv run pytest backend/tests/
+# All tests (with coverage, 80% threshold enforced)
+uv run pytest
 
-# With coverage
-uv run pytest backend/tests/ --cov=backend --cov-report=html
+# Watch mode (parallel execution)
+uv run pytest -n auto --looponfail
 
 # Specific test file
 uv run pytest backend/tests/test_auth.py -v
+
+# Coverage report
+# - Terminal: automatic with every pytest run
+# - HTML: open htmlcov/index.html after test run
+# - Current: 85% coverage (195 tests, 2 skipped)
 ```
 
 ### Database

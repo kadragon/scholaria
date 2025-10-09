@@ -188,3 +188,18 @@ class FeedbackDistributionOut(BaseModel):
     positive: int
     neutral: int
     negative: int
+
+
+class FeedbackCommentOut(BaseModel):
+    """Individual feedback comment entry for analytics."""
+
+    history_id: int
+    topic_id: int
+    topic_name: str
+    feedback_score: int
+    feedback_comment: str
+    created_at: datetime
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, value: datetime) -> str:
+        return to_local_iso(value)
