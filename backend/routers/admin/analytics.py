@@ -12,6 +12,7 @@ from backend.models.topic import Topic
 from backend.models.user import User
 from backend.schemas.admin import (
     AnalyticsSummaryOut,
+    FeedbackCommentOut,
     FeedbackDistributionOut,
     QuestionTrendOut,
     TopicStatsOut,
@@ -122,3 +123,43 @@ async def get_feedback_distribution(
     return FeedbackDistributionOut(
         positive=positive, neutral=neutral, negative=negative
     )
+
+
+@router.get("/feedback/comments", response_model=list[FeedbackCommentOut])
+async def get_feedback_comments(
+    db: Annotated[Session, Depends(get_db)],
+    _current_admin: Annotated[User, Depends(require_admin)],
+    topic_id: Annotated[int | None, Query(ge=1)] = None,
+    limit: Annotated[int, Query(gt=0, le=100)] = 20,
+) -> list[FeedbackCommentOut]:
+    query = (
+        db.query(
+            QuestionHistory.id.label("history_id"),
+            Topic.id.label("topic_id"),
+            Topic.name.label("topic_name"),
+            QuestionHistory.feedback_score,
+            QuestionHistory.feedback_comment,
+            QuestionHistory.created_at,
+        )
+        .join(Topic, Topic.id == QuestionHistory.topic_id)
+        .filter(QuestionHistory.feedback_comment.isnot(None))
+        .filter(func.trim(QuestionHistory.feedback_comment) != "")
+        .order_by(QuestionHistory.created_at.desc())
+    )
+
+    if topic_id is not None:
+        query = query.filter(QuestionHistory.topic_id == topic_id)
+
+    results = query.limit(limit).all()
+
+    return [
+        FeedbackCommentOut(
+            history_id=row.history_id,
+            topic_id=row.topic_id,
+            topic_name=row.topic_name,
+            feedback_score=row.feedback_score,
+            feedback_comment=row.feedback_comment,
+            created_at=row.created_at,
+        )
+        for row in results
+    ]

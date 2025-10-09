@@ -44,6 +44,16 @@ export const AnalyticsSkeleton = () => {
           <Skeleton className="h-[300px] w-full" />
         </div>
       </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 space-y-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <Skeleton className="h-6 w-44" />
+          <Skeleton className="h-9 w-40" />
+        </div>
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
     </div>
   );
 };

@@ -19,7 +19,7 @@
 ## 선택적 향상안
 
 - [ ] **성능 관측 강화** — OpenTelemetry + 대시보드로 RAG 체인의 메트릭 가시화
-- [ ] **피드백 루프 확장** — 좋아요/싫어요 외에 자유 서술 피드백 수집 UX 추가
+- [x] **피드백 루프 확장** — 좋아요/싫어요 + 자유 서술 피드백 입력 UI (챗 인터페이스, `/api/history/{id}/feedback`)
 
 ## Frontend 테스트 계획
 
@@ -33,6 +33,8 @@
 
 - **백엔드 커버리지 임계값 설정** — 85% 커버리지, 80% 임계값, backend-ci.yml 3개 잡 (test+coverage, lint, typecheck) (2025-10-09)
 - **Phase 4 커버리지 가드 완료** — 25% 임계값 설정, CI coverage 잡 추가, PR 템플릿 (백엔드/프런트엔드 체크리스트) (2025-10-09)
+- **피드백 코멘트 분석 뷰** — `/admin/analytics/feedback/comments` 엔드포인트 및 관리자 대시보드 코멘트 리스트 + 토픽 필터 (2025-10-09)
+- **Chat 피드백 입력 UI** — 세션 히스토리 생성 + 좋아요/싫어요 및 자유 서술 코멘트 PATCH 연동 (2025-10-09)
 - **Phase 3 페이지 시나리오 테스트 완료** — login, setup, topics list, contexts list, chat 페이지의 핵심 플로우 검증 (17 tests, 65 total tests) (2025-10-09)
 - **다크 모드 완료** — CSS 변수 기반 테마 시스템, light/dark/system 토글, localStorage 저장, FOUC 방지, 37개 테스트 통과 (2025-10-09)
 - **Golden Dataset 통합 테스트 완료** — Qdrant 벡터 검색 100% 정확도 달성, BGE 리랭킹 유지 확인 (2025-10-09)

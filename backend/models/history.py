@@ -28,6 +28,7 @@ class QuestionHistory(Base):
     session_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     is_favorited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     feedback_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    feedback_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=text("(CURRENT_TIMESTAMP)"),

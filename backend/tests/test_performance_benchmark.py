@@ -136,6 +136,6 @@ class TestRAGPerformance:
 
         successful = [r for r in results if not isinstance(r, Exception)]
         assert len(successful) == 10, f"Only {len(successful)}/10 requests succeeded"
-        assert elapsed < 5.0, (
-            f"10 concurrent requests took {elapsed:.2f}s (expected < 5s)"
-        )
+        assert (
+            elapsed < 5.0
+        ), f"10 concurrent requests took {elapsed:.2f}s (expected < 5s)"

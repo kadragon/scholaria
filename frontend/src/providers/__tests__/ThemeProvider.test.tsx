@@ -115,16 +115,20 @@ describe("ThemeProvider", () => {
       onchange: null,
       addListener: vi.fn(),
       removeListener: vi.fn(),
-      addEventListener: vi.fn((event: string, listener: (event: MediaQueryListEvent) => void) => {
-        if (event === "change") {
-          listeners.push(listener);
-        }
-      }),
-      removeEventListener: vi.fn((event: string, listener: (event: MediaQueryListEvent) => void) => {
-        if (event === "change") {
-          listeners = listeners.filter((l) => l !== listener);
-        }
-      }),
+      addEventListener: vi.fn(
+        (event: string, listener: (event: MediaQueryListEvent) => void) => {
+          if (event === "change") {
+            listeners.push(listener);
+          }
+        },
+      ),
+      removeEventListener: vi.fn(
+        (event: string, listener: (event: MediaQueryListEvent) => void) => {
+          if (event === "change") {
+            listeners = listeners.filter((l) => l !== listener);
+          }
+        },
+      ),
       dispatchEvent: vi.fn(),
     });
 
