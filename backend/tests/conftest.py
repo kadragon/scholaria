@@ -131,6 +131,10 @@ def integration_db_with_golden_data(golden_dataset):
     Provides database with golden dataset contexts and embeddings for integration tests.
 
     Requires: Redis and Qdrant services running (docker-compose.dev.yml)
+
+    WARNING: This fixture creates records with explicit IDs (1, 2, 3...) in the
+    production/dev database. To avoid data conflicts, ensure you clean up before
+    running tests or use a dedicated test database (scholaria_test).
     """
     from typing import Any
 
@@ -144,14 +148,6 @@ def integration_db_with_golden_data(golden_dataset):
         pytest.skip("OpenAI API key not configured for integration tests")
 
     _ensure_engine()
-
-    try:
-        qdrant_service = QdrantService()
-        qdrant_service.client.get_collection(qdrant_service.collection_name)
-    except Exception:
-        pytest.skip("Qdrant service not available for integration tests")
-
-    embedding_service = EmbeddingService()
 
     db_session = SessionLocal()
 
@@ -248,6 +244,30 @@ def integration_db_with_golden_data(golden_dataset):
         },
     }
 
+    try:
+        db_session.query(ContextItem).filter(
+            ContextItem.id.in_(list(fake_contexts_data.keys()))
+        ).delete(synchronize_session=False)
+
+        existing_topics = db_session.query(Topic).filter(Topic.id.in_([1, 2, 3])).all()
+        for topic in existing_topics:
+            for context in topic.contexts:
+                db_session.delete(context)
+            db_session.delete(topic)
+
+        db_session.commit()
+    except Exception:
+        db_session.rollback()
+
+    try:
+        qdrant_service = QdrantService()
+        qdrant_service.client.get_collection(qdrant_service.collection_name)
+    except Exception:
+        pytest.skip("Qdrant service not available for integration tests")
+
+    embedding_service = EmbeddingService()
+
+    created_topic_ids: list[int] = []
     topics: dict[int, Topic] = {}
     for topic_id in [1, 2, 3]:
         topic = Topic(
@@ -258,8 +278,10 @@ def integration_db_with_golden_data(golden_dataset):
         )
         db_session.add(topic)
         topics[topic_id] = topic
+        created_topic_ids.append(topic_id)
     db_session.commit()
 
+    created_context_ids: list[int] = []
     context_item_ids_created: list[int] = []
     for context_item_id, data in fake_contexts_data.items():
         context = Context(
@@ -272,6 +294,7 @@ def integration_db_with_golden_data(golden_dataset):
         )
         db_session.add(context)
         db_session.flush()
+        created_context_ids.append(context.id)
 
         topic_id_for_context = int(data["topic_id"])
         context.topics.append(topics[topic_id_for_context])
@@ -308,19 +331,30 @@ def integration_db_with_golden_data(golden_dataset):
 
     yield db_session
 
-    for cid in context_item_ids_created:
-        try:
-            qdrant_service.client.delete(
-                collection_name=qdrant_service.collection_name,
-                points_selector=[cid],
-            )
-        except Exception:
-            pass
+    try:
+        for cid in context_item_ids_created:
+            try:
+                qdrant_service.client.delete(
+                    collection_name=qdrant_service.collection_name,
+                    points_selector=[cid],
+                )
+            except Exception:
+                pass
 
-    for table in reversed(Base.metadata.sorted_tables):
-        try:
-            db_session.execute(table.delete())
-        except Exception:
-            pass
-    db_session.commit()
-    db_session.close()
+        db_session.query(ContextItem).filter(
+            ContextItem.id.in_(context_item_ids_created)
+        ).delete(synchronize_session=False)
+
+        db_session.query(Context).filter(Context.id.in_(created_context_ids)).delete(
+            synchronize_session=False
+        )
+
+        db_session.query(Topic).filter(Topic.id.in_(created_topic_ids)).delete(
+            synchronize_session=False
+        )
+
+        db_session.commit()
+    except Exception:
+        db_session.rollback()
+    finally:
+        db_session.close()
