@@ -59,3 +59,12 @@
 - **Commits:** 8f249ef, bc04488
 - **Tests:** 4 passed, 2 skipped (6 new tests)
 - **Artifacts:** `_archive/2025/Q4/performance-benchmark/TASK_SUMMARY.md`
+
+## dark-mode (2025-10-09)
+- **Title:** Dark Mode Implementation
+- **Status:** Complete
+- **Dates:** 2025-10-09
+- **Keep Level:** full
+- **Commits:** d42296f, ee39050, 2fc1314 (PR #50)
+- **Tests:** 37 passed (13 new: ThemeProvider 7, ThemeToggle 6)
+- **Artifacts:** `_archive/2025/Q4/dark-mode/` (RESEARCH.md, PLAN.md, PROGRESS.md, TASK_SUMMARY.md)
