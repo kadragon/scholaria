@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import pytest
+import pytest_asyncio
 
 from backend.config import settings
 from backend.services.rag_service import AsyncRAGService
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def integration_rag_service():
     """Provides AsyncRAGService for integration tests with real services."""
     import redis.asyncio as redis

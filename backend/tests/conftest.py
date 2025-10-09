@@ -126,7 +126,7 @@ def golden_dataset():
 
 
 @pytest.fixture(scope="function")
-def integration_db_with_golden_data(db_session, golden_dataset):
+def integration_db_with_golden_data(golden_dataset):
     """
     Provides database with golden dataset contexts and embeddings for integration tests.
 
@@ -134,9 +134,16 @@ def integration_db_with_golden_data(db_session, golden_dataset):
     """
     from typing import Any
 
+    from backend.config import settings
     from backend.models import Context, ContextItem, Topic
+    from backend.models.base import SessionLocal, _ensure_engine
     from backend.retrieval.embeddings import EmbeddingService
     from backend.retrieval.qdrant import QdrantService
+
+    if not settings.OPENAI_API_KEY:
+        pytest.skip("OpenAI API key not configured for integration tests")
+
+    _ensure_engine()
 
     try:
         qdrant_service = QdrantService()
@@ -145,6 +152,8 @@ def integration_db_with_golden_data(db_session, golden_dataset):
         pytest.skip("Qdrant service not available for integration tests")
 
     embedding_service = EmbeddingService()
+
+    db_session = SessionLocal()
 
     fake_contexts_data: dict[int, dict[str, Any]] = {
         1: {
@@ -254,7 +263,8 @@ def integration_db_with_golden_data(db_session, golden_dataset):
     context_item_ids_created: list[int] = []
     for context_item_id, data in fake_contexts_data.items():
         context = Context(
-            title=str(data["title"]),
+            name=str(data["title"]),
+            description=f"Test context {context_item_id} for golden dataset",
             context_type="markdown",
             original_content=str(data["content"]),
             chunk_count=1,
@@ -277,7 +287,20 @@ def integration_db_with_golden_data(db_session, golden_dataset):
         db_session.flush()
 
         embedding = embedding_service.generate_embedding(str(data["content"]))
-        qdrant_service.store_embedding(context_item_id, embedding)
+
+        payload = {
+            "context_item_id": context_item_id,
+            "title": str(data["title"]),
+            "content": str(data["content"]),
+            "context_id": context.id,
+            "context_type": "markdown",
+        }
+        from qdrant_client.models import PointStruct
+
+        point = PointStruct(id=context_item_id, vector=embedding, payload=payload)
+        qdrant_service.client.upsert(
+            collection_name=qdrant_service.collection_name, points=[point]
+        )
 
         context_item_ids_created.append(context_item_id)
 
@@ -293,3 +316,11 @@ def integration_db_with_golden_data(db_session, golden_dataset):
             )
         except Exception:
             pass
+
+    for table in reversed(Base.metadata.sorted_tables):
+        try:
+            db_session.execute(table.delete())
+        except Exception:
+            pass
+    db_session.commit()
+    db_session.close()
