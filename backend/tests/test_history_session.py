@@ -38,8 +38,7 @@ class TestSessionHistoryEndpoint:
         assert data["question"] == payload["question"]
         assert data["answer"] == payload["answer"]
         assert data["session_id"] == payload["session_id"]
-        topic_value = data.get("topic") or data.get("topic_id")
-        assert topic_value == topic.id
+        assert data["topic_id"] == topic.id
         assert data["feedback_score"] == 0
         assert data["feedback_comment"] is None
 

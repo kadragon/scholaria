@@ -27,8 +27,8 @@ repos:
     rev: v3.1.0
     hooks:
       - id: prettier
-        files: ^admin-frontend/.*\.(ts|tsx|js|jsx|json|css)$
-        exclude: ^admin-frontend/(dist|node_modules)/
+        files: ^frontend/.*\.(ts|tsx|js|jsx|json|css)$
+        exclude: ^frontend/(dist|node_modules|coverage)/
 
   - repo: local
     hooks:
@@ -39,12 +39,31 @@ repos:
         types: [python]
         require_serial: true
 
+      - id: backend-test
+        name: backend-test
+        entry: uv run pytest
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+
+      - id: frontend-lint
+        name: frontend-lint
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+
+      - id: frontend-typecheck
+        name: frontend-typecheck
+        entry: bash -c 'cd frontend && npm run typecheck'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+
       - id: frontend-test
         name: frontend-test
         entry: bash -c 'cd frontend && npm run test'
         language: system
         files: ^frontend/
         pass_filenames: false
-
-  # Django tests removed from pre-push for faster workflow
-  # Run manually when needed: uv run python manage.py test --settings=core.test_settings

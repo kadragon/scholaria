@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 
-const API_URL = import.meta.env.VITE_API_URL?.replace('/admin', '') || "http://localhost:8001/api";
+const API_URL =
+  import.meta.env.VITE_API_URL?.replace("/admin", "") ||
+  "http://localhost:8001/api";
 
 interface SetupCheckResponse {
   needs_setup: boolean;
@@ -24,7 +26,7 @@ export const SetupPage = () => {
   const checkSetupStatus = useCallback(async () => {
     try {
       const response = await axios.get<SetupCheckResponse>(
-        `${API_URL}/setup/check`
+        `${API_URL}/setup/check`,
       );
       if (!response.data.needs_setup) {
         navigate("/login");
@@ -65,13 +67,14 @@ export const SetupPage = () => {
 
       toast({
         title: "계정 생성 성공",
-        description: "관리자 계정이 생성되었습니다. 로그인 페이지로 이동합니다.",
+        description:
+          "관리자 계정이 생성되었습니다. 로그인 페이지로 이동합니다.",
       });
       navigate("/login");
     } catch (err: unknown) {
       const errorMessage =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        "계정 생성에 실패했습니다.";
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail || "계정 생성에 실패했습니다.";
       setError(errorMessage);
     } finally {
       setIsLoading(false);

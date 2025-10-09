@@ -17,9 +17,9 @@ export const ContextCreate = () => {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [contextType, setContextType] = useState<"MARKDOWN" | "PDF" | "FAQ" | "WEBSCRAPER">(
-    "MARKDOWN",
-  );
+  const [contextType, setContextType] = useState<
+    "MARKDOWN" | "PDF" | "FAQ" | "WEBSCRAPER"
+  >("MARKDOWN");
   const [originalContent, setOriginalContent] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [webUrl, setWebUrl] = useState("");
@@ -60,9 +60,10 @@ export const ContextCreate = () => {
           }
           setProcessingStatus(null);
           setIsSubmitting(false);
-          const descriptionText = contextType === "PDF"
-            ? "PDF 파싱 및 청킹이 완료되었습니다."
-            : "웹 페이지 스크래핑 및 청킹이 완료되었습니다.";
+          const descriptionText =
+            contextType === "PDF"
+              ? "PDF 파싱 및 청킹이 완료되었습니다."
+              : "웹 페이지 스크래핑 및 청킹이 완료되었습니다.";
           toast({
             title: "컨텍스트 생성 성공",
             description: descriptionText,
@@ -74,9 +75,10 @@ export const ContextCreate = () => {
           }
           setProcessingStatus(null);
           setIsSubmitting(false);
-          const errorDescText = contextType === "PDF"
-            ? "PDF 파싱 중 오류가 발생했습니다."
-            : "웹 페이지 스크래핑 중 오류가 발생했습니다.";
+          const errorDescText =
+            contextType === "PDF"
+              ? "PDF 파싱 중 오류가 발생했습니다."
+              : "웹 페이지 스크래핑 중 오류가 발생했습니다.";
           toast({
             title: "처리 실패",
             description: errorDescText,
@@ -157,12 +159,18 @@ export const ContextCreate = () => {
       }
     } catch (error: unknown) {
       let errorMessage = "컨텍스트 생성에 실패했습니다.";
-      const detail = (error as { response?: { data?: { detail?: string | Array<{ msg?: string }> } } })?.response?.data?.detail;
+      const detail = (
+        error as {
+          response?: { data?: { detail?: string | Array<{ msg?: string }> } };
+        }
+      )?.response?.data?.detail;
 
       if (typeof detail === "string") {
         errorMessage = detail;
       } else if (Array.isArray(detail)) {
-        errorMessage = detail.map((err) => err.msg || JSON.stringify(err)).join(", ");
+        errorMessage = detail
+          .map((err) => err.msg || JSON.stringify(err))
+          .join(", ");
       }
 
       toast({
@@ -252,14 +260,16 @@ export const ContextCreate = () => {
                     }}
                   />
                   <p className="text-sm text-muted-foreground mt-2">
-                    PDF 파일을 업로드하면 자동으로 파싱 및 청킹됩니다. (최대 {MAX_FILE_SIZE_MB}MB)
+                    PDF 파일을 업로드하면 자동으로 파싱 및 청킹됩니다. (최대{" "}
+                    {MAX_FILE_SIZE_MB}MB)
                   </p>
                 </div>
               </TabsContent>
 
               <TabsContent value="FAQ" className="space-y-4 mt-4">
                 <p className="text-sm text-muted-foreground">
-                  FAQ 컨텍스트가 생성됩니다. Q&A 쌍은 생성 후 추가할 수 있습니다.
+                  FAQ 컨텍스트가 생성됩니다. Q&A 쌍은 생성 후 추가할 수
+                  있습니다.
                 </p>
               </TabsContent>
 
@@ -274,7 +284,8 @@ export const ContextCreate = () => {
                     placeholder="https://example.com"
                   />
                   <p className="text-sm text-muted-foreground mt-2">
-                    웹 페이지를 자동으로 스크래핑하여 내용을 추출하고 청킹합니다.
+                    웹 페이지를 자동으로 스크래핑하여 내용을 추출하고
+                    청킹합니다.
                   </p>
                 </div>
               </TabsContent>
@@ -284,7 +295,9 @@ export const ContextCreate = () => {
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting
                   ? processingStatus === "PENDING"
-                    ? contextType === "PDF" ? "PDF 파싱 중..." : "웹 스크래핑 중..."
+                    ? contextType === "PDF"
+                      ? "PDF 파싱 중..."
+                      : "웹 스크래핑 중..."
                     : "생성 중..."
                   : "생성"}
               </Button>

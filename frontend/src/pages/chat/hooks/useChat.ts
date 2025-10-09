@@ -30,7 +30,11 @@ interface UseChatReturn {
   isStreaming: boolean;
   sendMessage: (content: string) => Promise<void>;
   clearMessages: () => void;
-  updateMessageFeedback: (historyId: number, score: number, comment: string | null) => void;
+  updateMessageFeedback: (
+    historyId: number,
+    score: number,
+    comment: string | null,
+  ) => void;
 }
 
 export const useChat = ({
@@ -99,8 +103,7 @@ export const useChat = ({
             feedbackComment: record.feedback_comment,
           }));
         } catch (error) {
-          const err =
-            error instanceof Error ? error : new Error(String(error));
+          const err = error instanceof Error ? error : new Error(String(error));
           console.error("Failed to persist history:", err);
           onError?.(err);
         }
@@ -182,14 +185,14 @@ export const useChat = ({
                     currentAssistantMessageRef.current ||
                     "답변 생성 중 오류가 발생했습니다",
                 }
-              : msg
-          )
+              : msg,
+          ),
         );
       } finally {
         setIsStreaming(false);
       }
     },
-    [topicId, sessionId, isStreaming, onError]
+    [topicId, sessionId, isStreaming, onError],
   );
 
   const clearMessages = useCallback(() => {

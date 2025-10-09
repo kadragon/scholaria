@@ -34,18 +34,21 @@ export const handlers = [
     });
   }),
 
-  http.patch(`${API_BASE_URL}/history/:historyId/feedback`, async ({ request }) => {
-    const body = await request.json();
-    return HttpResponse.json({
-      id: 1,
-      feedback_score: body.feedback_score ?? 0,
-      feedback_comment: body.feedback_comment ?? null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      question: "",
-      answer: "",
-      session_id: "session",
-      topic_id: 1,
-    });
-  }),
+  http.patch(
+    `${API_BASE_URL}/history/:historyId/feedback`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        id: 1,
+        feedback_score: body.feedback_score ?? 0,
+        feedback_comment: body.feedback_comment ?? null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        question: "",
+        answer: "",
+        session_id: "session",
+        topic_id: 1,
+      });
+    },
+  ),
 ];

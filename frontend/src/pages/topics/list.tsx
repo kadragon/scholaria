@@ -51,18 +51,22 @@ export const TopicList = () => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [contextCountFilter, setContextCountFilter] = useState<Set<string>>(new Set());
+  const [contextCountFilter, setContextCountFilter] = useState<Set<string>>(
+    new Set(),
+  );
 
   const filteredData = useMemo(() => {
     if (!data?.data) return [];
 
     return data.data.filter((topic) => {
-      const matchesSearch = searchQuery === "" ||
+      const matchesSearch =
+        searchQuery === "" ||
         topic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         topic.system_prompt?.toLowerCase().includes(searchQuery.toLowerCase());
 
       const hasContexts = (topic.contexts_count || 0) > 0;
-      const matchesContextCount = contextCountFilter.size === 0 ||
+      const matchesContextCount =
+        contextCountFilter.size === 0 ||
         (contextCountFilter.has("has") && hasContexts) ||
         (contextCountFilter.has("none") && !hasContexts);
 
@@ -97,7 +101,7 @@ export const TopicList = () => {
             variant: "destructive",
           });
         },
-      }
+      },
     );
   };
 
@@ -123,7 +127,7 @@ export const TopicList = () => {
             variant: "destructive",
           });
         },
-      }
+      },
     );
   };
 
@@ -143,7 +147,10 @@ export const TopicList = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const ids = data?.data.map((t) => t.id).filter((id): id is number => id !== undefined) || [];
+      const ids =
+        data?.data
+          .map((t) => t.id)
+          .filter((id): id is number => id !== undefined) || [];
       setSelectedIds(new Set(ids));
     } else {
       setSelectedIds(new Set());
@@ -165,10 +172,13 @@ export const TopicList = () => {
 
     setIsUpdating(true);
     try {
-      const response = await apiClient.post("/admin/bulk/update-system-prompt", {
-        topic_ids: Array.from(selectedIds),
-        system_prompt: systemPrompt,
-      });
+      const response = await apiClient.post(
+        "/admin/bulk/update-system-prompt",
+        {
+          topic_ids: Array.from(selectedIds),
+          system_prompt: systemPrompt,
+        },
+      );
 
       const result = response.data;
       toast({
@@ -197,12 +207,18 @@ export const TopicList = () => {
   return (
     <div className="p-8 space-y-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-secondary-900 mb-2">토픽 관리</h1>
-        <p className="text-secondary-600">대화 주제별 토픽을 생성하고 관리합니다</p>
+        <h1 className="text-3xl font-bold text-secondary-900 mb-2">
+          토픽 관리
+        </h1>
+        <p className="text-secondary-600">
+          대화 주제별 토픽을 생성하고 관리합니다
+        </p>
       </div>
       <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-secondary-50 to-white border-b-2 border-secondary-100">
-          <CardTitle className="text-xl font-bold text-secondary-800">토픽 목록</CardTitle>
+          <CardTitle className="text-xl font-bold text-secondary-800">
+            토픽 목록
+          </CardTitle>
           <div className="flex gap-2">
             {selectedIds.size > 0 && (
               <Button
@@ -253,9 +269,13 @@ export const TopicList = () => {
                 <TableRow key={topic.id}>
                   <TableCell>
                     <Checkbox
-                      checked={topic.id !== undefined && typeof topic.id === 'number' && selectedIds.has(topic.id)}
+                      checked={
+                        topic.id !== undefined &&
+                        typeof topic.id === "number" &&
+                        selectedIds.has(topic.id)
+                      }
                       onCheckedChange={(checked) => {
-                        if (typeof topic.id === 'number') {
+                        if (typeof topic.id === "number") {
                           handleSelectOne(topic.id, checked as boolean);
                         }
                       }}
@@ -263,20 +283,24 @@ export const TopicList = () => {
                   </TableCell>
                   <TableCell>{topic.id}</TableCell>
                   <TableCell>
-                    {typeof topic.id === 'number' ? (
+                    {typeof topic.id === "number" ? (
                       <InlineEditCell
                         value={topic.name}
-                        onSave={(newName) => handleUpdateName(topic.id as number, newName)}
+                        onSave={(newName) =>
+                          handleUpdateName(topic.id as number, newName)
+                        }
                       />
                     ) : (
                       topic.name
                     )}
                   </TableCell>
                   <TableCell>
-                    {typeof topic.id === 'number' ? (
+                    {typeof topic.id === "number" ? (
                       <InlineEditCell
                         value={topic.slug}
-                        onSave={(newSlug) => handleUpdateSlug(topic.id as number, newSlug)}
+                        onSave={(newSlug) =>
+                          handleUpdateSlug(topic.id as number, newSlug)
+                        }
                       />
                     ) : (
                       topic.slug
@@ -292,7 +316,7 @@ export const TopicList = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          if (typeof topic.id === 'number') {
+                          if (typeof topic.id === "number") {
                             edit("topics", topic.id);
                           }
                         }}
@@ -303,19 +327,25 @@ export const TopicList = () => {
                         variant="destructive"
                         size="sm"
                         onClick={() => {
-                          if (typeof topic.id === 'number' && confirm(`"${topic.name}" 토픽을 삭제하시겠습니까?`)) {
-                            deleteTopic({
-                              resource: "topics",
-                              id: topic.id,
-                            }, {
-                              onSuccess: () => {
-                                toast({
-                                  title: "성공",
-                                  description: "토픽이 삭제되었습니다.",
-                                });
-                                tableQueryResult.refetch();
+                          if (
+                            typeof topic.id === "number" &&
+                            confirm(`"${topic.name}" 토픽을 삭제하시겠습니까?`)
+                          ) {
+                            deleteTopic(
+                              {
+                                resource: "topics",
+                                id: topic.id,
                               },
-                            });
+                              {
+                                onSuccess: () => {
+                                  toast({
+                                    title: "성공",
+                                    description: "토픽이 삭제되었습니다.",
+                                  });
+                                  tableQueryResult.refetch();
+                                },
+                              },
+                            );
                           }
                         }}
                       >
@@ -338,7 +368,8 @@ export const TopicList = () => {
           <DialogHeader>
             <DialogTitle>시스템 프롬프트 업데이트</DialogTitle>
             <DialogDescription>
-              선택한 {selectedIds.size}개 토픽의 시스템 프롬프트를 업데이트합니다.
+              선택한 {selectedIds.size}개 토픽의 시스템 프롬프트를
+              업데이트합니다.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">

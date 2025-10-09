@@ -91,7 +91,10 @@ function App() {
                   </Authenticated>
                 }
               >
-                <Route index element={<NavigateToResource resource="topics" />} />
+                <Route
+                  index
+                  element={<NavigateToResource resource="topics" />}
+                />
                 <Route path="topics">
                   <Route index element={<TopicList />} />
                   <Route path="create" element={<TopicCreate />} />
@@ -107,7 +110,10 @@ function App() {
               </Route>
               <Route
                 element={
-                  <Authenticated key="unauthenticated-routes" fallback={<Outlet />}>
+                  <Authenticated
+                    key="unauthenticated-routes"
+                    fallback={<Outlet />}
+                  >
                     <NavigateToResource />
                   </Authenticated>
                 }

@@ -27,8 +27,8 @@ def create_history(
     db: Session = Depends(get_db),
 ) -> QuestionHistory:
     """Create a new question history record."""
-    topic_exists = db.query(Topic.id).filter(Topic.id == request.topic_id).first()
-    if not topic_exists:
+    topic = db.get(Topic, request.topic_id)
+    if not topic:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Topic not found",

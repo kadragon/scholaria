@@ -21,7 +21,13 @@ export const ChatPage = () => {
     return newId;
   });
 
-  const { messages, isStreaming, sendMessage, clearMessages, updateMessageFeedback } = useChat({
+  const {
+    messages,
+    isStreaming,
+    sendMessage,
+    clearMessages,
+    updateMessageFeedback,
+  } = useChat({
     topicId: selectedTopicId,
     sessionId,
     onError: (error) => {

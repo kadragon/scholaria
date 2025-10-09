@@ -66,7 +66,8 @@ export const ContextEdit = () => {
           toast({
             variant: "destructive",
             title: "업데이트 실패",
-            description: error.message || "컨텍스트 업데이트 중 오류가 발생했습니다.",
+            description:
+              error.message || "컨텍스트 업데이트 중 오류가 발생했습니다.",
           });
         },
       },

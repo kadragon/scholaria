@@ -50,9 +50,7 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
           </h4>
         ),
         p: ({ children }) => (
-          <p className="text-secondary-700 leading-relaxed my-3">
-            {children}
-          </p>
+          <p className="text-secondary-700 leading-relaxed my-3">{children}</p>
         ),
         ul: ({ children }) => (
           <ul className="list-disc list-inside space-y-2 my-3 ml-4 text-secondary-700">
@@ -64,11 +62,7 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
             {children}
           </ol>
         ),
-        li: ({ children }) => (
-          <li className="leading-relaxed">
-            {children}
-          </li>
-        ),
+        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
         code: ({ className, children, ...props }) => {
           const isInline = !className;
           if (isInline) {
@@ -78,7 +72,11 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
               </code>
             );
           }
-          return <code className={className} {...props}>{children}</code>;
+          return (
+            <code className={className} {...props}>
+              {children}
+            </code>
+          );
         },
         pre: ({ children }) => (
           <pre className="bg-secondary-900 text-secondary-100 p-4 rounded-lg overflow-x-auto my-4 font-mono text-sm">
@@ -108,9 +106,7 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
           </div>
         ),
         thead: ({ children }) => (
-          <thead className="bg-secondary-100">
-            {children}
-          </thead>
+          <thead className="bg-secondary-100">{children}</thead>
         ),
         tbody: ({ children }) => (
           <tbody className="bg-white divide-y divide-secondary-200">
@@ -118,9 +114,7 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
           </tbody>
         ),
         tr: ({ children }) => (
-          <tr className="hover:bg-secondary-50">
-            {children}
-          </tr>
+          <tr className="hover:bg-secondary-50">{children}</tr>
         ),
         th: ({ children }) => (
           <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-700 uppercase tracking-wider">
@@ -128,23 +122,15 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
           </th>
         ),
         td: ({ children }) => (
-          <td className="px-4 py-3 text-sm text-secondary-600">
-            {children}
-          </td>
+          <td className="px-4 py-3 text-sm text-secondary-600">{children}</td>
         ),
         strong: ({ children }) => (
-          <strong className="font-bold text-secondary-900">
-            {children}
-          </strong>
+          <strong className="font-bold text-secondary-900">{children}</strong>
         ),
         em: ({ children }) => (
-          <em className="italic text-secondary-700">
-            {children}
-          </em>
+          <em className="italic text-secondary-700">{children}</em>
         ),
-        hr: () => (
-          <hr className="my-6 border-t-2 border-secondary-200" />
-        ),
+        hr: () => <hr className="my-6 border-t-2 border-secondary-200" />,
       }}
     >
       {content}
@@ -158,11 +144,13 @@ export const MessageList = ({
   onFeedbackChange,
 }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [expandedCitations, setExpandedCitations] = useState<Set<string>>(new Set());
+  const [expandedCitations, setExpandedCitations] = useState<Set<string>>(
+    new Set(),
+  );
 
   const toggleCitation = (messageId: string, citationIdx: number) => {
     const key = `${messageId}-${citationIdx}`;
-    setExpandedCitations(prev => {
+    setExpandedCitations((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(key)) {
         newSet.delete(key);
@@ -203,66 +191,70 @@ export const MessageList = ({
               )}
             </div>
 
-            {message.role === "assistant" && message.citations && message.citations.length > 0 && (
-              <Collapsible className="mt-4 pt-4 border-t border-secondary-200">
-                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-secondary-600 hover:text-primary-600 font-medium transition-colors">
-                  <ChevronDown className="h-4 w-4" />
-                  참고 자료 ({message.citations.length})
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-3 space-y-2">
-                  {message.citations.map((citation, idx) => {
-                    const citationKey = `${message.id}-${idx}`;
-                    const isExpanded = expandedCitations.has(citationKey);
+            {message.role === "assistant" &&
+              message.citations &&
+              message.citations.length > 0 && (
+                <Collapsible className="mt-4 pt-4 border-t border-secondary-200">
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm text-secondary-600 hover:text-primary-600 font-medium transition-colors">
+                    <ChevronDown className="h-4 w-4" />
+                    참고 자료 ({message.citations.length})
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-3 space-y-2">
+                    {message.citations.map((citation, idx) => {
+                      const citationKey = `${message.id}-${idx}`;
+                      const isExpanded = expandedCitations.has(citationKey);
 
-                    return (
-                      <div
-                        key={citationKey}
-                        role="button"
-                        tabIndex={0}
-                        className="text-sm bg-gradient-to-br from-secondary-50 to-white p-3 rounded-lg border border-secondary-200 hover:border-primary-300 transition-colors cursor-pointer"
-                        onClick={() => toggleCitation(message.id, idx)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            toggleCitation(message.id, idx);
-                          }
-                        }}
-                      >
-                        <div className="font-semibold text-secondary-800 flex items-center justify-between">
-                          <span>{citation.title}</span>
-                          <ChevronDown
-                            className={`h-4 w-4 text-secondary-400 transition-transform ${
-                              isExpanded ? 'rotate-180' : ''
-                            }`}
-                          />
-                        </div>
-                        <div className={`text-secondary-600 text-xs mt-1.5 ${
-                          isExpanded ? '' : 'line-clamp-2'
-                        }`}>
-                          {citation.content}
-                        </div>
-                        {isExpanded && (
-                          <div className="text-primary-600 text-xs mt-1 font-medium">
-                            클릭하여 접기
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 mt-2">
-                          <div className="flex-1 bg-secondary-200 rounded-full h-1.5">
-                            <div
-                              className="bg-primary-500 h-1.5 rounded-full transition-all"
-                              style={{ width: `${citation.score * 100}%` }}
+                      return (
+                        <div
+                          key={citationKey}
+                          role="button"
+                          tabIndex={0}
+                          className="text-sm bg-gradient-to-br from-secondary-50 to-white p-3 rounded-lg border border-secondary-200 hover:border-primary-300 transition-colors cursor-pointer"
+                          onClick={() => toggleCitation(message.id, idx)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              toggleCitation(message.id, idx);
+                            }
+                          }}
+                        >
+                          <div className="font-semibold text-secondary-800 flex items-center justify-between">
+                            <span>{citation.title}</span>
+                            <ChevronDown
+                              className={`h-4 w-4 text-secondary-400 transition-transform ${
+                                isExpanded ? "rotate-180" : ""
+                              }`}
                             />
                           </div>
-                          <span className="text-secondary-500 text-xs font-medium">
-                            {(citation.score * 100).toFixed(0)}%
-                          </span>
+                          <div
+                            className={`text-secondary-600 text-xs mt-1.5 ${
+                              isExpanded ? "" : "line-clamp-2"
+                            }`}
+                          >
+                            {citation.content}
+                          </div>
+                          {isExpanded && (
+                            <div className="text-primary-600 text-xs mt-1 font-medium">
+                              클릭하여 접기
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="flex-1 bg-secondary-200 rounded-full h-1.5">
+                              <div
+                                className="bg-primary-500 h-1.5 rounded-full transition-all"
+                                style={{ width: `${citation.score * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-secondary-500 text-xs font-medium">
+                              {(citation.score * 100).toFixed(0)}%
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </CollapsibleContent>
-              </Collapsible>
-            )}
+                      );
+                    })}
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
 
             {message.role === "assistant" && message.historyId && (
               <div className="mt-4 border-t border-secondary-200 pt-4">
@@ -271,9 +263,11 @@ export const MessageList = ({
                   initialScore={message.feedbackScore ?? 0}
                   initialComment={message.feedbackComment ?? ""}
                   disabled={isStreaming}
-                  onChange={(score, comment) =>
-                    onFeedbackChange?.(message.historyId as number, score, comment)
-                  }
+                  onChange={(score, comment) => {
+                    if (message.historyId !== undefined) {
+                      onFeedbackChange?.(message.historyId, score, comment);
+                    }
+                  }}
                 />
               </div>
             )}
@@ -290,7 +284,9 @@ export const MessageList = ({
                 <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                 <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce"></div>
               </div>
-              <span className="text-sm text-primary-700 font-medium">답변 생성 중...</span>
+              <span className="text-sm text-primary-700 font-medium">
+                답변 생성 중...
+              </span>
             </div>
           </div>
         </div>

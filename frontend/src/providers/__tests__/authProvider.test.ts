@@ -13,7 +13,10 @@ describe("authProvider", () => {
 
   describe("login", () => {
     it("should store token and return success on valid credentials", async () => {
-      const result = await authProvider.login({ email: "admin@test.com", password: "password" });
+      const result = await authProvider.login({
+        email: "admin@test.com",
+        password: "password",
+      });
 
       expect(result.success).toBe(true);
       expect(result.redirectTo).toBe("/admin");
@@ -24,10 +27,13 @@ describe("authProvider", () => {
       server.use(
         http.post(`${API_URL}/auth/login`, () => {
           return new HttpResponse(null, { status: 401 });
-        })
+        }),
       );
 
-      const result = await authProvider.login({ email: "wrong@test.com", password: "wrong" });
+      const result = await authProvider.login({
+        email: "wrong@test.com",
+        password: "wrong",
+      });
 
       expect(result.success).toBe(false);
       expect(result.error?.name).toBe("LoginError");
@@ -87,7 +93,7 @@ describe("authProvider", () => {
       server.use(
         http.get(`${API_URL}/auth/me`, () => {
           return new HttpResponse(null, { status: 401 });
-        })
+        }),
       );
 
       const identity = await authProvider.getIdentity();

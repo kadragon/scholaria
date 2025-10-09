@@ -26,7 +26,7 @@ describe("ThemeToggle", () => {
     render(
       <ThemeProvider>
         <ThemeToggle />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     const button = screen.getByRole("button", { name: /테마 전환/i });
@@ -39,7 +39,7 @@ describe("ThemeToggle", () => {
     render(
       <ThemeProvider>
         <ThemeToggle />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     const button = screen.getByRole("button", { name: /테마 전환/i });
@@ -52,7 +52,7 @@ describe("ThemeToggle", () => {
     render(
       <ThemeProvider>
         <ThemeToggle />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     const button = screen.getByRole("button", { name: /테마 전환/i });
@@ -66,7 +66,7 @@ describe("ThemeToggle", () => {
     render(
       <ThemeProvider>
         <ThemeToggle />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     const button = screen.getByRole("button", { name: /테마 전환/i });
@@ -93,7 +93,7 @@ describe("ThemeToggle", () => {
     render(
       <ThemeProvider>
         <ThemeToggle />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     const button = screen.getByRole("button", { name: /테마 전환/i });
@@ -110,7 +110,7 @@ describe("ThemeToggle", () => {
     render(
       <ThemeProvider>
         <ThemeToggle />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     const button = screen.getByRole("button", { name: /테마 전환/i });

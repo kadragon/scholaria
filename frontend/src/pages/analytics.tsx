@@ -133,20 +133,24 @@ export const Analytics = () => {
     feedbackLoading ||
     (!commentsData && commentsFetching);
 
-  if (isInitialLoading) {
-    return <AnalyticsSkeleton />;
-  }
-
   const summary = summaryData?.data;
-  const topics = Array.isArray(topicsData?.data) ? topicsData.data : [];
+  const topics = useMemo(
+    () => (Array.isArray(topicsData?.data) ? topicsData.data : []),
+    [topicsData?.data],
+  );
   const trend = Array.isArray(trendData?.data) ? trendData.data : [];
   const feedback = feedbackData?.data;
-  const comments = Array.isArray(commentsData?.data) ? commentsData.data : [];
+  const comments = useMemo(
+    () => (Array.isArray(commentsData?.data) ? commentsData.data : []),
+    [commentsData?.data],
+  );
 
   const topicOptions = useMemo(() => {
     const map = new Map<number, string>();
     topics.forEach((topic) => map.set(topic.topic_id, topic.topic_name));
-    comments.forEach((comment) => map.set(comment.topic_id, comment.topic_name));
+    comments.forEach((comment) =>
+      map.set(comment.topic_id, comment.topic_name),
+    );
     return Array.from(map.entries()).sort((a, b) =>
       a[1].localeCompare(b[1], "ko"),
     );
@@ -161,6 +165,10 @@ export const Analytics = () => {
     [],
   );
 
+  if (isInitialLoading) {
+    return <AnalyticsSkeleton />;
+  }
+
   const feedbackPieData = feedback
     ? [
         { name: "긍정", value: feedback.positive },
@@ -172,18 +180,26 @@ export const Analytics = () => {
   return (
     <div className="p-8 space-y-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-secondary-900 mb-2">분석 대시보드</h1>
-        <p className="text-secondary-600">시스템 사용 현황과 통계를 확인합니다</p>
+        <h1 className="text-3xl font-bold text-secondary-900 mb-2">
+          분석 대시보드
+        </h1>
+        <p className="text-secondary-600">
+          시스템 사용 현황과 통계를 확인합니다
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 auto-rows-fr">
         <div className="md:col-span-2 p-6 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
           <h3 className="text-sm text-gray-500 mb-1">총 질문 수</h3>
-          <p className="text-3xl font-bold text-primary-700">{summary?.total_questions || 0}</p>
+          <p className="text-3xl font-bold text-primary-700">
+            {summary?.total_questions || 0}
+          </p>
         </div>
         <div className="md:col-span-2 p-6 bg-gradient-to-br from-white to-green-50 rounded-lg shadow-md border border-green-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
           <h3 className="text-sm text-gray-500 mb-1">피드백 수</h3>
-          <p className="text-3xl font-bold text-green-700">{summary?.total_feedback || 0}</p>
+          <p className="text-3xl font-bold text-green-700">
+            {summary?.total_feedback || 0}
+          </p>
         </div>
         <div className="md:col-span-2 md:row-span-2 p-6 bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-xl transition-all duration-200">
           <div className="flex justify-between items-center mb-4">
@@ -246,7 +262,11 @@ export const Analytics = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="question_count" fill={COLORS.primary} name="질문 수" />
+                <Bar
+                  dataKey="question_count"
+                  fill={COLORS.primary}
+                  name="질문 수"
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -306,7 +326,9 @@ export const Analytics = () => {
             </label>
             <select
               id="feedback-topic-filter"
-              value={selectedTopicId === "all" ? "all" : selectedTopicId.toString()}
+              value={
+                selectedTopicId === "all" ? "all" : selectedTopicId.toString()
+              }
               onChange={(event) => {
                 const value = event.target.value;
                 setSelectedTopicId(value === "all" ? "all" : Number(value));
@@ -352,7 +374,9 @@ export const Analytics = () => {
                         <p className="text-sm font-semibold text-secondary-900">
                           {comment.topic_name}
                         </p>
-                        <p className="text-xs text-secondary-500">{createdAt}</p>
+                        <p className="text-xs text-secondary-500">
+                          {createdAt}
+                        </p>
                       </div>
                       <span className={meta.className}>{meta.label}</span>
                     </div>

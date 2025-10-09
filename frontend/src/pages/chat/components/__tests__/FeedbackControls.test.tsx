@@ -17,17 +17,15 @@ describe("FeedbackControls", () => {
   });
 
   it("submits feedback and notifies parent", async () => {
-    const patchSpy = vi
-      .spyOn(apiClient, "patch")
-      .mockResolvedValue(
-        Promise.resolve({
-          data: {
-            id: 1,
-            feedback_score: 1,
-            feedback_comment: "정말 도움이 되었어요",
-          },
-        }) as unknown as ReturnType<typeof apiClient.patch>
-      );
+    const patchSpy = vi.spyOn(apiClient, "patch").mockResolvedValue(
+      Promise.resolve({
+        data: {
+          id: 1,
+          feedback_score: 1,
+          feedback_comment: "정말 도움이 되었어요",
+        },
+      }) as unknown as ReturnType<typeof apiClient.patch>,
+    );
 
     const onChange = vi.fn();
 
@@ -37,7 +35,7 @@ describe("FeedbackControls", () => {
         initialScore={0}
         initialComment=""
         onChange={onChange}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /좋아요/ }));
