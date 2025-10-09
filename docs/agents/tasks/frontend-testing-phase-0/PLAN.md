@@ -13,11 +13,11 @@ GitHub Actions 워크플로 추가하여 Phase 0 요구사항 완료
 
 ### New Files
 1. **`.github/workflows/frontend-ci.yml`**
-   - Trigger: `push` (main), `pull_request`
+   - Trigger: `push` (`main` branch, paths `frontend/**`), `pull_request` (paths `frontend/**`)
    - Jobs:
-     - `test`: Node.js 설치 → npm install → npm run test
-     - `typecheck`: npm run typecheck
-     - `lint`: npm run lint
+     - `test`: Node.js 설치 (npm cache 활용) → npm install → npm run test
+     - `typecheck`: Node.js 설치 (npm cache 활용) → npm install → npm run typecheck
+     - `lint`: Node.js 설치 (npm cache 활용) → npm install → npm run lint
    - Working directory: `frontend/`
    - Node version: 20.x (LTS)
 
