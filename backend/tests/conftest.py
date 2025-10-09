@@ -123,3 +123,173 @@ def golden_dataset():
     dataset_path = Path(__file__).parent / "fixtures" / "golden_dataset.json"
     with open(dataset_path) as f:
         return json.load(f)
+
+
+@pytest.fixture(scope="function")
+def integration_db_with_golden_data(db_session, golden_dataset):
+    """
+    Provides database with golden dataset contexts and embeddings for integration tests.
+
+    Requires: Redis and Qdrant services running (docker-compose.dev.yml)
+    """
+    from typing import Any
+
+    from backend.models import Context, ContextItem, Topic
+    from backend.retrieval.embeddings import EmbeddingService
+    from backend.retrieval.qdrant import QdrantService
+
+    try:
+        qdrant_service = QdrantService()
+        qdrant_service.client.get_collection(qdrant_service.collection_name)
+    except Exception:
+        pytest.skip("Qdrant service not available for integration tests")
+
+    embedding_service = EmbeddingService()
+
+    fake_contexts_data: dict[int, dict[str, Any]] = {
+        1: {
+            "topic_id": 1,
+            "title": "Admissions Policy Overview",
+            "content": "The school admission policy outlines application deadlines, GPA requirements, interviews, and enrollment steps.",
+        },
+        3: {
+            "topic_id": 1,
+            "title": "Admissions Criteria Breakdown",
+            "content": "School admission policy criteria cover academic performance, recommendations, and conduct expectations.",
+        },
+        5: {
+            "topic_id": 1,
+            "title": "Financial Aid Application Guide",
+            "content": "Families can apply for financial aid by completing the online form, submitting tax documents, and meeting aid deadlines.",
+        },
+        6: {
+            "topic_id": 1,
+            "title": "Campus Tour Schedule",
+            "content": "Weekly campus tours introduce new families to classrooms and facilities.",
+        },
+        10: {
+            "topic_id": 1,
+            "title": "Graduation Requirements Handbook",
+            "content": "Graduation requirements list credit minimums, capstone projects, service hours, and assessment benchmarks.",
+        },
+        11: {
+            "topic_id": 1,
+            "title": "Enrollment Checklist",
+            "content": "Enrollment checklist covers immunization records, tuition deposits, and transportation requests.",
+        },
+        7: {
+            "topic_id": 2,
+            "title": "Extracurricular Activities Catalog",
+            "content": "Extracurricular activities available include robotics club, theatre, debate team, and athletics.",
+        },
+        8: {
+            "topic_id": 2,
+            "title": "Dining Services Overview",
+            "content": "Information about cafeteria menus, meal plans, and nutrition guidelines.",
+        },
+        9: {
+            "topic_id": 2,
+            "title": "Student Clubs Directory",
+            "content": "Student clubs list extracurricular activities available after school, including music, art, and coding clubs.",
+        },
+        13: {
+            "topic_id": 2,
+            "title": "Campus Events Overview",
+            "content": "Monthly calendar of assemblies, guest speakers, and community events.",
+        },
+        14: {
+            "topic_id": 2,
+            "title": "Residence Life Policies",
+            "content": "Guidelines for boarding students and dormitory expectations.",
+        },
+        15: {
+            "topic_id": 2,
+            "title": "Volunteer Opportunities",
+            "content": "Service learning projects and volunteer programs for families.",
+        },
+        2: {
+            "topic_id": 3,
+            "title": "Student Support Contact Info",
+            "content": "Contact the student support office by phone or email for counseling services and academic guidance.",
+        },
+        4: {
+            "topic_id": 3,
+            "title": "Support Office Services",
+            "content": "Contact the student support office for tutoring, counseling, and accommodations during weekday office hours.",
+        },
+        12: {
+            "topic_id": 3,
+            "title": "Nurse Office Procedures",
+            "content": "Health office policies for medication management and illness reporting.",
+        },
+        16: {
+            "topic_id": 3,
+            "title": "Parent Portal Guide",
+            "content": "Instructions for using the parent portal to review grades and attendance.",
+        },
+        17: {
+            "topic_id": 3,
+            "title": "Transportation Help Desk",
+            "content": "Bus routing assistance and parking permits for families.",
+        },
+        18: {
+            "topic_id": 3,
+            "title": "Technology Support Center",
+            "content": "Chromebook troubleshooting and password reset assistance.",
+        },
+    }
+
+    topics: dict[int, Topic] = {}
+    for topic_id in [1, 2, 3]:
+        topic = Topic(
+            id=topic_id,
+            name=f"Topic {topic_id}",
+            slug=f"topic-{topic_id}",
+            description=f"Test topic {topic_id} for golden dataset integration",
+        )
+        db_session.add(topic)
+        topics[topic_id] = topic
+    db_session.commit()
+
+    context_item_ids_created: list[int] = []
+    for context_item_id, data in fake_contexts_data.items():
+        context = Context(
+            title=str(data["title"]),
+            context_type="markdown",
+            original_content=str(data["content"]),
+            chunk_count=1,
+            processing_status="completed",
+        )
+        db_session.add(context)
+        db_session.flush()
+
+        topic_id_for_context = int(data["topic_id"])
+        context.topics.append(topics[topic_id_for_context])
+
+        context_item = ContextItem(
+            id=context_item_id,
+            context_id=context.id,
+            title=str(data["title"]),
+            content=str(data["content"]),
+            order_index=0,
+        )
+        db_session.add(context_item)
+        db_session.flush()
+
+        embedding = embedding_service.generate_embedding(str(data["content"]))
+        qdrant_service.store_embedding(context_item_id, embedding)
+
+        context_item_ids_created.append(context_item_id)
+
+    db_session.commit()
+
+    yield db_session
+
+    for cid in context_item_ids_created:
+        try:
+            qdrant_service.client.delete(
+                collection_name=qdrant_service.collection_name,
+                points_selector=[cid],
+            )
+        except Exception:
+            pass
