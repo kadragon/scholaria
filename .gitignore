@@ -29,19 +29,24 @@ tmp/
 # codex
 codex.toml
 
-# mypy_cache
+# Cache directories
+.claude/
 .mypy_cache/
+.pytest_cache/
+.ruff_cache/
 
 # Test artifacts
-test_*.db
 *.db
 .coverage
+frontend/coverage/
+htmlcov/
+test_*.db
 
 .serena
 
 # Node.js (admin-frontend)
-admin-frontend/node_modules/
-admin-frontend/dist/
-admin-frontend/.vite/
 admin-frontend/.env.local
+admin-frontend/.vite/
+admin-frontend/dist/
+admin-frontend/node_modules/
 services/puppeteer/node_modules/

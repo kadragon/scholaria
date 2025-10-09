@@ -271,9 +271,9 @@ class TestGoldenDatasetAccuracy:
             assert reranked_results, "Reranked results should not be empty"
 
         accuracy = total_hits / total_expected if total_expected else 0.0
-        assert (
-            accuracy >= 0.8
-        ), f"Golden dataset accuracy {accuracy:.2f} below 0.80 threshold"
+        assert accuracy >= 0.8, (
+            f"Golden dataset accuracy {accuracy:.2f} below 0.80 threshold"
+        )
 
     @pytest.mark.asyncio
     async def test_reranking_improves_relevance(self, golden_dataset):
@@ -304,6 +304,6 @@ class TestGoldenDatasetAccuracy:
             f"Reranked accuracy {reranked_accuracy:.2f} is not higher than baseline "
             f"{baseline_accuracy:.2f}"
         )
-        assert (
-            reranked_accuracy - baseline_accuracy >= 0.1
-        ), "Reranking should improve accuracy by at least 0.10"
+        assert reranked_accuracy - baseline_accuracy >= 0.1, (
+            "Reranking should improve accuracy by at least 0.10"
+        )

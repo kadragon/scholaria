@@ -124,4 +124,10 @@ module = [
 ]
 ignore_missing_imports = true
 
-# Pytest configuration moved to pytest.ini
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=1.2.0",
+    "pytest-cov>=7.0.0",
+]
+
+# Pytest configuration moved to pytest.ini (takes precedence)
