@@ -136,7 +136,10 @@ def integration_db_with_golden_data(golden_dataset):
     production/dev database. To avoid data conflicts, ensure you clean up before
     running tests or use a dedicated test database (scholaria_test).
     """
+    import json
     from typing import Any
+
+    from qdrant_client.models import PointStruct
 
     from backend.config import settings
     from backend.models import Context, ContextItem, Topic
@@ -151,97 +154,11 @@ def integration_db_with_golden_data(golden_dataset):
 
     db_session = SessionLocal()
 
+    fixture_path = Path(__file__).parent / "fixtures" / "fake_contexts_data.json"
+    with open(fixture_path) as f:
+        fake_contexts_raw = json.load(f)
     fake_contexts_data: dict[int, dict[str, Any]] = {
-        1: {
-            "topic_id": 1,
-            "title": "Admissions Policy Overview",
-            "content": "The school admission policy outlines application deadlines, GPA requirements, interviews, and enrollment steps.",
-        },
-        3: {
-            "topic_id": 1,
-            "title": "Admissions Criteria Breakdown",
-            "content": "School admission policy criteria cover academic performance, recommendations, and conduct expectations.",
-        },
-        5: {
-            "topic_id": 1,
-            "title": "Financial Aid Application Guide",
-            "content": "Families can apply for financial aid by completing the online form, submitting tax documents, and meeting aid deadlines.",
-        },
-        6: {
-            "topic_id": 1,
-            "title": "Campus Tour Schedule",
-            "content": "Weekly campus tours introduce new families to classrooms and facilities.",
-        },
-        10: {
-            "topic_id": 1,
-            "title": "Graduation Requirements Handbook",
-            "content": "Graduation requirements list credit minimums, capstone projects, service hours, and assessment benchmarks.",
-        },
-        11: {
-            "topic_id": 1,
-            "title": "Enrollment Checklist",
-            "content": "Enrollment checklist covers immunization records, tuition deposits, and transportation requests.",
-        },
-        7: {
-            "topic_id": 2,
-            "title": "Extracurricular Activities Catalog",
-            "content": "Extracurricular activities available include robotics club, theatre, debate team, and athletics.",
-        },
-        8: {
-            "topic_id": 2,
-            "title": "Dining Services Overview",
-            "content": "Information about cafeteria menus, meal plans, and nutrition guidelines.",
-        },
-        9: {
-            "topic_id": 2,
-            "title": "Student Clubs Directory",
-            "content": "Student clubs list extracurricular activities available after school, including music, art, and coding clubs.",
-        },
-        13: {
-            "topic_id": 2,
-            "title": "Campus Events Overview",
-            "content": "Monthly calendar of assemblies, guest speakers, and community events.",
-        },
-        14: {
-            "topic_id": 2,
-            "title": "Residence Life Policies",
-            "content": "Guidelines for boarding students and dormitory expectations.",
-        },
-        15: {
-            "topic_id": 2,
-            "title": "Volunteer Opportunities",
-            "content": "Service learning projects and volunteer programs for families.",
-        },
-        2: {
-            "topic_id": 3,
-            "title": "Student Support Contact Info",
-            "content": "Contact the student support office by phone or email for counseling services and academic guidance.",
-        },
-        4: {
-            "topic_id": 3,
-            "title": "Support Office Services",
-            "content": "Contact the student support office for tutoring, counseling, and accommodations during weekday office hours.",
-        },
-        12: {
-            "topic_id": 3,
-            "title": "Nurse Office Procedures",
-            "content": "Health office policies for medication management and illness reporting.",
-        },
-        16: {
-            "topic_id": 3,
-            "title": "Parent Portal Guide",
-            "content": "Instructions for using the parent portal to review grades and attendance.",
-        },
-        17: {
-            "topic_id": 3,
-            "title": "Transportation Help Desk",
-            "content": "Bus routing assistance and parking permits for families.",
-        },
-        18: {
-            "topic_id": 3,
-            "title": "Technology Support Center",
-            "content": "Chromebook troubleshooting and password reset assistance.",
-        },
+        int(k): v for k, v in fake_contexts_raw.items()
     }
 
     try:
@@ -318,7 +235,6 @@ def integration_db_with_golden_data(golden_dataset):
             "context_id": context.id,
             "context_type": "markdown",
         }
-        from qdrant_client.models import PointStruct
 
         point = PointStruct(id=context_item_id, vector=embedding, payload=payload)
         qdrant_service.client.upsert(
@@ -332,11 +248,11 @@ def integration_db_with_golden_data(golden_dataset):
     yield db_session
 
     try:
-        for cid in context_item_ids_created:
+        if context_item_ids_created:
             try:
                 qdrant_service.client.delete(
                     collection_name=qdrant_service.collection_name,
-                    points_selector=[cid],
+                    points_selector=context_item_ids_created,
                 )
             except Exception:
                 pass

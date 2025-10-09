@@ -96,7 +96,7 @@ class TestGoldenDatasetIntegration:
 
     @pytest.mark.asyncio
     async def test_reranking_improves_accuracy_integration(
-        self, integration_db_with_golden_data, integration_rag_service, golden_dataset
+        self, integration_db_with_golden_data, golden_dataset
     ):
         """
         Reranking should improve citation accuracy by at least 10% over baseline.
