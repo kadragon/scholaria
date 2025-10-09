@@ -3,7 +3,7 @@
 ## 상태 스냅샷
 
 - MVP 완성, FastAPI + Refine 스택 프로덕션 준비 완료
-- 65개 프런트엔드 테스트 (29.63% coverage, 25% threshold), 195개 백엔드 테스트 (85% coverage, 80% threshold)
+- 86개 프런트엔드 테스트 (40.91% coverage, 35% threshold), 195개 백엔드 테스트 (85% coverage, 80% threshold)
 - ruff/mypy 클린, Celery/Redis 비동기 인프라 운영 중
 - CI: 프런트엔드 4개 잡, 백엔드 3개 잡 (test+coverage, lint, typecheck)
 - 세부 이력은 `docs/agents/tasks/_archive/` 및 `TASKS_ARCHIVE_INDEX.md` 참고
@@ -14,7 +14,7 @@
 
 ## 단기 백로그
 
-없음
+- [ ] **React Router v7 업그레이드** — 기존 v6 라우팅 구성을 v7 API에 맞춰 마이그레이션, 관련 네비게이션/라우터 훅 영향도 점검
 
 ## 선택적 향상안
 
@@ -28,9 +28,12 @@
 - [x] **Phase 2 – 공용 컴포넌트 상호작용 테스트** — `InlineEditCell`, `CommandPalette`, `TableSkeleton`, `use-toast` 테스트 작성 (28 tests); ResizeObserver/scrollIntoView 모킹 추가; Radix UI 래퍼는 통합 테스트에서 검증 예정 (2025-10-09)
 - [x] **Phase 3 – 페이지 시나리오 테스트** — login(5), setup(6), topics list(3), contexts list(1), chat(2) 총 17개 페이지 플로우 테스트 완료; MSW 핸들러 확장하여 Refine 훅(`useTable`, `useUpdate`, `useDelete`) 모킹 지원; 전체 65개 테스트 통과 (2025-10-09)
 - [x] **Phase 4 – 커버리지/회귀 가드** — 25% 커버리지 임계값 설정 (`vitest.config.ts`), CI coverage 잡 추가, PR 템플릿 생성 (백엔드/프런트엔드 체크리스트), `frontend/README.md` 업데이트 (2025-10-09)
+- [x] **Phase 5 – 커버리지 확대 (31.62% → 40.91%)** — dataProvider(4), Sidebar(3), LoginPage(4), MessageInput(5) 테스트 추가; 86개 테스트 통과; 임계값 35% 상향; dist/ 제외 설정 (2025-10-09)
+- [x] **Phase 6 – 추가 커버리지 확장 (40.91% → 51.29%)** — SetupPage(6), useCommandPalette(3), TopicSelector(3), MessageList(6), AnalyticsSkeleton(2) 테스트 추가; 106개 테스트 통과; 임계값 45% 상향 (2025-10-09)
 
 ## 최근 완료 하이라이트
 
+- **Phase 6 커버리지 확장** — 40.91% → 51.29%, 20개 테스트 추가 (SetupPage, useCommandPalette, TopicSelector, MessageList, AnalyticsSkeleton), 임계값 45% 상향 (2025-10-09)
 - **백엔드 커버리지 임계값 설정** — 85% 커버리지, 80% 임계값, backend-ci.yml 3개 잡 (test+coverage, lint, typecheck) (2025-10-09)
 - **Phase 4 커버리지 가드 완료** — 25% 임계값 설정, CI coverage 잡 추가, PR 템플릿 (백엔드/프런트엔드 체크리스트) (2025-10-09)
 - **피드백 코멘트 분석 뷰** — `/admin/analytics/feedback/comments` 엔드포인트 및 관리자 대시보드 코멘트 리스트 + 토픽 필터 (2025-10-09)
