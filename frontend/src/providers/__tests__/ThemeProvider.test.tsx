@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { ThemeProvider, useTheme } from "../ThemeProvider";
+import { ThemeProvider } from "../ThemeProvider";
+import { useTheme } from "../../hooks/useTheme";
 
 describe("ThemeProvider", () => {
   let originalMatchMedia: typeof window.matchMedia;

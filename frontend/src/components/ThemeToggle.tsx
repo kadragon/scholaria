@@ -1,23 +1,25 @@
-import { useTheme } from "../providers/ThemeProvider";
+import { useTheme } from "../hooks/useTheme";
 import { Button } from "./ui/button";
 
 export const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
 
   const handleToggle = () => {
-    if (theme === "light") {
-      setTheme("dark");
-    } else if (theme === "dark") {
-      setTheme("system");
-    } else {
-      setTheme("light");
-    }
+    const cycle: Record<typeof theme, typeof theme> = {
+      light: "dark",
+      dark: "system",
+      system: "light",
+    };
+    setTheme(cycle[theme]);
   };
 
   const getIcon = () => {
-    if (theme === "light") return "☀️";
-    if (theme === "dark") return "🌙";
-    return "🖥️";
+    const icons: Record<typeof theme, string> = {
+      light: "☀️",
+      dark: "🌙",
+      system: "🖥️",
+    };
+    return icons[theme];
   };
 
   return (

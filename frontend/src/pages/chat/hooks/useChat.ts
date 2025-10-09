@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { apiClient } from "../../../lib/apiClient";
+import { API_BASE_URL, getAuthHeaders } from "../../../lib/apiConfig";
 
 export interface Message {
   id: string;
@@ -67,17 +67,9 @@ export const useChat = ({
       ]);
 
       try {
-        const token = localStorage.getItem("token");
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-        };
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        const response = await fetch(`${import.meta.env.VITE_API_URL?.replace('/admin', '') || "http://localhost:8001/api"}/rag/stream`, {
+        const response = await fetch(`${API_BASE_URL}/rag/stream`, {
           method: "POST",
-          headers,
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             topic_id: topicId,
             question: content.trim(),

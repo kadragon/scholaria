@@ -98,16 +98,16 @@ Implement a complete dark mode system with:
 - [x] Step 4: Implement ThemeToggle component (Green)
 
 ### Phase 2: Styling (Steps 5-6)
-- [ ] Step 5: Define CSS variables in `index.css` (light + dark)
-- [ ] Step 6: Update `tailwind.config.js` to use CSS variables
+- [x] Step 5: Define CSS variables in `index.css` (light + dark)
+- [x] Step 6: Update `tailwind.config.js` to use CSS variables
 
 ### Phase 3: Integration (Steps 7-9)
-- [ ] Step 7: Wrap App with ThemeProvider, add ThemeToggle to Layout
-- [ ] Step 8: Add FOUC prevention script to `main.tsx`
-- [ ] Step 9: Run all tests, verify no regressions
+- [x] Step 7: Wrap App with ThemeProvider, add ThemeToggle to Layout
+- [x] Step 8: Add FOUC prevention script to `index.html`
+- [x] Step 9: Run all tests, verify no regressions
 
 ### Phase 4: Validation (Step 10)
-- [ ] Step 10: Manual visual check (all pages, contrast, persistence)
+- [x] Step 10: Manual visual check (all pages, contrast, persistence)
 
 ## Rollback Plan
 - Revert commits in reverse order

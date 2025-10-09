@@ -63,7 +63,7 @@ describe("ThemeToggle", () => {
     const user = userEvent.setup();
     localStorage.setItem("theme", "light");
 
-    const { rerender } = render(
+    render(
       <ThemeProvider>
         <ThemeToggle />
       </ThemeProvider>
@@ -71,31 +71,19 @@ describe("ThemeToggle", () => {
 
     const button = screen.getByRole("button", { name: /테마 전환/i });
 
-    expect(button.textContent).toContain("☀️");
+    expect(button).toHaveTextContent("☀️");
 
     await user.click(button);
-    rerender(
-      <ThemeProvider>
-        <ThemeToggle />
-      </ThemeProvider>
-    );
     expect(localStorage.getItem("theme")).toBe("dark");
+    expect(button).toHaveTextContent("🌙");
 
     await user.click(button);
-    rerender(
-      <ThemeProvider>
-        <ThemeToggle />
-      </ThemeProvider>
-    );
     expect(localStorage.getItem("theme")).toBe("system");
+    expect(button).toHaveTextContent("🖥️");
 
     await user.click(button);
-    rerender(
-      <ThemeProvider>
-        <ThemeToggle />
-      </ThemeProvider>
-    );
     expect(localStorage.getItem("theme")).toBe("light");
+    expect(button).toHaveTextContent("☀️");
   });
 
   it("responds to keyboard Enter key", async () => {
