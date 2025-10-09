@@ -38,23 +38,27 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 # Check if docker-compose is available
-if ! command -v docker-compose > /dev/null 2>&1; then
-    print_error "docker-compose is not installed or not in PATH."
+if docker compose version > /dev/null 2>&1; then
+    COMPOSE_CMD=(docker compose)
+elif command -v docker-compose > /dev/null 2>&1; then
+    COMPOSE_CMD=(docker-compose)
+else
+    print_error "Neither 'docker compose' nor 'docker-compose' is available in PATH."
     exit 1
 fi
 
 print_status "Stopping any existing containers..."
-docker-compose down -v 2>/dev/null || true
+"${COMPOSE_CMD[@]}" down -v 2>/dev/null || true
 
 print_status "Starting Docker Compose services..."
-docker-compose up -d
+"${COMPOSE_CMD[@]}" up -d
 
 # Function to wait for services to be ready
 wait_for_services() {
     local max_attempts=30
     local delay=2
     local required_services=("postgres" "redis" "qdrant")
-    local optional_services=("minio")
+    local optional_services=("frontend" "flower" "celery-worker")
 
     print_status "Waiting for required services to be ready..."
 
@@ -63,7 +67,7 @@ wait_for_services() {
         print_status "Waiting for $service..."
         local attempt=0
         while [ $attempt -lt $max_attempts ]; do
-            if docker-compose ps "$service" | grep -q "Up" && check_service_health "$service"; then
+            if "${COMPOSE_CMD[@]}" ps "$service" | grep -q "Up" && check_service_health "$service"; then
                 print_success "$service is ready"
                 break
             fi
@@ -71,7 +75,7 @@ wait_for_services() {
             attempt=$((attempt + 1))
             if [ $attempt -eq $max_attempts ]; then
                 print_error "$service failed to become ready after $((max_attempts * delay)) seconds"
-                docker-compose logs "$service"
+                "${COMPOSE_CMD[@]}" logs "$service"
                 exit 1
             fi
             sleep $delay
@@ -80,7 +84,7 @@ wait_for_services() {
 
     # Check optional services (don't fail if they're not available)
     for service in "${optional_services[@]}"; do
-        if docker-compose ps "$service" | grep -q "Up" && check_service_health "$service"; then
+        if "${COMPOSE_CMD[@]}" ps "$service" | grep -q "Up" && check_service_health "$service"; then
             print_success "$service is ready"
         else
             print_warning "$service is not available (optional)"
@@ -93,16 +97,13 @@ check_service_health() {
     local service=$1
     case $service in
         "postgres")
-            docker-compose exec -T postgres pg_isready -h localhost > /dev/null 2>&1
+            "${COMPOSE_CMD[@]}" exec -T postgres pg_isready -h localhost > /dev/null 2>&1
             ;;
         "redis")
-            docker-compose exec -T redis redis-cli ping > /dev/null 2>&1
+            "${COMPOSE_CMD[@]}" exec -T redis redis-cli ping > /dev/null 2>&1
             ;;
         "qdrant")
             curl -s http://localhost:6333/health > /dev/null 2>&1
-            ;;
-        "minio")
-            curl -s http://localhost:9000/minio/health/live > /dev/null 2>&1
             ;;
         *)
             return 0  # Unknown service, assume healthy if running
@@ -115,11 +116,11 @@ wait_for_services
 # Final check of all services
 print_status "Final service health check..."
 
-services=("postgres" "redis" "qdrant" "minio")
+services=("postgres" "redis" "qdrant" "frontend" "flower" "celery-worker")
 all_healthy=true
 
 for service in "${services[@]}"; do
-    if docker-compose ps "$service" | grep -q "Up"; then
+    if "${COMPOSE_CMD[@]}" ps "$service" | grep -q "Up"; then
         print_success "$service is running"
     else
         print_error "$service is not running"
@@ -128,8 +129,8 @@ for service in "${services[@]}"; do
 done
 
 if [ "$all_healthy" = false ]; then
-    print_error "Some services are not running. Check docker-compose logs for details."
-    docker-compose logs
+    print_error "Some services are not running. Check ${COMPOSE_CMD[*]} logs for details."
+    "${COMPOSE_CMD[@]}" logs
     exit 1
 fi
 
@@ -140,7 +141,7 @@ uv run alembic upgrade head
 print_status "Running Docker integration tests..."
 
 # Run the integration tests with detailed output
-if uv run python -m pytest rag/tests/test_docker_integration.py -v --tb=short; then
+if uv run pytest backend/tests/test_rag_endpoint.py backend/tests/test_rag_streaming.py -v --tb=short; then
     print_success "All integration tests passed! ✅"
     test_result=0
 else
@@ -150,9 +151,9 @@ fi
 
 print_status "Test run completed. Keeping services running for manual testing..."
 print_warning "Services are still running. You can:"
-print_warning "  - Access MinIO Console: http://localhost:9001 (admin/minioadmin)"
 print_warning "  - Access Qdrant Dashboard: http://localhost:6333/dashboard"
-print_warning "  - Run FastAPI server: uv run uvicorn backend.main:app --reload"
-print_warning "  - Stop services: docker-compose down"
+print_warning "  - Access Flower: http://localhost:5555"
+print_warning "  - Access Frontend (Refine): http://localhost:5173"
+print_warning "  - Stop services: ${COMPOSE_CMD[*]} down"
 
 exit $test_result
