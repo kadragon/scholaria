@@ -61,7 +61,9 @@ export function FacetedFilter({
                 onClick={() => toggleValue(option.value)}
               >
                 <Checkbox checked={isSelected} />
-                {option.icon && <option.icon className="h-4 w-4 text-muted-foreground" />}
+                {option.icon && (
+                  <option.icon className="h-4 w-4 text-muted-foreground" />
+                )}
                 <span className="text-sm flex-1">{option.label}</span>
               </div>
             );

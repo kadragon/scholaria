@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 
 export interface Topic {
@@ -49,9 +48,7 @@ export const TopicSelector = ({
 
   if (isError || topics.length === 0) {
     return (
-      <div className="text-sm text-red-500">
-        토픽을 불러올 수 없습니다.
-      </div>
+      <div className="text-sm text-red-500">토픽을 불러올 수 없습니다.</div>
     );
   }
 

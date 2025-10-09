@@ -51,6 +51,7 @@ def test_patch_feedback_like(
     data = response.json()
     assert data["feedback_score"] == 1
     assert data["id"] == sample_history.id
+    assert data["feedback_comment"] is None
 
 
 def test_patch_feedback_dislike(
@@ -65,6 +66,7 @@ def test_patch_feedback_dislike(
     assert response.status_code == 200
     data = response.json()
     assert data["feedback_score"] == -1
+    assert data["feedback_comment"] is None
 
 
 def test_patch_feedback_neutral(
@@ -79,6 +81,7 @@ def test_patch_feedback_neutral(
     assert response.status_code == 200
     data = response.json()
     assert data["feedback_score"] == 0
+    assert data["feedback_comment"] is None
 
 
 def test_patch_feedback_invalid_score(
@@ -103,6 +106,60 @@ def test_patch_feedback_not_found(
         headers=admin_headers,
     )
     assert response.status_code == 404
+
+
+def test_patch_feedback_with_comment(
+    client: TestClient,
+    sample_history: QuestionHistory,
+    admin_headers: dict[str, str],
+    db_session: Session,
+) -> None:
+    """Test setting feedback with an explanatory comment."""
+    payload = {
+        "feedback_score": -1,
+        "feedback_comment": "The answer was irrelevant to my question.",
+    }
+    response = client.patch(
+        f"/api/history/{sample_history.id}/feedback",
+        json=payload,
+        headers=admin_headers,
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["feedback_score"] == -1
+    assert data["feedback_comment"] == payload["feedback_comment"]
+
+    db_session.expire_all()
+    saved = db_session.get(QuestionHistory, sample_history.id)
+    assert saved is not None
+    assert saved.feedback_comment == payload["feedback_comment"]
+
+
+def test_patch_feedback_clear_comment(
+    client: TestClient,
+    sample_history: QuestionHistory,
+    admin_headers: dict[str, str],
+    db_session: Session,
+) -> None:
+    """Test clearing an existing feedback comment."""
+    # Seed comment
+    sample_history.feedback_comment = "Initial comment"
+    db_session.commit()
+
+    response = client.patch(
+        f"/api/history/{sample_history.id}/feedback",
+        json={"feedback_score": 1, "feedback_comment": None},
+        headers=admin_headers,
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["feedback_score"] == 1
+    assert data["feedback_comment"] is None
+
+    db_session.expire_all()
+    refreshed = db_session.get(QuestionHistory, sample_history.id)
+    assert refreshed is not None
+    assert refreshed.feedback_comment is None
 
 
 def test_get_history_includes_feedback_score(
@@ -133,3 +190,5 @@ def test_get_history_includes_feedback_score(
     assert len(data) > 0
     assert "feedback_score" in data[0]
     assert data[0]["feedback_score"] == 1
+    assert "feedback_comment" in data[0]
+    assert data[0]["feedback_comment"] is None

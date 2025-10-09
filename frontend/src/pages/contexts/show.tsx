@@ -77,16 +77,18 @@ function SortableRow({ item, onEdit }: SortableRowProps) {
   return (
     <TableRow ref={setNodeRef} style={style}>
       <TableCell>
-        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing"
+        >
           <GripVertical className="h-5 w-5 text-gray-400" />
         </div>
       </TableCell>
       <TableCell>{item.id}</TableCell>
       <TableCell className="font-medium">{item.title}</TableCell>
       <TableCell className="max-w-md">
-        <div className="line-clamp-3 whitespace-pre-wrap">
-          {item.content}
-        </div>
+        <div className="line-clamp-3 whitespace-pre-wrap">{item.content}</div>
       </TableCell>
       <TableCell className="text-sm text-gray-500">
         {new Date(item.created_at).toLocaleDateString()}
@@ -124,14 +126,14 @@ export const ContextShow = () => {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const fetchItems = useCallback(async () => {
     try {
       const response = await apiClient.get(`/contexts/${id}/items`);
-      const sortedData = response.data.sort((a: ContextItem, b: ContextItem) =>
-        a.order_index - b.order_index
+      const sortedData = response.data.sort(
+        (a: ContextItem, b: ContextItem) => a.order_index - b.order_index,
       );
       setItems(sortedData);
     } catch (error) {
@@ -241,11 +243,14 @@ export const ContextShow = () => {
       }));
 
       const updatePromises = updates
-        .filter((update, index) => update.order_index !== previousItems[index]?.order_index)
+        .filter(
+          (update, index) =>
+            update.order_index !== previousItems[index]?.order_index,
+        )
         .map((update) =>
           apiClient.patch(`/contexts/${id}/items/${update.id}`, {
             order_index: update.order_index,
-          })
+          }),
         );
 
       await Promise.all(updatePromises);
@@ -318,9 +323,7 @@ export const ContextShow = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>청크 목록 ({items.length})</CardTitle>
           {context?.context_type === "FAQ" && (
-            <Button onClick={() => setAddQADialogOpen(true)}>
-              Q&A 추가
-            </Button>
+            <Button onClick={() => setAddQADialogOpen(true)}>Q&A 추가</Button>
           )}
         </CardHeader>
         <CardContent>

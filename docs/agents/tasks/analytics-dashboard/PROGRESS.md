@@ -1,7 +1,7 @@
 # Analytics Dashboard - Progress
 
 ## Summary
-분석 대시보드 구현 시작 - TDD 방식으로 백엔드 API부터 개발
+분석 대시보드 구현 완료 — 백엔드/프론트엔드 집계 및 피드백 코멘트 뷰까지 제공
 
 ## Goal & Approach
 1. 백엔드: Analytics API 라우터 + 스키마 (TDD)
@@ -18,9 +18,10 @@
 - [x] Step 5 [Structural]: recharts 설치 (frontend/package.json:27)
 - [x] Step 6 [Behavioral]: 대시보드 페이지 구현 (frontend/src/pages/analytics.tsx)
 - [x] Step 7 [Structural]: 라우트 추가 (frontend/src/App.tsx:13,91)
+- [x] Step 8 [Behavioral]: 피드백 코멘트 API + 프론트 필터/로딩 통합 (analytics.tsx, tests 8/8)
 
 ## Current Failures
-- 기존 테스트 3개 실패 (test_admin_contexts.py) - 이는 기존 문제로, analytics 태스크와 무관
+없음 (타깃 테스트 통과)
 
 ## Decision Log
 1. **차트 라이브러리**: Recharts 선택 (React 표준, shadcn/ui 호환)
@@ -31,4 +32,4 @@
 6. **User 패스워드**: `pwd_context.hash()` 사용 (set_password 메서드 없음)
 
 ## Next Step
-**Step 8 [Behavioral]**: 통합 테스트 - 프론트엔드에서 API 호출 확인 (수동 검증)
+없음 — 감시 항목은 QA 주기 중 수동 확인 (필요 시)

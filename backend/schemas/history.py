@@ -16,6 +16,12 @@ class FeedbackRequest(BaseModel):
     feedback_score: int = Field(
         ..., ge=-1, le=1, description="Feedback: -1 (dislike), 0 (neutral), 1 (like)"
     )
+    feedback_comment: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=2000,
+        description="Optional free-form feedback comment",
+    )
 
 
 class QuestionHistoryOut(BaseModel):
@@ -30,6 +36,7 @@ class QuestionHistoryOut(BaseModel):
     session_id: str
     is_favorited: bool
     feedback_score: int
+    feedback_comment: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -50,3 +57,12 @@ class ConversationMessage(BaseModel):
     @field_serializer("timestamp")
     def serialize_timestamp(self, value: datetime) -> str:
         return to_local_iso(value)
+
+
+class QuestionHistoryCreate(BaseModel):
+    """Request payload for creating a question history record."""
+
+    topic_id: int = Field(..., gt=0)
+    question: str = Field(..., min_length=1)
+    answer: str = Field(..., min_length=1)
+    session_id: str = Field(..., min_length=1)

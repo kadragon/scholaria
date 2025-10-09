@@ -6,7 +6,14 @@ import { http, HttpResponse } from "msw";
 
 const API_URL = "http://localhost:8001/api";
 
-function createSSEStream(events: Array<{ type: string; content?: string; citations?: unknown; message?: string }>) {
+function createSSEStream(
+  events: Array<{
+    type: string;
+    content?: string;
+    citations?: unknown;
+    message?: string;
+  }>,
+) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
@@ -27,7 +34,7 @@ describe("useChat", () => {
 
   it("should initialize with empty messages", () => {
     const { result } = renderHook(() =>
-      useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() })
+      useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() }),
     );
 
     expect(result.current.messages).toEqual([]);
@@ -40,18 +47,45 @@ describe("useChat", () => {
         const stream = createSSEStream([
           { type: "answer_chunk", content: "Hello" },
           { type: "answer_chunk", content: " world" },
-          { type: "citations", citations: [{ context_item_id: 1, title: "Test", content: "Test content", score: 0.9, context_type: "markdown" }] },
+          {
+            type: "citations",
+            citations: [
+              {
+                context_item_id: 1,
+                title: "Test",
+                content: "Test content",
+                score: 0.9,
+                context_type: "markdown",
+              },
+            ],
+          },
           { type: "done" },
         ]);
 
         return new HttpResponse(stream, {
           headers: { "Content-Type": "text/event-stream" },
         });
-      })
+      }),
+    );
+    server.use(
+      http.post(`${API_URL}/history`, async ({ request }) => {
+        const body = await request.json();
+        return HttpResponse.json({
+          id: 42,
+          topic_id: body.topic_id,
+          question: body.question,
+          answer: body.answer,
+          session_id: body.session_id,
+          feedback_score: 0,
+          feedback_comment: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }),
     );
 
     const { result } = renderHook(() =>
-      useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() })
+      useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() }),
     );
 
     result.current.sendMessage("Test question");
@@ -66,8 +100,17 @@ describe("useChat", () => {
     expect(result.current.messages[1].role).toBe("assistant");
     expect(result.current.messages[1].content).toBe("Hello world");
     expect(result.current.messages[1].citations).toEqual([
-      { context_item_id: 1, title: "Test", content: "Test content", score: 0.9, context_type: "markdown" },
+      {
+        context_item_id: 1,
+        title: "Test",
+        content: "Test content",
+        score: 0.9,
+        context_type: "markdown",
+      },
     ]);
+    expect(result.current.messages[1].historyId).toBe(42);
+    expect(result.current.messages[1].feedbackScore).toBe(0);
+    expect(result.current.messages[1].feedbackComment).toBeNull();
   });
 
   it("should handle error event from stream", async () => {
@@ -82,17 +125,19 @@ describe("useChat", () => {
         return new HttpResponse(stream, {
           headers: { "Content-Type": "text/event-stream" },
         });
-      })
+      }),
     );
 
     const { result } = renderHook(() =>
-      useChat({ topicId: 1, sessionId: "test-session", onError })
+      useChat({ topicId: 1, sessionId: "test-session", onError }),
     );
 
     result.current.sendMessage("Test question");
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
-    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: "Stream error" }));
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Stream error" }),
+    );
   });
 
   it("should handle network error", async () => {
@@ -101,11 +146,11 @@ describe("useChat", () => {
     server.use(
       http.post(`${API_URL}/rag/stream`, () => {
         return HttpResponse.error();
-      })
+      }),
     );
 
     const { result } = renderHook(() =>
-      useChat({ topicId: 1, sessionId: "test-session", onError })
+      useChat({ topicId: 1, sessionId: "test-session", onError }),
     );
 
     result.current.sendMessage("Test question");
@@ -116,7 +161,7 @@ describe("useChat", () => {
 
   it("should clear messages", () => {
     const { result } = renderHook(() =>
-      useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() })
+      useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() }),
     );
 
     result.current.clearMessages();
@@ -126,7 +171,7 @@ describe("useChat", () => {
 
   it("should not send message when topicId is null", async () => {
     const { result } = renderHook(() =>
-      useChat({ topicId: null, sessionId: "test-session", onError: vi.fn() })
+      useChat({ topicId: null, sessionId: "test-session", onError: vi.fn() }),
     );
 
     result.current.sendMessage("Test question");
@@ -136,7 +181,7 @@ describe("useChat", () => {
 
   it("should not send empty message", async () => {
     const { result } = renderHook(() =>
-      useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() })
+      useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() }),
     );
 
     result.current.sendMessage("   ");
@@ -157,9 +202,18 @@ describe("useChat", () => {
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
           start(controller) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "answer_chunk", content: "Processing" })}\n\n`));
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  type: "answer_chunk",
+                  content: "Processing",
+                })}\n\n`,
+              ),
+            );
             streamPromise.then(() => {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`),
+              );
               controller.close();
             });
           },
@@ -168,16 +222,18 @@ describe("useChat", () => {
         return new HttpResponse(stream, {
           headers: { "Content-Type": "text/event-stream" },
         });
-      })
+      }),
     );
 
     const { result } = renderHook(() =>
-      useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() })
+      useChat({ topicId: 1, sessionId: "test-session", onError: vi.fn() }),
     );
 
     result.current.sendMessage("First message");
 
-    await waitFor(() => expect(result.current.isStreaming).toBe(true), { timeout: 1000 });
+    await waitFor(() => expect(result.current.isStreaming).toBe(true), {
+      timeout: 1000,
+    });
 
     const messagesBefore = result.current.messages.length;
     result.current.sendMessage("Second message");

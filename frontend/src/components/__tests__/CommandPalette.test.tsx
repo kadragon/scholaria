@@ -23,20 +23,24 @@ describe("CommandPalette", () => {
     render(
       <BrowserRouter>
         <CommandPalette open={false} onOpenChange={vi.fn()} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
-    expect(screen.queryByPlaceholderText("명령어 또는 페이지 검색...")).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText("명령어 또는 페이지 검색..."),
+    ).not.toBeInTheDocument();
   });
 
   it("should render when open is true", () => {
     render(
       <BrowserRouter>
         <CommandPalette open={true} onOpenChange={vi.fn()} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
-    expect(screen.getByPlaceholderText("명령어 또는 페이지 검색...")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("명령어 또는 페이지 검색..."),
+    ).toBeInTheDocument();
   });
 
   it("should navigate to topics page when topic command is selected", async () => {
@@ -46,7 +50,7 @@ describe("CommandPalette", () => {
     render(
       <BrowserRouter>
         <CommandPalette open={true} onOpenChange={onOpenChange} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     await user.click(screen.getByText("토픽 관리"));
@@ -62,7 +66,7 @@ describe("CommandPalette", () => {
     render(
       <BrowserRouter>
         <CommandPalette open={true} onOpenChange={onOpenChange} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     await user.click(screen.getByText("컨텍스트 관리"));
@@ -77,7 +81,7 @@ describe("CommandPalette", () => {
     render(
       <BrowserRouter>
         <CommandPalette open={true} onOpenChange={vi.fn()} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     await user.click(screen.getByText("분석 대시보드"));
@@ -91,7 +95,7 @@ describe("CommandPalette", () => {
     render(
       <BrowserRouter>
         <CommandPalette open={true} onOpenChange={vi.fn()} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     await user.click(screen.getByText("채팅"));
@@ -105,7 +109,7 @@ describe("CommandPalette", () => {
     render(
       <BrowserRouter>
         <CommandPalette open={true} onOpenChange={vi.fn()} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     await user.click(screen.getByText("토픽 생성"));
@@ -119,7 +123,7 @@ describe("CommandPalette", () => {
     render(
       <BrowserRouter>
         <CommandPalette open={true} onOpenChange={vi.fn()} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     await user.click(screen.getByText("컨텍스트 생성"));

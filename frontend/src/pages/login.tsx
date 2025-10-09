@@ -4,7 +4,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 
-const API_URL = import.meta.env.VITE_API_URL?.replace('/admin', '') || "http://localhost:8001/api";
+const API_URL =
+  import.meta.env.VITE_API_URL?.replace("/admin", "") ||
+  "http://localhost:8001/api";
 
 export const LoginPage = () => {
   const { mutate: login, isLoading } = useLogin();
@@ -41,7 +43,7 @@ export const LoginPage = () => {
             description: "이메일 또는 비밀번호가 올바르지 않습니다.",
           });
         },
-      }
+      },
     );
   };
 

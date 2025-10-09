@@ -1,6 +1,12 @@
 import { useState, useMemo } from "react";
 import { apiClient } from "../../lib/apiClient";
-import { useTable, useNavigation, useDelete, useList, useUpdate } from "@refinedev/core";
+import {
+  useTable,
+  useNavigation,
+  useDelete,
+  useList,
+  useUpdate,
+} from "@refinedev/core";
 import {
   Table,
   TableBody,
@@ -77,15 +83,16 @@ export const ContextList = () => {
     if (!data?.data) return [];
 
     return data.data.filter((context) => {
-      const matchesSearch = searchQuery === "" ||
+      const matchesSearch =
+        searchQuery === "" ||
         context.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         context.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesType = typeFilter.size === 0 ||
-        typeFilter.has(context.context_type);
+      const matchesType =
+        typeFilter.size === 0 || typeFilter.has(context.context_type);
 
-      const matchesStatus = statusFilter.size === 0 ||
-        statusFilter.has(context.processing_status);
+      const matchesStatus =
+        statusFilter.size === 0 || statusFilter.has(context.processing_status);
 
       return matchesSearch && matchesType && matchesStatus;
     });
@@ -119,7 +126,7 @@ export const ContextList = () => {
             variant: "destructive",
           });
         },
-      }
+      },
     );
   };
 
@@ -139,7 +146,10 @@ export const ContextList = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const ids = data?.data.map((c) => c.id).filter((id): id is number => id !== undefined) || [];
+      const ids =
+        data?.data
+          .map((c) => c.id)
+          .filter((id): id is number => id !== undefined) || [];
       setSelectedIds(new Set(ids));
     } else {
       setSelectedIds(new Set());
@@ -161,10 +171,13 @@ export const ContextList = () => {
 
     setIsAssigning(true);
     try {
-      const response = await apiClient.post("/admin/bulk/assign-context-to-topic", {
-        topic_id: parseInt(selectedTopicId),
-        context_ids: Array.from(selectedIds),
-      });
+      const response = await apiClient.post(
+        "/admin/bulk/assign-context-to-topic",
+        {
+          topic_id: parseInt(selectedTopicId),
+          context_ids: Array.from(selectedIds),
+        },
+      );
 
       const result = response.data;
       toast({
@@ -191,9 +204,12 @@ export const ContextList = () => {
 
     setIsRegenerating(true);
     try {
-      const response = await apiClient.post("/admin/bulk/regenerate-embeddings", {
-        context_ids: Array.from(selectedIds),
-      });
+      const response = await apiClient.post(
+        "/admin/bulk/regenerate-embeddings",
+        {
+          context_ids: Array.from(selectedIds),
+        },
+      );
 
       const result = response.data;
       toast({
@@ -219,12 +235,18 @@ export const ContextList = () => {
   return (
     <div className="p-8 space-y-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-secondary-900 mb-2">컨텍스트 관리</h1>
-        <p className="text-secondary-600">지식 기반 컨텍스트를 생성하고 관리합니다</p>
+        <h1 className="text-3xl font-bold text-secondary-900 mb-2">
+          컨텍스트 관리
+        </h1>
+        <p className="text-secondary-600">
+          지식 기반 컨텍스트를 생성하고 관리합니다
+        </p>
       </div>
       <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-secondary-50 to-white border-b-2 border-secondary-100">
-          <CardTitle className="text-xl font-bold text-secondary-800">컨텍스트 목록</CardTitle>
+          <CardTitle className="text-xl font-bold text-secondary-800">
+            컨텍스트 목록
+          </CardTitle>
           <div className="flex gap-2">
             {selectedIds.size > 0 && (
               <>
@@ -251,7 +273,9 @@ export const ContextList = () => {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="컨텍스트 검색..."
-            isFiltered={searchQuery !== "" || typeFilter.size > 0 || statusFilter.size > 0}
+            isFiltered={
+              searchQuery !== "" || typeFilter.size > 0 || statusFilter.size > 0
+            }
             onReset={handleResetFilters}
             filters={
               <>
@@ -292,9 +316,13 @@ export const ContextList = () => {
                 <TableRow key={context.id}>
                   <TableCell>
                     <Checkbox
-                      checked={context.id !== undefined && typeof context.id === 'number' && selectedIds.has(context.id)}
+                      checked={
+                        context.id !== undefined &&
+                        typeof context.id === "number" &&
+                        selectedIds.has(context.id)
+                      }
                       onCheckedChange={(checked) => {
-                        if (typeof context.id === 'number') {
+                        if (typeof context.id === "number") {
                           handleSelectOne(context.id, checked as boolean);
                         }
                       }}
@@ -302,10 +330,12 @@ export const ContextList = () => {
                   </TableCell>
                   <TableCell>{context.id}</TableCell>
                   <TableCell>
-                    {typeof context.id === 'number' ? (
+                    {typeof context.id === "number" ? (
                       <InlineEditCell
                         value={context.name}
-                        onSave={(newName) => handleUpdateName(context.id as number, newName)}
+                        onSave={(newName) =>
+                          handleUpdateName(context.id as number, newName)
+                        }
                       />
                     ) : (
                       context.name
@@ -320,7 +350,7 @@ export const ContextList = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          if (typeof context.id === 'number') {
+                          if (typeof context.id === "number") {
                             show("contexts", context.id);
                           }
                         }}
@@ -331,7 +361,7 @@ export const ContextList = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          if (typeof context.id === 'number') {
+                          if (typeof context.id === "number") {
                             edit("contexts", context.id);
                           }
                         }}
@@ -375,13 +405,14 @@ export const ContextList = () => {
                 <SelectValue placeholder="토픽 선택" />
               </SelectTrigger>
               <SelectContent>
-                {topicsData?.data.map((topic) => (
-                  topic.id !== undefined && (
-                    <SelectItem key={topic.id} value={topic.id.toString()}>
-                      {topic.name}
-                    </SelectItem>
-                  )
-                ))}
+                {topicsData?.data.map(
+                  (topic) =>
+                    topic.id !== undefined && (
+                      <SelectItem key={topic.id} value={topic.id.toString()}>
+                        {topic.name}
+                      </SelectItem>
+                    ),
+                )}
               </SelectContent>
             </Select>
           </div>

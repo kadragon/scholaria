@@ -58,7 +58,7 @@ describe("InlineEditCell", () => {
       <div>
         <InlineEditCell value="Old Value" onSave={onSave} />
         <button>Outside</button>
-      </div>
+      </div>,
     );
 
     await user.dblClick(screen.getByText("Old Value"));

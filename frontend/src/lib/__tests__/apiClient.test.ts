@@ -17,7 +17,7 @@ describe("apiClient", () => {
         http.get("*/test", ({ request }) => {
           authHeader = request.headers.get("Authorization");
           return new HttpResponse(null, { status: 200 });
-        })
+        }),
       );
 
       await apiClient.get("/test");
@@ -30,7 +30,7 @@ describe("apiClient", () => {
         http.get("*/test", ({ request }) => {
           authHeader = request.headers.get("Authorization");
           return new HttpResponse(null, { status: 200 });
-        })
+        }),
       );
 
       await apiClient.get("/test");
@@ -45,12 +45,16 @@ describe("apiClient", () => {
       Object.defineProperty(window, "location", {
         value: {
           pathname: "/admin/topics",
-          set href(url: string) { mockLocationHref(url); }
+          set href(url: string) {
+            mockLocationHref(url);
+          },
         },
         writable: true,
         configurable: true,
       });
-      server.use(http.get("*/protected", () => new HttpResponse(null, { status: 401 })));
+      server.use(
+        http.get("*/protected", () => new HttpResponse(null, { status: 401 })),
+      );
 
       try {
         await apiClient.get("/protected");
@@ -68,12 +72,16 @@ describe("apiClient", () => {
       Object.defineProperty(window, "location", {
         value: {
           pathname: "/admin/login",
-          set href(url: string) { mockLocationHref(url); }
+          set href(url: string) {
+            mockLocationHref(url);
+          },
         },
         writable: true,
         configurable: true,
       });
-      server.use(http.get("*/protected", () => new HttpResponse(null, { status: 401 })));
+      server.use(
+        http.get("*/protected", () => new HttpResponse(null, { status: 401 })),
+      );
 
       try {
         await apiClient.get("/protected");
@@ -86,7 +94,9 @@ describe("apiClient", () => {
     });
 
     it("should pass through non-401 errors", async () => {
-      server.use(http.get("*/error", () => new HttpResponse(null, { status: 500 })));
+      server.use(
+        http.get("*/error", () => new HttpResponse(null, { status: 500 })),
+      );
 
       await expect(apiClient.get("/error")).rejects.toThrow();
     });
