@@ -124,4 +124,16 @@ module = [
 ]
 ignore_missing_imports = true
 
-# Pytest configuration moved to pytest.ini
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.0.0",
+]
+
+# Pytest configuration
+[tool.pytest.ini_options]
+addopts = [
+    "--cov=backend",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=80",
+]
