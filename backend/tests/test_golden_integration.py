@@ -145,11 +145,14 @@ class TestGoldenDatasetIntegration:
         reranked_accuracy = reranked_hits / total_expected
 
         assert reranked_accuracy >= baseline_accuracy, (
-            f"Reranked accuracy {reranked_accuracy:.2%} is not higher than "
+            f"Reranked accuracy {reranked_accuracy:.2%} should not be lower than "
             f"baseline {baseline_accuracy:.2%}"
         )
-        assert (reranked_accuracy - baseline_accuracy) >= 0.1, (
-            f"Reranking should improve accuracy by at least 10%\n"
-            f"Baseline: {baseline_accuracy:.2%}, Reranked: {reranked_accuracy:.2%}\n"
-            f"Improvement: {(reranked_accuracy - baseline_accuracy):.2%}"
-        )
+
+        improvement = reranked_accuracy - baseline_accuracy
+        if baseline_accuracy < 1.0:
+            assert improvement >= 0.1, (
+                f"Reranking should improve accuracy by at least 10% when baseline < 100%\n"
+                f"Baseline: {baseline_accuracy:.2%}, Reranked: {reranked_accuracy:.2%}\n"
+                f"Improvement: {improvement:.2%}"
+            )
