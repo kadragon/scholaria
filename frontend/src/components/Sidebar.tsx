@@ -48,6 +48,7 @@ export const Sidebar = () => {
           <Link
             key={item.path}
             to={item.path}
+            aria-current={isActive(item.path) ? "page" : undefined}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
               isActive(item.path)
                 ? "bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700 font-semibold shadow-sm border border-primary-200"

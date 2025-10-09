@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { AnalyticsSkeleton } from "../AnalyticsSkeleton";
 
 describe("AnalyticsSkeleton", () => {
   it("스켈레톤 렌더링 검증", () => {
-    const { container } = render(<AnalyticsSkeleton />);
+    render(<AnalyticsSkeleton />);
 
     // Skeleton 컴포넌트들이 렌더링되었는지 확인
-    const skeletons = container.querySelectorAll('[class*="animate-pulse"]');
+    const skeletons = screen.getAllByTestId("skeleton-element");
     expect(skeletons.length).toBeGreaterThan(0);
   });
 

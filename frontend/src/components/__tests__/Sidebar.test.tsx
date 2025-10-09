@@ -37,7 +37,7 @@ describe("Sidebar", () => {
     );
 
     const topicLink = screen.getByText("토픽 관리").closest("a");
-    expect(topicLink).toHaveClass("from-primary-50");
+    expect(topicLink).toHaveAttribute("aria-current", "page");
   });
 
   it("should call logout when logout button is clicked", async () => {

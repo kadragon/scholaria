@@ -39,11 +39,9 @@ describe("SetupPage", () => {
 
     expect(screen.getByText("초기 설정")).toBeInTheDocument();
     expect(screen.getByText("첫 관리자 계정을 생성하세요")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("admin")).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText("admin@scholaria.com"),
-    ).toBeInTheDocument();
-    expect(screen.getAllByPlaceholderText("••••••••")).toHaveLength(2);
+    expect(screen.getByLabelText("사용자명")).toBeInTheDocument();
+    expect(screen.getByLabelText("이메일")).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/비밀번호/)).toHaveLength(2);
     expect(
       screen.getByRole("button", { name: "관리자 계정 생성" }),
     ).toBeInTheDocument();
@@ -71,13 +69,10 @@ describe("SetupPage", () => {
       expect(screen.queryByText("확인 중...")).not.toBeInTheDocument();
     });
 
-    await user.type(screen.getByPlaceholderText("admin"), "testuser");
-    await user.type(
-      screen.getByPlaceholderText("admin@scholaria.com"),
-      "test@test.com",
-    );
+    await user.type(screen.getByLabelText("사용자명"), "testuser");
+    await user.type(screen.getByLabelText("이메일"), "test@test.com");
 
-    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    const passwordInputs = screen.getAllByLabelText(/비밀번호/);
     await user.type(passwordInputs[0], "password123");
     await user.type(passwordInputs[1], "password456");
 
@@ -98,13 +93,10 @@ describe("SetupPage", () => {
       expect(screen.queryByText("확인 중...")).not.toBeInTheDocument();
     });
 
-    await user.type(screen.getByPlaceholderText("admin"), "testuser");
-    await user.type(
-      screen.getByPlaceholderText("admin@scholaria.com"),
-      "test@test.com",
-    );
+    await user.type(screen.getByLabelText("사용자명"), "testuser");
+    await user.type(screen.getByLabelText("이메일"), "test@test.com");
 
-    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    const passwordInputs = screen.getAllByLabelText(/비밀번호/);
     await user.type(passwordInputs[0], "short");
     await user.type(passwordInputs[1], "short");
 
@@ -126,13 +118,10 @@ describe("SetupPage", () => {
       expect(screen.queryByText("확인 중...")).not.toBeInTheDocument();
     });
 
-    await user.type(screen.getByPlaceholderText("admin"), "admin");
-    await user.type(
-      screen.getByPlaceholderText("admin@scholaria.com"),
-      "admin@test.com",
-    );
+    await user.type(screen.getByLabelText("사용자명"), "admin");
+    await user.type(screen.getByLabelText("이메일"), "admin@test.com");
 
-    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    const passwordInputs = screen.getAllByLabelText(/비밀번호/);
     await user.type(passwordInputs[0], "password123");
     await user.type(passwordInputs[1], "password123");
 
@@ -151,13 +140,10 @@ describe("SetupPage", () => {
       expect(screen.queryByText("확인 중...")).not.toBeInTheDocument();
     });
 
-    await user.type(screen.getByPlaceholderText("admin"), "testuser");
-    await user.type(
-      screen.getByPlaceholderText("admin@scholaria.com"),
-      "existing@test.com",
-    );
+    await user.type(screen.getByLabelText("사용자명"), "testuser");
+    await user.type(screen.getByLabelText("이메일"), "existing@test.com");
 
-    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    const passwordInputs = screen.getAllByLabelText(/비밀번호/);
     await user.type(passwordInputs[0], "password123");
     await user.type(passwordInputs[1], "password123");
 

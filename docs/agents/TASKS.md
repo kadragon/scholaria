@@ -3,7 +3,7 @@
 ## 상태 스냅샷
 
 - MVP 완성, FastAPI + Refine 스택 프로덕션 준비 완료
-- 86개 프런트엔드 테스트 (40.91% coverage, 35% threshold), 195개 백엔드 테스트 (85% coverage, 80% threshold)
+- 106개 프런트엔드 테스트 (51.29% coverage, 45% threshold), 195개 백엔드 테스트 (85% coverage, 80% threshold)
 - ruff/mypy 클린, Celery/Redis 비동기 인프라 운영 중
 - CI: 프런트엔드 4개 잡, 백엔드 3개 잡 (test+coverage, lint, typecheck)
 - 세부 이력은 `docs/agents/tasks/_archive/` 및 `TASKS_ARCHIVE_INDEX.md` 참고

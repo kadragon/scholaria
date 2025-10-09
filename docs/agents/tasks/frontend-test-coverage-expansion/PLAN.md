@@ -65,7 +65,7 @@
 1. [ ] Step 1: dataProvider 단위 테스트 (4 tests)
 2. [ ] Step 2: Sidebar 컴포넌트 테스트 (3 tests)
 3. [ ] Step 3: LoginPage 통합 테스트 (4 tests)
-4. [ ] Step 4: MessageInput 컴포넌트 테스트 (4 tests)
+4. [ ] Step 4: MessageInput 컴포넌트 테스트 (5 tests)
 5. [ ] Step 5: 커버리지 검증 & 임계값 35% 상향
 6. [ ] TASKS.md 업데이트 (Phase 5 완료 기록)
 

@@ -109,10 +109,14 @@ export const SetupPage = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-secondary-700 mb-2">
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-secondary-700 mb-2"
+            >
               사용자명
             </label>
             <input
+              id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -124,10 +128,14 @@ export const SetupPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-700 mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-secondary-700 mb-2"
+            >
               이메일
             </label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -138,10 +146,14 @@ export const SetupPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-700 mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-secondary-700 mb-2"
+            >
               비밀번호
             </label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -156,10 +168,14 @@ export const SetupPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-700 mb-2">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-secondary-700 mb-2"
+            >
               비밀번호 확인
             </label>
             <input
+              id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

@@ -44,10 +44,8 @@ describe("LoginPage", () => {
       </BrowserRouter>,
     );
 
-    expect(
-      screen.getByPlaceholderText("admin@example.com"),
-    ).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("••••••••")).toBeInTheDocument();
+    expect(screen.getByLabelText("이메일")).toBeInTheDocument();
+    expect(screen.getByLabelText("비밀번호")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "로그인" })).toBeInTheDocument();
   });
 
@@ -84,8 +82,8 @@ describe("LoginPage", () => {
       </BrowserRouter>,
     );
 
-    const emailInput = screen.getByPlaceholderText("admin@example.com");
-    const passwordInput = screen.getByPlaceholderText("••••••••");
+    const emailInput = screen.getByLabelText("이메일");
+    const passwordInput = screen.getByLabelText("비밀번호");
     const submitButton = screen.getByRole("button", { name: "로그인" });
 
     await user.type(emailInput, "test@example.com");
@@ -117,8 +115,8 @@ describe("LoginPage", () => {
       </BrowserRouter>,
     );
 
-    const emailInput = screen.getByPlaceholderText("admin@example.com");
-    const passwordInput = screen.getByPlaceholderText("••••••••");
+    const emailInput = screen.getByLabelText("이메일");
+    const passwordInput = screen.getByLabelText("비밀번호");
     const submitButton = screen.getByRole("button", { name: "로그인" });
 
     await user.type(emailInput, "wrong@example.com");
