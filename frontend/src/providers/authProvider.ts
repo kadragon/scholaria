@@ -1,11 +1,10 @@
 import type { AuthProvider } from "@refinedev/core";
 import { apiClient } from "../lib/apiClient";
-
-const API_URL = import.meta.env.VITE_API_URL?.replace('/admin', '') || "http://localhost:8001/api";
+import { API_BASE_URL } from "../lib/apiConfig";
 
 export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ username: email, password }),

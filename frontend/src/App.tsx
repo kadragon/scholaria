@@ -6,6 +6,7 @@ import routerBindings, {
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { authProvider } from "./providers/authProvider";
 import { adminDataProvider } from "./providers/dataProvider";
+import { ThemeProvider } from "./providers/ThemeProvider";
 import { TopicList } from "./pages/topics/list";
 import { TopicCreate } from "./pages/topics/create";
 import { TopicEdit } from "./pages/topics/edit";
@@ -20,6 +21,7 @@ import { ChatPage } from "./pages/chat";
 import { Toaster } from "./components/ui/toaster";
 import { Sidebar } from "./components/Sidebar";
 import { CommandPalette } from "./components/CommandPalette";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { useCommandPalette } from "./hooks/useCommandPalette";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -27,6 +29,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     <div className="flex min-h-screen bg-secondary-50">
       <Sidebar />
       <div className="flex-1 flex flex-col">
+        <div className="flex justify-end p-4 border-b border-secondary-200">
+          <ThemeToggle />
+        </div>
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
       <Toaster />
@@ -38,81 +43,83 @@ function App() {
   const { open, setOpen } = useCommandPalette();
 
   return (
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <Refine
-        dataProvider={adminDataProvider}
-        authProvider={authProvider}
-        routerProvider={routerBindings}
-        resources={[
-          {
-            name: "topics",
-            list: "/admin/topics",
-            create: "/admin/topics/create",
-            edit: "/admin/topics/edit/:id",
-          },
-          {
-            name: "contexts",
-            list: "/admin/contexts",
-            create: "/admin/contexts/create",
-            edit: "/admin/contexts/edit/:id",
-            show: "/admin/contexts/show/:id",
-          },
-        ]}
+    <ThemeProvider>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
       >
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<ChatPage />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/chat/:slug" element={<ChatPage />} />
+        <Refine
+          dataProvider={adminDataProvider}
+          authProvider={authProvider}
+          routerProvider={routerBindings}
+          resources={[
+            {
+              name: "topics",
+              list: "/admin/topics",
+              create: "/admin/topics/create",
+              edit: "/admin/topics/edit/:id",
+            },
+            {
+              name: "contexts",
+              list: "/admin/contexts",
+              create: "/admin/contexts/create",
+              edit: "/admin/contexts/edit/:id",
+              show: "/admin/contexts/show/:id",
+            },
+          ]}
+        >
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<ChatPage />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat/:slug" element={<ChatPage />} />
 
-          {/* Admin routes */}
-          <Route path="/admin">
-            <Route path="setup" element={<SetupPage />} />
-            <Route
-              element={
-                <Authenticated
-                  key="authenticated-routes"
-                  fallback={<CatchAllNavigate to="/admin/login" />}
-                >
-                  <Layout>
-                    <Outlet />
-                  </Layout>
-                </Authenticated>
-              }
-            >
-              <Route index element={<NavigateToResource resource="topics" />} />
-              <Route path="topics">
-                <Route index element={<TopicList />} />
-                <Route path="create" element={<TopicCreate />} />
-                <Route path="edit/:id" element={<TopicEdit />} />
+            {/* Admin routes */}
+            <Route path="/admin">
+              <Route path="setup" element={<SetupPage />} />
+              <Route
+                element={
+                  <Authenticated
+                    key="authenticated-routes"
+                    fallback={<CatchAllNavigate to="/admin/login" />}
+                  >
+                    <Layout>
+                      <Outlet />
+                    </Layout>
+                  </Authenticated>
+                }
+              >
+                <Route index element={<NavigateToResource resource="topics" />} />
+                <Route path="topics">
+                  <Route index element={<TopicList />} />
+                  <Route path="create" element={<TopicCreate />} />
+                  <Route path="edit/:id" element={<TopicEdit />} />
+                </Route>
+                <Route path="contexts">
+                  <Route index element={<ContextList />} />
+                  <Route path="create" element={<ContextCreate />} />
+                  <Route path="edit/:id" element={<ContextEdit />} />
+                  <Route path="show/:id" element={<ContextShow />} />
+                </Route>
+                <Route path="analytics" element={<Analytics />} />
               </Route>
-              <Route path="contexts">
-                <Route index element={<ContextList />} />
-                <Route path="create" element={<ContextCreate />} />
-                <Route path="edit/:id" element={<ContextEdit />} />
-                <Route path="show/:id" element={<ContextShow />} />
+              <Route
+                element={
+                  <Authenticated key="unauthenticated-routes" fallback={<Outlet />}>
+                    <NavigateToResource />
+                  </Authenticated>
+                }
+              >
+                <Route path="login" element={<LoginPage />} />
               </Route>
-              <Route path="analytics" element={<Analytics />} />
             </Route>
-            <Route
-              element={
-                <Authenticated key="unauthenticated-routes" fallback={<Outlet />}>
-                  <NavigateToResource />
-                </Authenticated>
-              }
-            >
-              <Route path="login" element={<LoginPage />} />
-            </Route>
-          </Route>
-        </Routes>
-      </Refine>
-      <CommandPalette open={open} onOpenChange={setOpen} />
-    </BrowserRouter>
+          </Routes>
+        </Refine>
+        <CommandPalette open={open} onOpenChange={setOpen} />
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
