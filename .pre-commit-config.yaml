@@ -39,6 +39,12 @@ repos:
         types: [python]
         require_serial: true
 
+      - id: frontend-test
+        name: frontend-test
+        entry: bash -c 'cd frontend && npm run test'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+
   # Django tests removed from pre-push for faster workflow
   # Run manually when needed: uv run python manage.py test --settings=core.test_settings
-  # TypeScript/ESLint checks: Run in CI or manually with `cd admin-frontend && npm run build`
