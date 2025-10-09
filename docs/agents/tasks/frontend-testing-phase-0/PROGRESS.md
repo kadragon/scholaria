@@ -35,5 +35,25 @@ Phase 0 요구사항 중 테스트 인프라는 이미 완료됨. GitHub Actions
 - Node 20.x, npm cache 활용
 - Working directory: `frontend/`
 
+### Step 2: YAML 문법 검증 ✅
+- pre-commit hook `check yaml` 통과
+
+### Step 3: TASKS.md 업데이트 ✅
+- Phase 0 체크박스 `[x]` 표시
+
+### Step 4-5: 브랜치 생성 & 커밋 ✅
+- Branch: `feat/frontend-testing-phase-0`
+- Commit: `77b02d4` — [Structural] GitHub Actions CI 추가
+
+### Step 6-7: Push & PR 검증 ✅
+- Branch pushed: `feat/frontend-testing-phase-0`
+- PR #52 생성: https://github.com/kadragon/scholaria/pull/52
+- CI 체크 결과:
+  - Test: SUCCESS ✅
+  - Type Check: SUCCESS ✅
+  - Lint: SUCCESS ✅
+  - CodeQL: NEUTRAL
+  - GitGuardian: SUCCESS ✅
+
 ## Next Step
-Step 2: YAML 문법 검증
+PR 머지 대기 (사용자 승인 필요)
