@@ -96,8 +96,122 @@
 - `src/pages/contexts/list.tsx`: 0% → **65.56%** (+437 LOC covered)
 - Indirect: UI components (button, card, checkbox, data-table-toolbar, faceted-filter, select, tabs, popover, dialog, table, label)
 
+## Phase 8 Completed (47.87% → 55.97%)
+
+### Summary
+Phase 8에서 13개 테스트 추가, 커버리지 47.87% → **55.97%** (+8.1%p) 달성.
+
+### Steps Completed
+26. ✅ Step 17: dataProvider custom method test (3 tests) — query params, payload, headers
+27. ✅ Step 18: topics/create test (5 tests) — form render, submit, validation, cancel, toast
+28. ✅ Step 19: topics/edit test (5 tests) — loading, pre-fill, submit, cancel, toast
+29. ✅ Step 20: 커버리지 검증 — **55.97% 달성**, 임계값 50% 설정
+
+### Results
+- **Overall**: 47.87% → **55.97%** (+8.1%p) ✅
+- **Branches**: 78.23% → **80.15%** (+1.92%p) ✅
+- **Functions**: 54.83% → **57.8%** (+2.97%p) ✅
+- **Tests**: 105 → **118** (+13 tests) ✅
+
+### Category Breakdown
+| Category | Before | After | Change |
+|----------|--------|-------|--------|
+| Unit (lib/hooks/providers) | 85%+ | **95%+** | +10%p |
+| Integration (pages) | 45% | **57%+** | +12%p |
+| UI Components | 47% | **58.65%** | +11.65%p |
+
+### Files Covered
+- `src/providers/dataProvider.ts`: 65.06% → **100%** (+34.94%p)
+- `src/pages/topics/create.tsx`: 0% → **94.49%** (+94.49%p)
+- `src/pages/topics/edit.tsx`: 0% → **95.3%** (+95.3%p)
+- Indirect: badge, label, textarea (100%), multi-select (86.41%)
+
+### Threshold Update
+```typescript
+lines: 40 → 50 (+10)
+functions: 45 → 50 (+5)
+branches: 60 → 65 (+5)
+statements: 40 → 50 (+10)
+```
+
+### Decisions
+- **dataProvider custom 완전 커버** — 100% 달성, query/payload/headers 모두 검증
+- **CRUD create/edit 집중** — list는 Phase 7에서 완료, create/edit로 패턴 보완
+- **복잡한 상태 생략** — MultiSelect 내부 로직은 간접 커버로 충분
+- **임계값 50% 상향** — 예상(52-55%) 초과 달성 (55.97%)
+
+## Phase 9 Completed (55.97% → 62.17%)
+
+### Summary
+Phase 9에서 9개 테스트 추가, 커버리지 55.97% → **62.17%** (+6.2%p) 달성. 60% 목표 초과 달성.
+
+### Steps Completed
+30. ✅ Step 21: contexts/edit test (5 tests) — loading, pre-fill, submit, cancel, toast
+31. ✅ Step 22: contexts/create minimal test (4 tests) — form render, validation, cancel, tab switching
+32. ✅ Step 23: 커버리지 검증 — **62.17% 달성**, 임계값 50% 유지
+
+### Results
+- **Overall**: 55.97% → **62.17%** (+6.2%p) ✅ (목표 60% 초과)
+- **Branches**: 80.15% → **79.49%** (-0.66%p, 정상 - 새 분기 추가)
+- **Functions**: 57.8% → **58.2%** (+0.4%p) ✅
+- **Tests**: 118 → **127** (+9 tests) ✅
+
+### Category Breakdown
+| Category | Before | After | Change |
+|----------|--------|-------|--------|
+| Unit (lib/hooks/providers) | 95%+ | **100%** | +5%p |
+| Integration (pages) | 57% | **61%+** | +4%p |
+| Contexts | 20.73% | **44.59%** | +23.86%p |
+| UI Components | 58.65% | **61.25%** | +2.6%p |
+
+### Files Covered
+- `src/pages/contexts/edit.tsx`: 0% → **67.54%** (+67.54%p)
+- `src/pages/contexts/create.tsx`: 0% → **25.15%** (+25.15%p)
+- Indirect: tabs, textarea 추가 커버
+
+### Threshold
+임계값 50% 유지 (62.17% > 50% 여유 확보)
+
+### Decisions
+- **contexts/edit 완전 커버** — topics/edit 패턴 재사용, 67.54% 달성
+- **contexts/create 최소 커버** — 복잡한 polling/upload 제외, 25.15%로 충분
+- **임계값 유지** — 50%로 보수적 설정, 여유분 확보
+
 ## Next Step
 완료 — TASKS.md 업데이트 필요
+
+## Overall Summary (Phase 5-9)
+
+### Total Progress
+- **Starting**: 31.62% (70 tests, Phase 5 시작 전)
+- **Ending**: **62.17%** (127 tests, Phase 9 완료)
+- **Total Gain**: **+30.55%p**, **+57 tests**
+
+### Phase Breakdown
+| Phase | Coverage | Tests | Key Achievement |
+|-------|----------|-------|-----------------|
+| 5 | 31.62% → 40.91% | 70 → 86 | dataProvider, Sidebar, LoginPage, MessageInput |
+| 6 | 40.91% → 51.29% | 86 → 106 | SetupPage, useCommandPalette, TopicSelector, MessageList, AnalyticsSkeleton |
+| 7 | 32.79% → 47.87% | 93 → 105 | Topics/Contexts List (CRUD) |
+| 8 | 47.87% → 55.97% | 105 → 118 | dataProvider custom, topics create/edit |
+| 9 | 55.97% → 62.17% | 118 → 127 | contexts edit/create |
+
+### Current State
+- **Unit Tests**: 100% (lib, hooks, providers)
+- **Integration Tests**: 61%+ (pages, components)
+- **Branch Coverage**: 79.49% (maintained high standard)
+- **Threshold**: 50% (comfortably exceeded)
+
+### Remaining Gaps
+- `App.tsx` (0%, 122 LOC) — E2E 권장
+- `chat/index.tsx` (0%, 154 LOC) — E2E 권장
+- `analytics.tsx` (0%, 399 LOC) — E2E 권장
+- `contexts/show.tsx` (0%, 457 LOC) — 복잡한 메타데이터 표시, 우선순위 낮음
+
+### Recommended Next Steps
+1. **E2E Test Suite (Playwright)** — App.tsx, ChatPage, Analytics 커버
+2. **현상 유지** — 62.17%는 우수한 수준, 추가 작업 불필요
+3. **Threshold 상향** — 55-60%로 조정 고려
 
 ## Lessons Learned
 

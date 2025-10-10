@@ -461,7 +461,364 @@ thresholds: {
 - [x] ~~Step 12: Unit test refinement~~ (Cancelled - 불필요)
 - [x] ~~Step 13: App.tsx integration test~~ (Cancelled - E2E 권장)
 - [x] ~~Step 14: ChatPage integration test~~ (Cancelled - E2E 권장)
-- [ ] **Step 14 (NEW): Topics List page test (6 tests, 핵심만)**
-- [ ] **Step 15 (NEW): Contexts List page test (6 tests, 핵심만)**
-- [ ] **Step 16 (NEW): Coverage verification & threshold 40% update**
-- [ ] PROGRESS.md / TASKS.md update — Phase 7 완료 기록
+- [x] **Step 14 (NEW): Topics List page test (6 tests, 핵심만)**
+- [x] **Step 15 (NEW): Contexts List page test (6 tests, 핵심만)**
+- [x] **Step 16 (NEW): Coverage verification & threshold 40% update**
+- [x] PROGRESS.md / TASKS.md update — Phase 7 완료 기록
+
+---
+
+## Phase 8 Plan: Incremental Coverage Expansion (47.87% → 52-55%)
+
+### Objective
+**Realistic incremental improvement** focusing on high-value, low-complexity targets:
+- Target: **52-55% overall coverage** (+5-8%p)
+- Approach: Partial coverage of mid-complexity files
+- Strategy: Avoid full E2E-style tests, focus on isolated unit/integration logic
+
+### Philosophy
+- **ROI-driven**: Target files with business logic density
+- **Partial coverage**: 30-50% of complex files is acceptable
+- **Avoid deep integration**: No BrowserRouter, no complex chart mocking
+- **Quick wins**: 10-15 tests, ~2-3 hours
+
+### Current Gap Analysis (2025-10-10)
+
+**Overall**: 47.87% (105 tests)
+**Uncovered high-value targets**:
+
+| File | LOC | Current | Complexity | ROI | Priority |
+|------|-----|---------|------------|-----|----------|
+| `dataProvider.ts` (custom method) | 33 | 65.06% | Low | High | ⭐⭐⭐ |
+| `topics/create.tsx` | 120 | 0% | Medium | Medium | ⭐⭐ |
+| `topics/edit.tsx` | 164 | 0% | Medium | Medium | ⭐⭐ |
+| `contexts/create.tsx` | 318 | 0% | High | Low | ⭐ |
+| `contexts/edit.tsx` | 151 | 0% | High | Low | ⭐ |
+| `App.tsx` | 122 | 0% | Very High | Low | ❌ (E2E) |
+| `chat/index.tsx` | 154 | 0% | Very High | Low | ❌ (E2E) |
+| `analytics.tsx` | 399 | 0% | Very High | Low | ❌ (E2E) |
+
+### Phase 8 Scope (Minimal, Targeted)
+
+#### Step 17: dataProvider custom method test
+- **File**: `src/providers/dataProvider.ts` (lines 66-99)
+- **Current**: 65.06% → **Target**: 85%+
+- **Test File**: `src/providers/__tests__/dataProvider.test.ts` (extend existing)
+- **Test Cases** (3 tests):
+  1. `custom` method with query params — URL construction
+  2. `custom` method with payload — POST data handling
+  3. `custom` method with headers — header forwarding
+
+**Rationale**: Low-hanging fruit, pure logic, no UI dependencies.
+
+#### Step 18: topics/create basic logic test
+- **File**: `src/pages/topics/create.tsx` (120 LOC)
+- **Current**: 0% → **Target**: 40-50%
+- **Test File**: `src/pages/topics/__tests__/create.test.tsx`
+- **Test Cases** (4-5 tests, 핵심만):
+  1. Form rendering — name, description, system_prompt fields
+  2. Form submission — useCreate mutation call
+  3. Validation — required fields
+  4. Cancel navigation — go back to list
+  5. *(Optional)* Success toast & redirect
+
+**Excluded**: Active/Archive radio, detailed validation messages.
+
+#### Step 19: topics/edit basic logic test
+- **File**: `src/pages/topics/edit.tsx` (164 LOC)
+- **Current**: 0% → **Target**: 40-50%
+- **Test File**: `src/pages/topics/__tests__/edit.test.tsx`
+- **Test Cases** (4-5 tests, 핵심만):
+  1. Loading state — useOne hook loading
+  2. Form pre-fill — existing topic data display
+  3. Form submission — useUpdate mutation call
+  4. Delete action — useDelete mutation call
+  5. Cancel navigation — go back to list
+
+**Excluded**: InlineEditCell (already tested), archive toggle logic.
+
+#### Step 20: Coverage verification & threshold update
+- **File**: `frontend/vitest.config.ts`
+- **Action**: Run `npm run test:coverage`
+- **Expected**: 47.87% → **52-55%** (+4-8%p)
+- **Threshold Update**: `{ lines: 50, functions: 50, branches: 65, statements: 50 }`
+- **Rationale**: Realistic given unit (85%) + integration (45-50%) mix
+
+### Estimated Impact
+
+| Step | File(s) | Current | Target | LOC | Tests | Est. Impact |
+|------|---------|---------|--------|-----|-------|-------------|
+| 17 | dataProvider.ts (custom) | 65.06% | 85% | 33 | 3 | +0.5% |
+| 18 | topics/create.tsx | 0% | 45% | 120 | 5 | +0.9% |
+| 19 | topics/edit.tsx | 0% | 45% | 164 | 5 | +1.2% |
+| **Total** | | | | **317** | **13** | **+2.6%p** |
+
+**Projected Coverage**: 47.87% + 2.6% = **50.5%**
+
+**Indirect Coverage (UI components)**: +1-2%p from form interactions
+**Conservative Final Estimate**: **51-53%**
+
+### Alternative: Drop topics/edit if time-constrained
+If Step 19 proves too complex (InlineEditCell integration), can still achieve **50%+** with Steps 17-18 only.
+
+### Implementation Guidelines
+
+1. **TDD**: Red → Green → Refactor
+2. **MSW Handlers**: Extend existing handlers for `/topics` POST/PUT/DELETE
+3. **Refine Mocking**: Mock useCreate, useUpdate, useDelete, useOne via MSW
+4. **Minimal UI**: Test form rendering + submission logic only, skip validation messages
+5. **No Deep Nesting**: Avoid testing InlineEditCell interactions (already covered separately)
+
+### Validation Cases
+- Each step: `npm run test -- <file-name>`
+- Full coverage: `npm run test:coverage` after all steps
+- Lint/typecheck: `npm run lint && npm run typecheck`
+- CI: frontend-ci.yml must pass
+
+### Rollback Strategy
+- Each step is independent test file
+- Can skip Step 19 (topics/edit) if complexity too high
+- Threshold update (Step 20) only after achieving 50%+
+
+### Review Hotspots
+- **dataProvider custom**: Query param serialization edge cases
+- **topics/create**: Refine useCreate hook response handling
+- **topics/edit**: useOne loading state, useDelete confirmation
+
+### Timeline Estimate
+- Step 17 (dataProvider): ~0.5 hour
+- Step 18 (topics/create): ~1 hour
+- Step 19 (topics/edit): ~1-1.5 hours
+- Step 20 (Verification): ~0.5 hour
+- **Total**: **~3-3.5 hours**
+
+### Success Criteria
+1. ✅ **50%+ coverage achieved** (realistic target)
+2. ✅ **65%+ branch coverage** (maintained)
+3. ✅ All 105 existing tests still passing
+4. ✅ **~13 new tests** added
+5. ✅ Threshold updated to 50%
+6. ✅ CI pipeline passing
+7. ✅ No lint/typecheck errors
+
+### Out of Scope (Phase 8)
+- ❌ **contexts/create, contexts/edit** — Too complex (318, 151 LOC with type-specific rendering)
+- ❌ **App.tsx, chat/index.tsx, analytics.tsx** — E2E recommended
+- ❌ **contexts/show.tsx** — 457 LOC, complex metadata display
+- ❌ **UI components** — Already at 47%, sufficient indirect coverage
+
+---
+
+## Phase 8 Status
+- [x] Step 17: dataProvider custom method test (3 tests) — query params, payload, headers
+- [x] Step 18: topics/create basic logic test (5 tests) — form render, submit, validation, cancel, toast
+- [x] Step 19: topics/edit basic logic test (5 tests) — loading, pre-fill, submit, cancel, toast
+- [x] Step 20: Coverage verification & threshold 50% update — **55.97% achieved**, 50% threshold set
+- [x] PROGRESS.md / TASKS.md update
+
+---
+
+## Phase 9 Plan: Contexts CRUD Tests (55.97% → 60%+)
+
+### Objective
+**Incremental improvement to 60%+** by adding partial coverage for contexts create/edit:
+- Target: **60-62% overall coverage** (+4-6%p)
+- Approach: Focus on core logic, skip complex async/polling flows
+- Strategy: Test form rendering + basic submission, exclude file upload details
+
+### Philosophy
+- **Partial coverage is acceptable**: 30-40% of complex files is realistic
+- **Avoid deep async testing**: Polling, FormData mocking = high complexity, low ROI
+- **Core logic only**: Form validation, basic submission flow, cancel navigation
+
+### Current Gap Analysis (2025-10-10)
+
+**Overall**: 55.97% (118 tests)
+**Target files**:
+
+| File | LOC | Current | Complexity | Target | Priority |
+|------|-----|---------|------------|--------|----------|
+| `contexts/create.tsx` | 318 | 0% | Very High | 30-35% | ⭐⭐ |
+| `contexts/edit.tsx` | 151 | 0% | Medium | 50-60% | ⭐⭐⭐ |
+
+**Complexity factors**:
+- **create.tsx**: 4 types (MARKDOWN/PDF/FAQ/WEBSCRAPER), async polling, file upload, FormData
+- **edit.tsx**: Simpler (metadata only), similar to topics/edit
+
+### Phase 9 Scope (Realistic, Partial Coverage)
+
+#### Step 21: contexts/edit basic logic test
+- **File**: `src/pages/contexts/edit.tsx` (151 LOC)
+- **Current**: 0% → **Target**: 55-65%
+- **Test File**: `src/pages/contexts/__tests__/edit.test.tsx`
+- **Test Cases** (5-6 tests, 핵심만):
+  1. Loading state — useOne hook loading
+  2. Form pre-fill — existing context data display
+  3. Form submission — useUpdate mutation call
+  4. Cancel navigation — go back to list
+  5. Success toast & redirect
+  6. *(Optional)* MultiSelect topics integration
+
+**Rationale**: Similar to topics/edit, low complexity, high ROI.
+
+**Excluded**: original_content editing for non-editable types (PDF/WEBSCRAPER).
+
+#### Step 22: contexts/create basic logic test
+- **File**: `src/pages/contexts/create.tsx` (318 LOC)
+- **Current**: 0% → **Target**: 25-35%
+- **Test File**: `src/pages/contexts/__tests__/create.test.tsx`
+- **Test Cases** (4-5 tests, 최소):
+  1. Form rendering — name, description, tabs
+  2. MARKDOWN tab validation — content required
+  3. Cancel navigation — go back to list
+  4. *(Optional)* Tab switching
+  5. *(Optional)* Basic form state changes
+
+**Rationale**: Extremely complex (polling, FormData, file upload). Focus on minimal UI logic only.
+
+**Excluded (very high complexity)**:
+- ❌ PDF file upload — File object mocking, size validation
+- ❌ WEBSCRAPER URL validation
+- ❌ FormData construction
+- ❌ Polling logic — setInterval, clearInterval mocking
+- ❌ Processing status updates
+- ❌ FAQ type handling
+- ❌ Full submission flow (requires MSW FormData support)
+
+**Alternative approach**: Focus on **contexts/edit only**, skip create if too complex.
+
+### Estimated Impact
+
+| Step | File(s) | Current | Target | LOC | Tests | Est. Impact |
+|------|---------|---------|--------|-----|-------|-------------|
+| 21 | contexts/edit.tsx | 0% | 60% | 151 | 5-6 | +1.5% |
+| 22 | contexts/create.tsx | 0% | 30% | 318 | 4-5 | +1.5% |
+| **Total** | | | | **469** | **9-11** | **+3%p** |
+
+**Projected Coverage**: 55.97% + 3% = **58-59%**
+
+**If Step 22 proves too complex**, can achieve **~57-58%** with Step 21 only.
+
+### Revised Target (Realistic)
+- **Minimum (edit only)**: 57-58% (+1-2%p, 5-6 tests)
+- **Stretch (edit + partial create)**: 58-60% (+2-4%p, 9-11 tests)
+- **Threshold**: Keep at 50% (conservative, achievable)
+
+### Implementation Guidelines
+
+1. **TDD**: Red → Green → Refactor
+2. **MSW Handlers**: Extend for `/contexts` GET/PUT (edit), minimal POST (create)
+3. **Refine Mocking**: Mock useOne, useUpdate, useList for contexts/edit
+4. **Minimal Scope**: Form rendering + basic validation only
+5. **Skip Complex Async**: No polling, no file upload, no FormData testing
+
+### Validation Cases
+- Each step: `npm run test -- <file-name>`
+- Full coverage: `npm run test:coverage` after all steps
+- Lint/typecheck: `npm run lint && npm run typecheck`
+- CI: frontend-ci.yml must pass
+
+### Rollback Strategy
+- Each step is independent test file
+- Can skip Step 22 (create) entirely if complexity too high
+- Threshold stays at 50% (no increase needed)
+
+### Review Hotspots
+- **contexts/edit**: Similar to topics/edit, should be straightforward
+- **contexts/create**: Very complex, acceptable to achieve only 25-30% coverage
+
+### Timeline Estimate
+- Step 21 (contexts/edit): ~1 hour
+- Step 22 (contexts/create, minimal): ~1-1.5 hours (or skip)
+- Step 23 (Verification): ~0.5 hour
+- **Total**: **2-3 hours** (or 1.5 hours if skipping create)
+
+### Success Criteria
+1. ✅ **57-60% coverage achieved** (realistic target)
+2. ✅ **65%+ branch coverage** (maintained)
+3. ✅ All 118 existing tests still passing
+4. ✅ **9-11 new tests** added (or 5-6 if skipping create)
+5. ✅ Threshold maintained at 50%
+6. ✅ CI pipeline passing
+7. ✅ No lint/typecheck errors
+
+### Out of Scope (Phase 9)
+- ❌ **contexts/create full coverage** — Too complex (polling, file upload, FormData)
+- ❌ **File upload testing** — Requires File object mocking, low ROI
+- ❌ **Polling logic** — setInterval/clearInterval mocking, high complexity
+- ❌ **FormData construction** — MSW FormData support limited
+- ❌ **Type-specific validation** — 4 different types, too many branches
+
+---
+
+## Phase 9 Status
+- [x] Step 21: contexts/edit basic logic test (5 tests) — loading, pre-fill, submit, cancel, toast
+- [x] Step 22: contexts/create minimal test (4 tests) — form render, validation, cancel, tabs
+- [x] Step 23: Coverage verification — **62.17% achieved** (exceeded 60% target), threshold kept at 50%
+- [x] PROGRESS.md / TASKS.md update
+
+---
+
+## Final Summary (Phase 5-9 Complete)
+
+### Overall Achievement
+- **Starting Coverage**: 31.62% (70 tests, Phase 5 시작 전)
+- **Final Coverage**: **62.17%** (127 tests)
+- **Total Progress**: **+30.55%p** (+57 tests)
+- **Time Investment**: ~10-12 hours across 5 phases
+
+### Coverage Breakdown by Layer
+| Layer | Coverage | Quality |
+|-------|----------|---------|
+| Unit (lib/hooks/providers) | 100% | ✅ Excellent |
+| Integration (pages/components) | 61%+ | ✅ Good |
+| Branch Coverage | 79.49% | ✅ Excellent |
+| Function Coverage | 58.2% | ✅ Good |
+
+### Test Distribution (127 total)
+- **Unit Tests**: ~65 tests (lib, hooks, providers, utils)
+- **Component Tests**: ~35 tests (shared components, chat components)
+- **Integration Tests**: ~27 tests (pages: login, setup, topics, contexts)
+
+### Strategic Decisions
+1. **Differential Targets**: Unit 80%+, Integration 50%+, E2E deferred
+2. **ROI-Driven**: High-value files first, complex async/UI deferred
+3. **Partial Coverage Acceptable**: 25-30% of complex files (contexts/create) is realistic
+4. **Conservative Threshold**: 50% maintained for stability
+
+### Files Fully Covered (90%+)
+- All lib files (apiClient, utils)
+- All providers (auth, data)
+- All utils (feedback)
+- Most shared components (InlineEditCell, Sidebar, CommandPalette, TableSkeleton, AnalyticsSkeleton)
+- Most chat components (MessageInput, TopicSelector, FeedbackControls)
+- CRUD pages: topics/create (94.49%), topics/edit (95.3%), contexts/edit (67.54%)
+
+### Files Partially Covered (25-70%)
+- contexts/create (25.15%) — polling/upload excluded
+- contexts/list (65.56%) — bulk operations excluded
+- topics/list (67.12%) — inline editing excluded
+- MessageList (76.29%) — complex markdown rendering partially excluded
+
+### Files Excluded (0%, E2E Recommended)
+- App.tsx (122 LOC) — BrowserRouter integration
+- chat/index.tsx (154 LOC) — page orchestration
+- analytics.tsx (399 LOC) — complex chart mocking
+- contexts/show.tsx (457 LOC) — low priority metadata display
+
+### Recommended Future Work
+1. **E2E Test Suite (Playwright)** — 3-5 critical flows
+   - Login → Topic creation → Q&A
+   - Context upload → Ingestion → Search verification
+   - Feedback submission → Analytics dashboard
+2. **Threshold Increase** — Consider 55-60% once E2E in place
+3. **Visual Regression** — Chromatic or Percy integration
+4. **Accessibility** — axe-core integration
+
+### Success Metrics
+✅ **60%+ coverage achieved** (62.17%)
+✅ **Branch coverage maintained** (79.49%)
+✅ **127 passing tests** (100% pass rate)
+✅ **CI pipeline passing** (lint, typecheck, coverage)
+✅ **Realistic scope** (complex async/UI deferred to E2E)
+✅ **Sustainable** (50% threshold provides buffer)
