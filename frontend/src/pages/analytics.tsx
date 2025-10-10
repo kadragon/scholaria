@@ -20,6 +20,21 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:8001/api/admin";
+
+const apiClient = axios.create({
+  baseURL: API_URL,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 interface AnalyticsSummary {
   total_questions: number;
   total_feedback: number;
@@ -64,21 +79,6 @@ const COLORS = {
 export const Analytics = () => {
   const [days, setDays] = useState(7);
   const [selectedTopicId, setSelectedTopicId] = useState<"all" | number>("all");
-
-  const API_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:8001/api/admin";
-
-  const apiClient = axios.create({
-    baseURL: API_URL,
-  });
-
-  apiClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  });
 
   const { data: summaryData, isLoading: summaryLoading } = useQuery({
     queryKey: ["analytics", "summary"],
