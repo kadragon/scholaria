@@ -54,24 +54,31 @@ export const TopicSelector = ({
 
   return (
     <div className="space-y-2">
-      {topics.map((topic) => (
-        <button
-          key={topic.id}
-          onClick={() => onSelectTopic(topic)}
-          className={`w-full text-left px-3 py-2 rounded-lg transition-colors border-2 ${
-            selectedTopicId === topic.id
-              ? "bg-primary-600 text-white font-semibold border-primary-600 shadow-md"
-              : "hover:bg-primary-50 text-secondary-700 border-transparent hover:border-primary-200"
-          }`}
-        >
-          <div className="text-sm font-medium">{topic.name}</div>
-          {topic.description && (
-            <div className="text-xs text-secondary-500 mt-1 line-clamp-2">
-              {topic.description}
-            </div>
-          )}
-        </button>
-      ))}
+      {topics.map((topic) => {
+        const isSelected = selectedTopicId === topic.id;
+        return (
+          <button
+            key={topic.id}
+            onClick={() => onSelectTopic(topic)}
+            className={`w-full text-left px-3 py-2 rounded-lg transition-colors border-2 ${
+              isSelected
+                ? "bg-primary-600 text-white font-semibold border-primary-600 shadow-md"
+                : "hover:bg-primary-50 text-secondary-700 border-transparent hover:border-primary-200"
+            }`}
+          >
+            <div className="text-sm font-medium">{topic.name}</div>
+            {topic.description && (
+              <div
+                className={`text-xs mt-1 line-clamp-2 ${
+                  isSelected ? "text-primary-50" : "text-secondary-500"
+                }`}
+              >
+                {topic.description}
+              </div>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 };
