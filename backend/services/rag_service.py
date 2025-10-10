@@ -10,6 +10,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import time
 from collections.abc import AsyncGenerator
 from typing import Any
 
@@ -119,8 +120,6 @@ class AsyncRAGService:
         Raises:
             ValueError: If query is None/empty or topic_ids is empty
         """
-        import time
-
         start_time = time.perf_counter()
         with tracer.start_as_current_span("rag.query") as span:
             try:
