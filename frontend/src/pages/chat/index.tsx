@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 import { v4 as uuidv4 } from "uuid";
 import { TopicSelector, type Topic } from "./components/TopicSelector";
 import { MessageList } from "./components/MessageList";

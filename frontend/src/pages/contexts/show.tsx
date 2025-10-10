@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiClient } from "../../lib/apiClient";
 import { useOne, useNavigation } from "@refinedev/core";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

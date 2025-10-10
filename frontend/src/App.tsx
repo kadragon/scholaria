@@ -2,8 +2,8 @@ import { Refine, Authenticated } from "@refinedev/core";
 import routerBindings, {
   CatchAllNavigate,
   NavigateToResource,
-} from "@refinedev/react-router-v6";
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+} from "@refinedev/react-router";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router";
 import { authProvider } from "./providers/authProvider";
 import { adminDataProvider } from "./providers/dataProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
