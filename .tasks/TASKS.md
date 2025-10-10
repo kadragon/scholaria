@@ -10,7 +10,7 @@
 
 ## 진행 중
 
-없음
+- **성능 관측 강화 (OpenTelemetry)** — Phase 1 완료 (기반 구축), Phase 2-8 대기 중 (feat/observability-opentelemetry 브랜치)
 
 ## 단기 백로그
 
@@ -18,7 +18,7 @@
 
 ## 선택적 향상안
 
-- [ ] **성능 관측 강화** — OpenTelemetry + 대시보드로 RAG 체인의 메트릭 가시화
+- [~] **성능 관측 강화** — OpenTelemetry + 대시보드로 RAG 체인의 메트릭 가시화 (Phase 1/8 완료: 기반 구축, 자동 계측, 테스트 13개, 2025-10-10)
 - [x] **피드백 루프 확장** — 좋아요/싫어요 + 자유 서술 피드백 입력 UI (챗 인터페이스, `/api/history/{id}/feedback`)
 
 ## Frontend 테스트 계획
@@ -33,6 +33,7 @@
 
 ## 최근 완료 하이라이트
 
+- **OpenTelemetry Phase 1 완료** — 기반 구축 (SDK 통합, FastAPI/HTTPX/Redis 자동 계측, OTLP/Prometheus 익스포터, 13개 테스트 100% 커버리지) (2025-10-10)
 - **Phase 6 커버리지 확장** — 40.91% → 51.29%, 20개 테스트 추가 (SetupPage, useCommandPalette, TopicSelector, MessageList, AnalyticsSkeleton), 임계값 45% 상향 (2025-10-09)
 - **백엔드 커버리지 임계값 설정** — 85% 커버리지, 80% 임계값, backend-ci.yml 3개 잡 (test+coverage, lint, typecheck) (2025-10-09)
 - **Phase 4 커버리지 가드 완료** — 25% 임계값 설정, CI coverage 잡 추가, PR 템플릿 (백엔드/프런트엔드 체크리스트) (2025-10-09)
