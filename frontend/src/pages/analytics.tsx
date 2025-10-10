@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AnalyticsSkeleton } from "@/components/AnalyticsSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getFeedbackMeta } from "@/utils/feedback";
-import axios from "axios";
+import { apiClient } from "@/lib/apiClient";
 import {
   LineChart,
   Line,
@@ -19,21 +19,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8001/api/admin";
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-});
-
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 interface AnalyticsSummary {
   total_questions: number;
@@ -83,8 +68,9 @@ export const Analytics = () => {
   const { data: summaryData, isLoading: summaryLoading } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => {
-      const response =
-        await apiClient.get<AnalyticsSummary>("/analytics/summary");
+      const response = await apiClient.get<AnalyticsSummary>(
+        "/admin/analytics/summary",
+      );
       return response.data;
     },
   });
@@ -92,7 +78,9 @@ export const Analytics = () => {
   const { data: topicsData, isLoading: topicsLoading } = useQuery({
     queryKey: ["analytics", "topics"],
     queryFn: async () => {
-      const response = await apiClient.get<TopicStats[]>("/analytics/topics");
+      const response = await apiClient.get<TopicStats[]>(
+        "/admin/analytics/topics",
+      );
       return response.data;
     },
   });
@@ -105,7 +93,7 @@ export const Analytics = () => {
     queryKey: ["analytics", "questions", "trend", days],
     queryFn: async () => {
       const response = await apiClient.get<QuestionTrend[]>(
-        "/analytics/questions/trend",
+        "/admin/analytics/questions/trend",
         {
           params: { days },
         },
@@ -118,7 +106,7 @@ export const Analytics = () => {
     queryKey: ["analytics", "feedback", "distribution"],
     queryFn: async () => {
       const response = await apiClient.get<FeedbackDistribution>(
-        "/analytics/feedback/distribution",
+        "/admin/analytics/feedback/distribution",
       );
       return response.data;
     },
@@ -139,7 +127,7 @@ export const Analytics = () => {
     queryKey: ["analytics", "feedback", "comments", commentsQuery],
     queryFn: async () => {
       const response = await apiClient.get<FeedbackComment[]>(
-        "/analytics/feedback/comments",
+        "/admin/analytics/feedback/comments",
         {
           params: commentsQuery,
         },
