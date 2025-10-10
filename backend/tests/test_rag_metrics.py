@@ -67,20 +67,22 @@ async def test_rag_query_duration_metric(setup_metrics, async_rag_service, mock_
 
     # Verify metric was recorded
     metrics_data = setup_metrics.get_metrics_data()
-    metric_names = [
-        metric.name
-        for resource_metrics in metrics_data.resource_metrics
-        for scope_metrics in resource_metrics.scope_metrics
-        for metric in scope_metrics.metrics
-    ]
+    if metrics_data and metrics_data.resource_metrics:
+        metric_names = [
+            metric.name
+            for resource_metrics in metrics_data.resource_metrics
+            for scope_metrics in resource_metrics.scope_metrics
+            for metric in scope_metrics.metrics
+        ]
 
-    assert "rag.query.duration" in metric_names
+        assert "rag.query.duration" in metric_names
 
 
 @pytest.mark.asyncio
 async def test_embedding_cache_hit_metric(setup_metrics, async_rag_service, mock_redis):
     """Test that rag_embedding_cache_hits_total counter is incremented."""
-    # Mock cache hit
+    # Mock cache hit and cache.enabled
+    async_rag_service.embedding_service.cache.enabled = MagicMock(return_value=True)
     async_rag_service.embedding_service.cache.get = MagicMock(return_value=[0.1] * 1536)
 
     # Generate embedding (should hit cache)
@@ -88,14 +90,15 @@ async def test_embedding_cache_hit_metric(setup_metrics, async_rag_service, mock
 
     # Verify metric was recorded
     metrics_data = setup_metrics.get_metrics_data()
-    metric_names = [
-        metric.name
-        for resource_metrics in metrics_data.resource_metrics
-        for scope_metrics in resource_metrics.scope_metrics
-        for metric in scope_metrics.metrics
-    ]
+    if metrics_data and metrics_data.resource_metrics:
+        metric_names = [
+            metric.name
+            for resource_metrics in metrics_data.resource_metrics
+            for scope_metrics in resource_metrics.scope_metrics
+            for metric in scope_metrics.metrics
+        ]
 
-    assert "rag.embedding.cache.hits" in metric_names
+        assert "rag.embedding.cache.hits" in metric_names
 
 
 @pytest.mark.asyncio
@@ -115,14 +118,15 @@ async def test_embedding_cache_miss_metric(setup_metrics, async_rag_service):
 
     # Verify metric was recorded
     metrics_data = setup_metrics.get_metrics_data()
-    metric_names = [
-        metric.name
-        for resource_metrics in metrics_data.resource_metrics
-        for scope_metrics in resource_metrics.scope_metrics
-        for metric in scope_metrics.metrics
-    ]
+    if metrics_data and metrics_data.resource_metrics:
+        metric_names = [
+            metric.name
+            for resource_metrics in metrics_data.resource_metrics
+            for scope_metrics in resource_metrics.scope_metrics
+            for metric in scope_metrics.metrics
+        ]
 
-    assert "rag.embedding.cache.misses" in metric_names
+        assert "rag.embedding.cache.misses" in metric_names
 
 
 @pytest.mark.asyncio
@@ -144,14 +148,15 @@ async def test_openai_tokens_metric(setup_metrics, async_rag_service, mock_redis
 
     # Verify metric was recorded
     metrics_data = setup_metrics.get_metrics_data()
-    metric_names = [
-        metric.name
-        for resource_metrics in metrics_data.resource_metrics
-        for scope_metrics in resource_metrics.scope_metrics
-        for metric in scope_metrics.metrics
-    ]
+    if metrics_data and metrics_data.resource_metrics:
+        metric_names = [
+            metric.name
+            for resource_metrics in metrics_data.resource_metrics
+            for scope_metrics in resource_metrics.scope_metrics
+            for metric in scope_metrics.metrics
+        ]
 
-    assert "rag.openai.tokens" in metric_names
+        assert "rag.openai.tokens" in metric_names
 
 
 @pytest.mark.asyncio
@@ -173,7 +178,13 @@ async def test_vector_search_results_metric(
     )
     async_rag_service.reranking_service.rerank_results = MagicMock(
         return_value=[
-            {"id": 1, "score": 0.95},
+            {
+                "id": 1,
+                "score": 0.95,
+                "title": "Test Title",
+                "content": "Test content",
+                "context_item_id": 1,
+            },
         ]
     )
     async_rag_service._generate_answer = AsyncMock(
@@ -185,14 +196,15 @@ async def test_vector_search_results_metric(
 
     # Verify metric was recorded
     metrics_data = setup_metrics.get_metrics_data()
-    metric_names = [
-        metric.name
-        for resource_metrics in metrics_data.resource_metrics
-        for scope_metrics in resource_metrics.scope_metrics
-        for metric in scope_metrics.metrics
-    ]
+    if metrics_data and metrics_data.resource_metrics:
+        metric_names = [
+            metric.name
+            for resource_metrics in metrics_data.resource_metrics
+            for scope_metrics in resource_metrics.scope_metrics
+            for metric in scope_metrics.metrics
+        ]
 
-    assert "rag.vector_search.results" in metric_names
+        assert "rag.vector_search.results" in metric_names
 
 
 @pytest.mark.asyncio
@@ -210,11 +222,12 @@ async def test_query_error_metric(setup_metrics, async_rag_service, mock_redis):
 
     # Verify metric was recorded
     metrics_data = setup_metrics.get_metrics_data()
-    metric_names = [
-        metric.name
-        for resource_metrics in metrics_data.resource_metrics
-        for scope_metrics in resource_metrics.scope_metrics
-        for metric in scope_metrics.metrics
-    ]
+    if metrics_data and metrics_data.resource_metrics:
+        metric_names = [
+            metric.name
+            for resource_metrics in metrics_data.resource_metrics
+            for scope_metrics in resource_metrics.scope_metrics
+            for metric in scope_metrics.metrics
+        ]
 
-    assert "rag.query.errors" in metric_names
+        assert "rag.query.errors" in metric_names

@@ -3,14 +3,15 @@
 ## 상태 스냅샷
 
 - MVP 완성, FastAPI + Refine 스택 프로덕션 준비 완료
-- 106개 프런트엔드 테스트 (51.29% coverage, 45% threshold), 195개 백엔드 테스트 (85% coverage, 80% threshold)
+- 106개 프런트엔드 테스트 (51.29% coverage, 45% threshold), 223개 백엔드 테스트 (83% coverage, 80% threshold)
 - ruff/mypy 클린, Celery/Redis 비동기 인프라 운영 중
 - CI: 프런트엔드 4개 잡, 백엔드 3개 잡 (test+coverage, lint, typecheck)
+- Observability: OpenTelemetry + Jaeger + Prometheus + Grafana 완전 통합 (2025-10-10)
 - 세부 이력은 `docs/agents/tasks/_archive/` 및 `TASKS_ARCHIVE_INDEX.md` 참고
 
 ## 진행 중
 
-- **성능 관측 강화 (OpenTelemetry)** — Phase 1 완료 (기반 구축), Phase 2-8 대기 중 (feat/observability-opentelemetry 브랜치)
+(없음)
 
 ## 단기 백로그
 
@@ -18,7 +19,7 @@
 
 ## 선택적 향상안
 
-- [~] **성능 관측 강화** — OpenTelemetry + 대시보드로 RAG 체인의 메트릭 가시화 (Phase 1/8 완료: 기반 구축, 자동 계측, 테스트 13개, 2025-10-10)
+- [x] **성능 관측 강화 (OpenTelemetry)** — 8개 Phase 완료 (기반 구축, 커스텀 스팬, 메트릭, Jaeger, Prometheus, Grafana, 테스트, 문서화), 223개 테스트, 83% 커버리지, ~4% 오버헤드 (2025-10-10)
 - [x] **피드백 루프 확장** — 좋아요/싫어요 + 자유 서술 피드백 입력 UI (챗 인터페이스, `/api/history/{id}/feedback`)
 
 ## Frontend 테스트 계획
@@ -33,7 +34,7 @@
 
 ## 최근 완료 하이라이트
 
-- **OpenTelemetry Phase 1 완료** — 기반 구축 (SDK 통합, FastAPI/HTTPX/Redis 자동 계측, OTLP/Prometheus 익스포터, 13개 테스트 100% 커버리지) (2025-10-10)
+- **OpenTelemetry 완전 통합 (Phase 1-8 완료)** — SDK 통합, 커스텀 RAG 스팬, 메트릭 수집, Jaeger (traces), Prometheus (metrics), Grafana (6개 패널 대시보드), 통합/성능 테스트, 포괄적 문서화 (OBSERVABILITY.md 400+줄), 26개 파일 변경, ~11.5시간 소요 (2025-10-10)
 - **Phase 6 커버리지 확장** — 40.91% → 51.29%, 20개 테스트 추가 (SetupPage, useCommandPalette, TopicSelector, MessageList, AnalyticsSkeleton), 임계값 45% 상향 (2025-10-09)
 - **백엔드 커버리지 임계값 설정** — 85% 커버리지, 80% 임계값, backend-ci.yml 3개 잡 (test+coverage, lint, typecheck) (2025-10-09)
 - **Phase 4 커버리지 가드 완료** — 25% 임계값 설정, CI coverage 잡 추가, PR 템플릿 (백엔드/프런트엔드 체크리스트) (2025-10-09)

@@ -96,6 +96,11 @@ open http://localhost/docs
 
 # Access admin panel
 open http://localhost/admin
+
+# Access observability dashboards
+open http://localhost:16686  # Jaeger UI
+open http://localhost:9090   # Prometheus UI
+open http://localhost:3001   # Grafana UI (admin/admin)
 ```
 
 ## Production Setup
@@ -212,11 +217,71 @@ REDIS_URL=redis://redis:6379/0
 OPENAI_API_KEY=sk-xxx
 QDRANT_URL=http://qdrant:6333
 FASTAPI_ALLOWED_ORIGINS=https://yourdomain.com
+
+# Observability (OpenTelemetry)
+OTEL_ENABLED=true
+OTEL_TRACES_SAMPLER_ARG=0.1  # 10% sampling for production
+PROMETHEUS_METRICS_ENABLED=true
 ```
 
 > 🔒 **보안**: `JWT_SECRET_KEY`, `DB_PASSWORD`, `OPENAI_API_KEY`는 반드시 프로덕션 환경에서 설정 필요. 기본값 사용 금지.
 
 상세 환경 변수 설명은 `.env.example` 참조.
+
+## Observability
+
+Scholaria includes comprehensive observability with OpenTelemetry, Jaeger, Prometheus, and Grafana:
+
+### Services
+
+```yaml
+# docker-compose.yml includes:
+- jaeger:16686     # Trace visualization UI
+- prometheus:9090  # Metrics scraping & UI
+- grafana:3001     # Dashboard UI (login: admin/admin)
+```
+
+### Configuration
+
+```bash
+# Enable/disable observability
+OTEL_ENABLED=true
+
+# Trace sampling (reduce overhead in production)
+OTEL_TRACES_SAMPLER_ARG=0.1  # 10% of traces (recommended for prod)
+OTEL_TRACES_SAMPLER_ARG=1.0  # 100% of traces (dev/testing)
+
+# Metrics endpoint
+PROMETHEUS_METRICS_ENABLED=true  # Exposes /metrics
+```
+
+### Access Dashboards
+
+```bash
+# Jaeger: View distributed traces
+open http://localhost:16686
+
+# Prometheus: Query metrics
+open http://localhost:9090
+
+# Grafana: Pre-configured RAG dashboard
+open http://localhost:3001  # Login: admin/admin
+# Navigate to: Dashboards → Scholaria RAG Pipeline
+```
+
+### Performance Impact
+
+- **Overhead**: ~4% latency increase with 100% sampling
+- **Recommended**: Use 10% sampling (`OTEL_TRACES_SAMPLER_ARG=0.1`) in production
+- **Disable**: Set `OTEL_ENABLED=false` to completely disable instrumentation
+
+### Troubleshooting
+
+See `docs/OBSERVABILITY.md` for:
+- Detailed configuration reference
+- Dashboard usage guide
+- Performance tuning
+- Common issues and solutions
 
 ## Database Management
 

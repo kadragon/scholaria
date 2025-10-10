@@ -9,6 +9,7 @@ FastAPI-based backend powering the Scholaria RAG platform. Provides JWT-authenti
 - JWT authentication reused by Refine admin frontend
 - Alembic migrations aligned with production PostgreSQL schema
 - Comprehensive pytest suite with strict mypy/ruff enforcement
+- OpenTelemetry observability with Jaeger, Prometheus, and Grafana
 
 ## Local Development
 
@@ -51,6 +52,47 @@ backend/
 - **Migrations**: Alembic (`alembic/`)
 - **Cache**: Redis (async client in `backend/dependencies/redis.py`)
 - **Vector Store**: Qdrant client in `backend/retrieval/qdrant.py`
+- **Observability**: OpenTelemetry SDK with Jaeger (traces), Prometheus (metrics), Grafana (dashboards)
+
+## Observability
+
+The backend is instrumented with OpenTelemetry for distributed tracing and metrics:
+
+- **Traces**: Exported to Jaeger via OTLP (http://localhost:16686)
+- **Metrics**: Exposed at `/metrics` endpoint, scraped by Prometheus (http://localhost:9090)
+- **Dashboards**: Pre-configured Grafana dashboard for RAG pipeline (http://localhost:3001)
+
+### Configuration
+
+```bash
+# Enable/disable observability (default: true)
+OTEL_ENABLED=true
+
+# Trace sampling rate (0.0-1.0, default: 1.0)
+OTEL_TRACES_SAMPLER_ARG=1.0  # 100% sampling (dev)
+OTEL_TRACES_SAMPLER_ARG=0.1  # 10% sampling (production)
+
+# Enable/disable Prometheus metrics (default: true)
+PROMETHEUS_METRICS_ENABLED=true
+```
+
+### Quick Start
+
+```bash
+# Start observability stack
+docker compose up -d jaeger prometheus grafana
+
+# View traces in Jaeger
+open http://localhost:16686
+
+# View metrics in Prometheus
+open http://localhost:9090
+
+# View Grafana dashboard (login: admin/admin)
+open http://localhost:3001
+```
+
+See `docs/OBSERVABILITY.md` for detailed configuration, troubleshooting, and dashboard usage.
 
 ## Deployment
 
