@@ -11,9 +11,12 @@ from backend.config import settings
 from backend.models import ContextItem
 from backend.models.associations import topic_context_association
 from backend.models.base import SessionLocal
+from backend.observability import get_tracer
 
 if TYPE_CHECKING:
     pass
+
+tracer = get_tracer(__name__)
 
 
 class QdrantService:
@@ -168,48 +171,60 @@ class QdrantService:
         Raises:
             ValueError: If query_embedding is empty or topic_ids is empty
         """
-        if not query_embedding:
-            raise ValueError("Query embedding cannot be empty")
+        with tracer.start_as_current_span("rag.vector_search") as span:
+            if not query_embedding:
+                raise ValueError("Query embedding cannot be empty")
 
-        if not topic_ids:
-            raise ValueError("Topic IDs cannot be empty")
+            if not topic_ids:
+                raise ValueError("Topic IDs cannot be empty")
 
-        # Get context IDs with caching optimization
-        context_ids = self._get_context_ids_for_topics(topic_ids)
+            span.set_attribute("topic_ids.count", len(topic_ids))
+            span.set_attribute("search.limit", limit)
 
-        if not context_ids:
-            return []
+            # Get context IDs with caching optimization
+            context_ids = self._get_context_ids_for_topics(topic_ids)
 
-        # Build optimized filter for Qdrant
-        query_filter = {
-            "must": [
-                {
-                    "key": "context_id",
-                    "match": {"any": context_ids},
-                }
-            ]
-        }
+            if not context_ids:
+                span.set_attribute("results.count", 0)
+                return []
 
-        # Perform vector search
-        search_results = self.client.search(
-            collection_name=self.collection_name,
-            query_vector=query_embedding,
-            query_filter=query_filter,
-            limit=limit,
-        )
+            span.set_attribute("context_ids.count", len(context_ids))
 
-        # Format results efficiently
-        results = []
-        for scored_point in search_results:
-            if scored_point.payload:
-                result = {
-                    "context_item_id": scored_point.payload["context_item_id"],
-                    "score": scored_point.score,
-                    "title": scored_point.payload.get("title", ""),
-                    "content": scored_point.payload.get("content", ""),
-                    "context_id": scored_point.payload.get("context_id"),
-                    "context_type": scored_point.payload.get("context_type"),
-                }
-                results.append(result)
+            # Build optimized filter for Qdrant
+            query_filter = {
+                "must": [
+                    {
+                        "key": "context_id",
+                        "match": {"any": context_ids},
+                    }
+                ]
+            }
 
-        return results
+            # Perform vector search
+            search_results = self.client.search(
+                collection_name=self.collection_name,
+                query_vector=query_embedding,
+                query_filter=query_filter,
+                limit=limit,
+            )
+
+            # Format results efficiently
+            results = []
+            for scored_point in search_results:
+                if scored_point.payload:
+                    result = {
+                        "context_item_id": scored_point.payload["context_item_id"],
+                        "score": scored_point.score,
+                        "title": scored_point.payload.get("title", ""),
+                        "content": scored_point.payload.get("content", ""),
+                        "context_id": scored_point.payload.get("context_id"),
+                        "context_type": scored_point.payload.get("context_type"),
+                    }
+                    results.append(result)
+
+            span.set_attribute("results.count", len(results))
+            if results:
+                span.set_attribute("score.max", max(r["score"] for r in results))
+                span.set_attribute("score.min", min(r["score"] for r in results))
+
+            return results

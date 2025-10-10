@@ -16,12 +16,14 @@ from typing import Any
 import redis.asyncio as redis
 from openai import AsyncOpenAI
 
+from backend.observability import get_tracer
 from backend.retrieval.embeddings import EmbeddingService
 from backend.retrieval.monitoring import OpenAIUsageMonitor
 from backend.retrieval.qdrant import QdrantService
 from backend.retrieval.reranking import RerankingService
 
 logger = logging.getLogger(__name__)
+tracer = get_tracer(__name__)
 
 
 class AsyncRAGService:
@@ -98,83 +100,96 @@ class AsyncRAGService:
         Raises:
             ValueError: If query is None/empty or topic_ids is empty
         """
-        if query is None or not query.strip():
-            raise ValueError("Query cannot be None or empty")
+        with tracer.start_as_current_span("rag.query") as span:
+            if query is None or not query.strip():
+                raise ValueError("Query cannot be None or empty")
 
-        if not topic_ids:
-            raise ValueError("Topic IDs cannot be empty")
+            if not topic_ids:
+                raise ValueError("Topic IDs cannot be empty")
 
-        limit = limit if limit is not None else self.rag_search_limit
-        rerank_top_k = (
-            rerank_top_k if rerank_top_k is not None else self.rag_rerank_top_k
-        )
+            span.set_attribute("query.length", len(query))
+            span.set_attribute("topic_ids.count", len(topic_ids))
 
-        # Check cache first
-        cache_key = self._get_query_cache_key(query, topic_ids, limit, rerank_top_k)
-        cached_result = await self._get_cached_result(cache_key)
-        if cached_result is not None:
-            return cached_result
+            limit = limit if limit is not None else self.rag_search_limit
+            rerank_top_k = (
+                rerank_top_k if rerank_top_k is not None else self.rag_rerank_top_k
+            )
 
-        # Step 1: Generate embedding for the query (blocking, but fast)
-        query_embedding = await asyncio.to_thread(
-            self.embedding_service.generate_embedding, query
-        )
+            span.set_attribute("search.limit", limit)
+            span.set_attribute("rerank.top_k", rerank_top_k)
 
-        # Step 2: Search for similar context items in Qdrant (SQLAlchemy-backed lookups)
-        search_results = await asyncio.to_thread(
-            self.qdrant_service.search_similar,
-            query_embedding=query_embedding,
-            topic_ids=topic_ids,
-            limit=limit,
-        )
+            # Check cache first
+            cache_key = self._get_query_cache_key(query, topic_ids, limit, rerank_top_k)
+            cached_result = await self._get_cached_result(cache_key)
+            if cached_result is not None:
+                span.set_attribute("cache.hit", True)
+                return cached_result
 
-        # If no results found, return empty response
-        if not search_results:
-            result = {
-                "answer": "I couldn't find any relevant information for your question in the selected topics.",
-                "sources": [],
-                "context_items": [],
+            span.set_attribute("cache.hit", False)
+
+            # Step 1: Generate embedding for the query (blocking, but fast)
+            query_embedding = await asyncio.to_thread(
+                self.embedding_service.generate_embedding, query
+            )
+
+            # Step 2: Search for similar context items in Qdrant (SQLAlchemy-backed lookups)
+            search_results = await asyncio.to_thread(
+                self.qdrant_service.search_similar,
+                query_embedding=query_embedding,
+                topic_ids=topic_ids,
+                limit=limit,
+            )
+
+            # If no results found, return empty response
+            if not search_results:
+                span.set_attribute("results.count", 0)
+                result = {
+                    "answer": "I couldn't find any relevant information for your question in the selected topics.",
+                    "sources": [],
+                    "context_items": [],
+                }
+                # Cache empty results for shorter duration (5 minutes)
+                await self.redis_client.set(cache_key, json.dumps(result), ex=300)
+                return result
+
+            # Step 3: Rerank results using BGE reranker (blocking, ML model)
+            reranked_results = await asyncio.to_thread(
+                self.reranking_service.rerank_results,
+                query=query,
+                search_results=search_results,
+                top_k=rerank_top_k,
+            )
+
+            span.set_attribute("results.count", len(reranked_results))
+
+            # Step 4: Prepare context for the LLM
+            context_text = self._prepare_context(reranked_results)
+
+            # Step 5: Generate answer using OpenAI
+            answer = await self._generate_answer(query, context_text)
+
+            # Step 6: Format response
+            sources = [
+                {
+                    "title": result["title"],
+                    "content": result["content"],
+                    "score": result.get("rerank_score", result.get("score", 0.0)),
+                    "context_type": result.get("context_type", ""),
+                    "context_item_id": result["context_item_id"],
+                }
+                for result in reranked_results
+            ]
+
+            final_result: dict[str, Any] = {
+                "answer": answer,
+                "sources": sources,
+                "context_items": reranked_results,
             }
-            # Cache empty results for shorter duration (5 minutes)
-            await self.redis_client.set(cache_key, json.dumps(result), ex=300)
-            return result
 
-        # Step 3: Rerank results using BGE reranker (blocking, ML model)
-        reranked_results = await asyncio.to_thread(
-            self.reranking_service.rerank_results,
-            query=query,
-            search_results=search_results,
-            top_k=rerank_top_k,
-        )
+            # Cache the result
+            await self._cache_result(cache_key, final_result)
 
-        # Step 4: Prepare context for the LLM
-        context_text = self._prepare_context(reranked_results)
-
-        # Step 5: Generate answer using OpenAI
-        answer = await self._generate_answer(query, context_text)
-
-        # Step 6: Format response
-        sources = [
-            {
-                "title": result["title"],
-                "content": result["content"],
-                "score": result.get("rerank_score", result.get("score", 0.0)),
-                "context_type": result.get("context_type", ""),
-                "context_item_id": result["context_item_id"],
-            }
-            for result in reranked_results
-        ]
-
-        final_result: dict[str, Any] = {
-            "answer": answer,
-            "sources": sources,
-            "context_items": reranked_results,
-        }
-
-        # Cache the result
-        await self._cache_result(cache_key, final_result)
-
-        return final_result
+            return final_result
 
     def _prepare_context(self, search_results: list[dict[str, Any]]) -> str:
         """Prepare context text from search results for the LLM."""
@@ -191,11 +206,14 @@ class AsyncRAGService:
 
     async def _generate_answer(self, query: str, context: str) -> str:
         """Generate an answer using OpenAI API."""
-        if not context:
-            return "I couldn't find any relevant information to answer your question."
+        with tracer.start_as_current_span("rag.llm_generation") as span:
+            if not context:
+                return (
+                    "I couldn't find any relevant information to answer your question."
+                )
 
-        # Create the prompt
-        prompt = f"""You are a helpful assistant that answers questions based on the provided context.
+            # Create the prompt
+            prompt = f"""You are a helpful assistant that answers questions based on the provided context.
 
 Context:
 {context}
@@ -204,51 +222,62 @@ Question: {query}
 
 Please provide a comprehensive answer based on the context above. If the context doesn't contain enough information to fully answer the question, acknowledge this in your response. Include relevant details from the sources where appropriate."""
 
-        # Track request timing for rate limiting
-        self.monitor.track_request_timestamp("chat_completions")
+            span.set_attribute("model.name", self.openai_chat_model)
+            span.set_attribute("prompt.length", len(prompt))
 
-        response = await self.chat_client.chat.completions.create(
-            model=self.openai_chat_model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant that provides accurate answers based on the given context.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            temperature=self.openai_chat_temperature,
-            max_tokens=self.openai_chat_max_tokens,
-        )
+            # Track request timing for rate limiting
+            self.monitor.track_request_timestamp("chat_completions")
 
-        # Track usage metrics
-        if hasattr(response, "usage") and response.usage:
-            prompt_tokens = (
-                int(response.usage.prompt_tokens)
-                if hasattr(response.usage, "prompt_tokens")
-                else 0
-            )
-            completion_tokens = (
-                int(response.usage.completion_tokens)
-                if hasattr(response.usage, "completion_tokens")
-                else 0
-            )
-            self.monitor.track_chat_completion_usage(
-                prompt_tokens, completion_tokens, self.openai_chat_model
-            )
-        else:
-            # Estimate tokens if usage not available
-            estimated_prompt_tokens = len(prompt) // 4
-            estimated_completion_tokens = 100
-            self.monitor.track_chat_completion_usage(
-                estimated_prompt_tokens,
-                estimated_completion_tokens,
-                self.openai_chat_model,
+            response = await self.chat_client.chat.completions.create(
+                model=self.openai_chat_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant that provides accurate answers based on the given context.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=self.openai_chat_temperature,
+                max_tokens=self.openai_chat_max_tokens,
             )
 
-        return (
-            response.choices[0].message.content
-            or "I apologize, but I couldn't generate an answer at this time."
-        )
+            # Track usage metrics
+            if hasattr(response, "usage") and response.usage:
+                prompt_tokens = (
+                    int(response.usage.prompt_tokens)
+                    if hasattr(response.usage, "prompt_tokens")
+                    else 0
+                )
+                completion_tokens = (
+                    int(response.usage.completion_tokens)
+                    if hasattr(response.usage, "completion_tokens")
+                    else 0
+                )
+                span.set_attribute("tokens.prompt", prompt_tokens)
+                span.set_attribute("tokens.completion", completion_tokens)
+                span.set_attribute("tokens.total", prompt_tokens + completion_tokens)
+                self.monitor.track_chat_completion_usage(
+                    prompt_tokens, completion_tokens, self.openai_chat_model
+                )
+            else:
+                # Estimate tokens if usage not available
+                estimated_prompt_tokens = len(prompt) // 4
+                estimated_completion_tokens = 100
+                span.set_attribute("tokens.prompt", estimated_prompt_tokens)
+                span.set_attribute("tokens.completion", estimated_completion_tokens)
+                self.monitor.track_chat_completion_usage(
+                    estimated_prompt_tokens,
+                    estimated_completion_tokens,
+                    self.openai_chat_model,
+                )
+
+            answer = (
+                response.choices[0].message.content
+                or "I apologize, but I couldn't generate an answer at this time."
+            )
+            span.set_attribute("answer.length", len(answer))
+
+            return answer
 
     async def query_stream(
         self,

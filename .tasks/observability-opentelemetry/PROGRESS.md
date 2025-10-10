@@ -9,8 +9,8 @@
 
 ## Current Status
 
-**Phase**: 1 of 8 (Foundation) - ✅ **COMPLETE**
-**Overall Progress**: 12.5% (1/8 phases)
+**Phase**: 2 of 8 (Custom RAG Pipeline Spans) - ✅ **COMPLETE**
+**Overall Progress**: 25% (2/8 phases)
 
 ---
 
@@ -95,18 +95,52 @@ All tests green, ruff clean, mypy clean
 
 ---
 
+## Recently Completed
+
+### Phase 2: Custom RAG Pipeline Spans ✅
+**Completion Date**: 2025-10-10
+**Commits**: (pending)
+
+**Deliverables**:
+1. **Instrumented Services**:
+   - `backend/retrieval/embeddings.py` - `rag.embedding` span with cache hit/miss, token count
+   - `backend/retrieval/qdrant.py` - `rag.vector_search` span with result counts, score ranges
+   - `backend/retrieval/reranking.py` - `rag.rerank` span with input/output counts, scores
+   - `backend/services/rag_service.py` - `rag.query` parent span + `rag.llm_generation` child span
+
+2. **Span Attributes**:
+   - Embedding: `text.length`, `model.name`, `cache.hit`, `tokens.total`
+   - Vector Search: `topic_ids.count`, `search.limit`, `context_ids.count`, `results.count`, `score.max/min`
+   - Reranking: `query.length`, `input.count`, `top_k`, `output.count`, `score.max/min`
+   - RAG Query: `query.length`, `topic_ids.count`, `cache.hit`, `search.limit`, `rerank.top_k`, `results.count`
+   - LLM Generation: `model.name`, `prompt.length`, `tokens.prompt`, `tokens.completion`, `tokens.total`, `answer.length`
+
+3. **Span Hierarchy**:
+   ```
+   rag.query (parent)
+   ├─ rag.embedding (from generate_embedding call)
+   ├─ rag.vector_search (from search_similar call)
+   ├─ rag.rerank (from rerank_results call)
+   └─ rag.llm_generation (from _generate_answer call)
+   ```
+
+**Test Results**:
+- 167 existing tests pass (no regression)
+- ruff clean, mypy clean
+- Spans verified manually via console exporter output
+- **Note**: Unit tests for tracing deferred to Phase 6 (integration testing with Jaeger)
+
+**Files Changed**:
+- `backend/retrieval/embeddings.py` - Added span instrumentation (17 lines)
+- `backend/retrieval/qdrant.py` - Added span instrumentation (18 lines)
+- `backend/retrieval/reranking.py` - Added span instrumentation (12 lines)
+- `backend/services/rag_service.py` - Added span instrumentation (28 lines)
+
 ## Pending Work
 
-### Phase 2: Custom RAG Pipeline Spans (Next)
+### Phase 3: Metrics Collection (Next)
 **Status**: Not Started
-**Estimated Effort**: 3-4 hours
-
-**Tasks**:
-- [ ] Instrument EmbeddingService with `rag.embedding` span
-- [ ] Instrument AsyncRAGService with `rag.query` parent span
-- [ ] Add child spans for vector search, reranking, LLM generation
-- [ ] Add span attributes (query length, result counts, token usage)
-- [ ] Write tests for span creation and hierarchy
+**Estimated Effort**: 2-3 hours
 
 ### Phase 3: Metrics Collection
 **Status**: Not Started
@@ -203,7 +237,8 @@ None currently.
 ## Timeline
 
 - **2025-10-10**: Phase 1 complete (Foundation)
-- **Remaining**: Phases 2-8 (estimated 14-20 hours)
+- **2025-10-10**: Phase 2 complete (Custom RAG Pipeline Spans)
+- **Remaining**: Phases 3-8 (estimated 10-16 hours)
 
 ---
 
