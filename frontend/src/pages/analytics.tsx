@@ -133,16 +133,6 @@ export const Analytics = () => {
     feedbackLoading ||
     (!commentsData && commentsFetching);
 
-  // Debug logging
-  console.log("Analytics Debug:", {
-    summaryData,
-    topicsData,
-    trendData,
-    feedbackData,
-    commentsData,
-    isInitialLoading,
-  });
-
   const summary = summaryData?.data;
   const topics = useMemo(
     () => (Array.isArray(topicsData?.data) ? topicsData.data : []),
