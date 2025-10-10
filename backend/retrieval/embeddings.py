@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import openai
 
 from backend.config import settings
-from backend.observability import get_tracer
+from backend.observability import get_meter, get_tracer
 
 from .cache import EmbeddingCache
 from .monitoring import OpenAIUsageMonitor
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     pass
 
 tracer = get_tracer(__name__)
+meter = get_meter(__name__)
 
 
 class EmbeddingService:
@@ -24,6 +25,15 @@ class EmbeddingService:
         self.model = settings.OPENAI_EMBEDDING_MODEL
         self.cache = EmbeddingCache()
         self.monitor = OpenAIUsageMonitor()
+
+        self._cache_hits_counter = meter.create_counter(
+            name="rag.embedding.cache.hits",
+            description="Total number of embedding cache hits",
+        )
+        self._cache_misses_counter = meter.create_counter(
+            name="rag.embedding.cache.misses",
+            description="Total number of embedding cache misses",
+        )
 
     def generate_embedding(self, text: str | None) -> list[float]:
         """
@@ -49,9 +59,11 @@ class EmbeddingService:
                 cached = self.cache.get(text, self.model)
                 if cached is not None:
                     span.set_attribute("cache.hit", True)
+                    self._cache_hits_counter.add(1)
                     return cached
 
             span.set_attribute("cache.hit", False)
+            self._cache_misses_counter.add(1)
 
             # Track request timing for rate limiting
             self.monitor.track_request_timestamp("embeddings")

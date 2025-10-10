@@ -16,7 +16,7 @@ from typing import Any
 import redis.asyncio as redis
 from openai import AsyncOpenAI
 
-from backend.observability import get_tracer
+from backend.observability import get_meter, get_tracer
 from backend.retrieval.embeddings import EmbeddingService
 from backend.retrieval.monitoring import OpenAIUsageMonitor
 from backend.retrieval.qdrant import QdrantService
@@ -24,6 +24,7 @@ from backend.retrieval.reranking import RerankingService
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer(__name__)
+meter = get_meter(__name__)
 
 
 class AsyncRAGService:
@@ -52,6 +53,24 @@ class AsyncRAGService:
         self.openai_chat_max_tokens = openai_chat_max_tokens
         self.rag_search_limit = rag_search_limit
         self.rag_rerank_top_k = rag_rerank_top_k
+
+        self._query_duration_histogram = meter.create_histogram(
+            name="rag.query.duration",
+            description="Duration of RAG query pipeline execution",
+            unit="s",
+        )
+        self._query_errors_counter = meter.create_counter(
+            name="rag.query.errors",
+            description="Total number of RAG query errors",
+        )
+        self._vector_search_results_histogram = meter.create_histogram(
+            name="rag.vector_search.results",
+            description="Number of vector search results",
+        )
+        self._openai_tokens_counter = meter.create_counter(
+            name="rag.openai.tokens",
+            description="Total number of OpenAI tokens used",
+        )
 
     def _get_query_cache_key(
         self, query: str, topic_ids: list[int], limit: int, rerank_top_k: int
@@ -100,96 +119,119 @@ class AsyncRAGService:
         Raises:
             ValueError: If query is None/empty or topic_ids is empty
         """
+        import time
+
+        start_time = time.perf_counter()
         with tracer.start_as_current_span("rag.query") as span:
-            if query is None or not query.strip():
-                raise ValueError("Query cannot be None or empty")
+            try:
+                if query is None or not query.strip():
+                    raise ValueError("Query cannot be None or empty")
 
-            if not topic_ids:
-                raise ValueError("Topic IDs cannot be empty")
+                if not topic_ids:
+                    raise ValueError("Topic IDs cannot be empty")
 
-            span.set_attribute("query.length", len(query))
-            span.set_attribute("topic_ids.count", len(topic_ids))
+                span.set_attribute("query.length", len(query))
+                span.set_attribute("topic_ids.count", len(topic_ids))
 
-            limit = limit if limit is not None else self.rag_search_limit
-            rerank_top_k = (
-                rerank_top_k if rerank_top_k is not None else self.rag_rerank_top_k
-            )
+                limit = limit if limit is not None else self.rag_search_limit
+                rerank_top_k = (
+                    rerank_top_k if rerank_top_k is not None else self.rag_rerank_top_k
+                )
 
-            span.set_attribute("search.limit", limit)
-            span.set_attribute("rerank.top_k", rerank_top_k)
+                span.set_attribute("search.limit", limit)
+                span.set_attribute("rerank.top_k", rerank_top_k)
 
-            # Check cache first
-            cache_key = self._get_query_cache_key(query, topic_ids, limit, rerank_top_k)
-            cached_result = await self._get_cached_result(cache_key)
-            if cached_result is not None:
-                span.set_attribute("cache.hit", True)
-                return cached_result
+                # Check cache first
+                cache_key = self._get_query_cache_key(
+                    query, topic_ids, limit, rerank_top_k
+                )
+                cached_result = await self._get_cached_result(cache_key)
+                if cached_result is not None:
+                    span.set_attribute("cache.hit", True)
+                    return cached_result
 
-            span.set_attribute("cache.hit", False)
+                span.set_attribute("cache.hit", False)
 
-            # Step 1: Generate embedding for the query (blocking, but fast)
-            query_embedding = await asyncio.to_thread(
-                self.embedding_service.generate_embedding, query
-            )
+                # Step 1: Generate embedding for the query (blocking, but fast)
+                query_embedding = await asyncio.to_thread(
+                    self.embedding_service.generate_embedding, query
+                )
 
-            # Step 2: Search for similar context items in Qdrant (SQLAlchemy-backed lookups)
-            search_results = await asyncio.to_thread(
-                self.qdrant_service.search_similar,
-                query_embedding=query_embedding,
-                topic_ids=topic_ids,
-                limit=limit,
-            )
+                # Step 2: Search for similar context items in Qdrant (SQLAlchemy-backed lookups)
+                search_results = await asyncio.to_thread(
+                    self.qdrant_service.search_similar,
+                    query_embedding=query_embedding,
+                    topic_ids=topic_ids,
+                    limit=limit,
+                )
 
-            # If no results found, return empty response
-            if not search_results:
-                span.set_attribute("results.count", 0)
-                result = {
-                    "answer": "I couldn't find any relevant information for your question in the selected topics.",
-                    "sources": [],
-                    "context_items": [],
+                self._vector_search_results_histogram.record(len(search_results))
+
+                # If no results found, return empty response
+                if not search_results:
+                    span.set_attribute("results.count", 0)
+                    result = {
+                        "answer": "I couldn't find any relevant information for your question in the selected topics.",
+                        "sources": [],
+                        "context_items": [],
+                    }
+                    # Cache empty results for shorter duration (5 minutes)
+                    await self.redis_client.set(cache_key, json.dumps(result), ex=300)
+                    return result
+
+                # Step 3: Rerank results using BGE reranker (blocking, ML model)
+                reranked_results = await asyncio.to_thread(
+                    self.reranking_service.rerank_results,
+                    query=query,
+                    search_results=search_results,
+                    top_k=rerank_top_k,
+                )
+
+                span.set_attribute("results.count", len(reranked_results))
+
+                # Step 4: Prepare context for the LLM
+                context_text = self._prepare_context(reranked_results)
+
+                # Step 5: Generate answer using OpenAI
+                answer, usage = await self._generate_answer(query, context_text)
+
+                if usage:
+                    self._openai_tokens_counter.add(
+                        usage.get("prompt_tokens", 0), {"type": "prompt"}
+                    )
+                    self._openai_tokens_counter.add(
+                        usage.get("completion_tokens", 0), {"type": "completion"}
+                    )
+
+                # Step 6: Format response
+                sources = [
+                    {
+                        "title": result["title"],
+                        "content": result["content"],
+                        "score": result.get("rerank_score", result.get("score", 0.0)),
+                        "context_type": result.get("context_type", ""),
+                        "context_item_id": result["context_item_id"],
+                    }
+                    for result in reranked_results
+                ]
+
+                final_result: dict[str, Any] = {
+                    "answer": answer,
+                    "sources": sources,
+                    "context_items": reranked_results,
                 }
-                # Cache empty results for shorter duration (5 minutes)
-                await self.redis_client.set(cache_key, json.dumps(result), ex=300)
-                return result
 
-            # Step 3: Rerank results using BGE reranker (blocking, ML model)
-            reranked_results = await asyncio.to_thread(
-                self.reranking_service.rerank_results,
-                query=query,
-                search_results=search_results,
-                top_k=rerank_top_k,
-            )
+                # Cache the result
+                await self._cache_result(cache_key, final_result)
 
-            span.set_attribute("results.count", len(reranked_results))
+                return final_result
 
-            # Step 4: Prepare context for the LLM
-            context_text = self._prepare_context(reranked_results)
-
-            # Step 5: Generate answer using OpenAI
-            answer = await self._generate_answer(query, context_text)
-
-            # Step 6: Format response
-            sources = [
-                {
-                    "title": result["title"],
-                    "content": result["content"],
-                    "score": result.get("rerank_score", result.get("score", 0.0)),
-                    "context_type": result.get("context_type", ""),
-                    "context_item_id": result["context_item_id"],
-                }
-                for result in reranked_results
-            ]
-
-            final_result: dict[str, Any] = {
-                "answer": answer,
-                "sources": sources,
-                "context_items": reranked_results,
-            }
-
-            # Cache the result
-            await self._cache_result(cache_key, final_result)
-
-            return final_result
+            except Exception:
+                self._query_errors_counter.add(1, {"stage": "query"})
+                raise
+            finally:
+                duration = time.perf_counter() - start_time
+                self._query_duration_histogram.record(duration)
 
     def _prepare_context(self, search_results: list[dict[str, Any]]) -> str:
         """Prepare context text from search results for the LLM."""
@@ -204,12 +246,15 @@ class AsyncRAGService:
 
         return "\n".join(context_parts)
 
-    async def _generate_answer(self, query: str, context: str) -> str:
+    async def _generate_answer(
+        self, query: str, context: str
+    ) -> tuple[str, dict[str, int]]:
         """Generate an answer using OpenAI API."""
         with tracer.start_as_current_span("rag.llm_generation") as span:
             if not context:
                 return (
-                    "I couldn't find any relevant information to answer your question."
+                    "I couldn't find any relevant information to answer your question.",
+                    {},
                 )
 
             # Create the prompt
@@ -242,6 +287,8 @@ Please provide a comprehensive answer based on the context above. If the context
             )
 
             # Track usage metrics
+            prompt_tokens = 0
+            completion_tokens = 0
             if hasattr(response, "usage") and response.usage:
                 prompt_tokens = (
                     int(response.usage.prompt_tokens)
@@ -261,13 +308,13 @@ Please provide a comprehensive answer based on the context above. If the context
                 )
             else:
                 # Estimate tokens if usage not available
-                estimated_prompt_tokens = len(prompt) // 4
-                estimated_completion_tokens = 100
-                span.set_attribute("tokens.prompt", estimated_prompt_tokens)
-                span.set_attribute("tokens.completion", estimated_completion_tokens)
+                prompt_tokens = len(prompt) // 4
+                completion_tokens = 100
+                span.set_attribute("tokens.prompt", prompt_tokens)
+                span.set_attribute("tokens.completion", completion_tokens)
                 self.monitor.track_chat_completion_usage(
-                    estimated_prompt_tokens,
-                    estimated_completion_tokens,
+                    prompt_tokens,
+                    completion_tokens,
                     self.openai_chat_model,
                 )
 
@@ -277,7 +324,13 @@ Please provide a comprehensive answer based on the context above. If the context
             )
             span.set_attribute("answer.length", len(answer))
 
-            return answer
+            usage_info = {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            }
+
+            return answer, usage_info
 
     async def query_stream(
         self,
