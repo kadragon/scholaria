@@ -63,4 +63,37 @@ export const adminDataProvider: DataProvider = {
 
     return response;
   },
+  custom: async <TData = BaseRecord>({
+    url,
+    method,
+    payload,
+    query,
+    headers,
+  }) => {
+    let requestUrl = `${API_URL}/${url}`;
+
+    if (query) {
+      const queryParams = new URLSearchParams();
+      Object.entries(query).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, String(value));
+        }
+      });
+      const queryString = queryParams.toString();
+      if (queryString) {
+        requestUrl += `?${queryString}`;
+      }
+    }
+
+    const response = await axiosInstance({
+      url: requestUrl,
+      method,
+      data: payload,
+      headers,
+    });
+
+    return {
+      data: response.data as TData,
+    };
+  },
 } as DataProvider;

@@ -100,7 +100,7 @@ export const ChatPage = () => {
         <div className="flex-1 flex overflow-hidden">
           <aside className="w-72 border-r-2 border-secondary-200 bg-gradient-to-b from-white to-secondary-50 p-6 shadow-inner">
             <h2 className="text-sm font-bold text-secondary-800 mb-4 uppercase tracking-wider">
-              토픽 선택
+              주제 목록
             </h2>
             <TopicSelector
               selectedTopicId={selectedTopicId}
