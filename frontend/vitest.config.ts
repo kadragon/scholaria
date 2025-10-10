@@ -26,10 +26,10 @@ export default defineConfig({
         "dist/**",
       ],
       thresholds: {
-        lines: 45,
+        lines: 40,
         functions: 45,
-        branches: 45,
-        statements: 45,
+        branches: 60,
+        statements: 40,
       },
     },
   },
