@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LoginPage } from "../login";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router";
 import { http, HttpResponse } from "msw";
 import { server } from "../../__mocks__/msw/server";
 
@@ -14,8 +14,8 @@ vi.mock("@refinedev/core", () => ({
   useLogin: () => ({ mutate: mockLogin, isLoading: false }),
 }));
 
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
   return {
     ...actual,
     useNavigate: () => mockNavigate,

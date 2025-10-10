@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { useLogout } from "@refinedev/core";
 
 export const Sidebar = () => {

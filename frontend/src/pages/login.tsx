@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLogin } from "@refinedev/core";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 
