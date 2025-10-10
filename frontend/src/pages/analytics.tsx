@@ -135,6 +135,7 @@ export const Analytics = () => {
       return response.data;
     },
     enabled: false,
+    keepPreviousData: true,
   });
 
   useEffect(() => {
