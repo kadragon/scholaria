@@ -4,8 +4,12 @@ from typing import TYPE_CHECKING, Any
 
 import sentence_transformers
 
+from backend.observability import get_tracer
+
 if TYPE_CHECKING:
     pass
+
+tracer = get_tracer(__name__)
 
 
 class RerankingService:
@@ -34,30 +38,46 @@ class RerankingService:
         Raises:
             ValueError: If query is None/empty or search_results is empty
         """
-        if query is None or not query.strip():
-            raise ValueError("Query cannot be None or empty")
+        with tracer.start_as_current_span("rag.rerank") as span:
+            if query is None or not query.strip():
+                raise ValueError("Query cannot be None or empty")
 
-        if not search_results:
-            raise ValueError("Search results cannot be empty")
+            if not search_results:
+                raise ValueError("Search results cannot be empty")
 
-        # Prepare input pairs for the cross-encoder
-        input_pairs = [(query, result["content"]) for result in search_results]
+            span.set_attribute("query.length", len(query))
+            span.set_attribute("input.count", len(search_results))
+            span.set_attribute(
+                "top_k", top_k if top_k is not None else len(search_results)
+            )
 
-        # Get reranking scores
-        rerank_scores = self.model.predict(input_pairs)
+            # Prepare input pairs for the cross-encoder
+            input_pairs = [(query, result["content"]) for result in search_results]
 
-        # Add rerank scores to results and sort
-        reranked_results = []
-        for i, result in enumerate(search_results):
-            result_with_score = result.copy()
-            result_with_score["rerank_score"] = float(rerank_scores[i])
-            reranked_results.append(result_with_score)
+            # Get reranking scores
+            rerank_scores = self.model.predict(input_pairs)
 
-        # Sort by rerank score (descending)
-        reranked_results.sort(key=lambda x: x["rerank_score"], reverse=True)
+            # Add rerank scores to results and sort
+            reranked_results = []
+            for i, result in enumerate(search_results):
+                result_with_score = result.copy()
+                result_with_score["rerank_score"] = float(rerank_scores[i])
+                reranked_results.append(result_with_score)
 
-        # Apply top_k limitation if specified
-        if top_k is not None:
-            reranked_results = reranked_results[:top_k]
+            # Sort by rerank score (descending)
+            reranked_results.sort(key=lambda x: x["rerank_score"], reverse=True)
 
-        return reranked_results
+            # Apply top_k limitation if specified
+            if top_k is not None:
+                reranked_results = reranked_results[:top_k]
+
+            span.set_attribute("output.count", len(reranked_results))
+            if reranked_results:
+                span.set_attribute(
+                    "score.max", max(r["rerank_score"] for r in reranked_results)
+                )
+                span.set_attribute(
+                    "score.min", min(r["rerank_score"] for r in reranked_results)
+                )
+
+            return reranked_results

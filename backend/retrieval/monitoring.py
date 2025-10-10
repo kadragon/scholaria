@@ -5,6 +5,10 @@ from datetime import datetime
 from threading import Lock
 from typing import Any
 
+from backend.observability import get_meter
+
+meter = get_meter(__name__)
+
 
 class OpenAIUsageMonitor:
     """Monitor and optimize OpenAI API usage."""
@@ -13,6 +17,23 @@ class OpenAIUsageMonitor:
         """Initialize the usage monitor."""
         self._lock = Lock()
         self._reset()
+
+        self._embedding_calls_counter = meter.create_counter(
+            name="rag.openai.embedding.calls",
+            description="Total number of OpenAI embedding API calls",
+        )
+        self._embedding_tokens_counter = meter.create_counter(
+            name="rag.openai.embedding.tokens",
+            description="Total number of OpenAI embedding tokens used",
+        )
+        self._chat_completion_calls_counter = meter.create_counter(
+            name="rag.openai.chat.calls",
+            description="Total number of OpenAI chat completion API calls",
+        )
+        self._chat_completion_tokens_counter = meter.create_counter(
+            name="rag.openai.chat.tokens",
+            description="Total number of OpenAI chat completion tokens used",
+        )
 
     def _reset(self) -> None:
         self._metrics: dict[str, Any] = {
@@ -40,6 +61,9 @@ class OpenAIUsageMonitor:
             metrics["tokens"] += tokens
             metrics["models"][model] = metrics["models"].get(model, 0) + 1
 
+        self._embedding_calls_counter.add(1, {"model": model})
+        self._embedding_tokens_counter.add(tokens, {"model": model})
+
     def track_chat_completion_usage(
         self, prompt_tokens: int, completion_tokens: int, model: str
     ) -> None:
@@ -53,6 +77,14 @@ class OpenAIUsageMonitor:
             metrics["completion_tokens"] += completion_tokens
             metrics["total_tokens"] += total_tokens
             metrics["models"][model] = metrics["models"].get(model, 0) + 1
+
+        self._chat_completion_calls_counter.add(1, {"model": model})
+        self._chat_completion_tokens_counter.add(
+            prompt_tokens, {"model": model, "type": "prompt"}
+        )
+        self._chat_completion_tokens_counter.add(
+            completion_tokens, {"model": model, "type": "completion"}
+        )
 
     def track_request_timestamp(self, api_type: str) -> None:
         """Track request timestamps for rate limiting detection."""

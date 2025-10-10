@@ -13,7 +13,7 @@ MVP-완료된 학교 통합 RAG 시스템 – 문서 컨텍스트 기반 Q&A 플
 
 ## Context
 
-### 아키텍처 (2025-10-09)
+### 아키텍처 (2025-10-10)
 - **Backend**: FastAPI + SQLAlchemy + Celery + AsyncOpenAI 클라이언트.
 - **Vector DB**: Qdrant (임베딩 검색 전용).
 - **Storage**: 업로드 → Docling 파싱 → 청킹 → 임시 파일 폐기 (외부 MinIO 의존성 제거).
@@ -21,6 +21,7 @@ MVP-완료된 학교 통합 RAG 시스템 – 문서 컨텍스트 기반 Q&A 플
 - **Database**: PostgreSQL이 주 데이터 저장소를 담당.
 - **AI**: OpenAI text-embedding-3-large + GPT-4o-mini + BGE reranker.
 - **Frontend**: Refine 기반 관리자 UI (Vite dev server, port 5173).
+- **Observability**: OpenTelemetry + Jaeger (traces) + Prometheus (metrics) + Grafana (dashboards).
 
 ### 핵심 워크플로우
 ```bash
@@ -47,11 +48,11 @@ docker compose -f docker-compose.prod.yml up -d
 
 ## Changelog
 
-### 프로젝트 상태 (2025-10-09)
-- 201 tests passed, 5 skipped, 85% coverage (`uv run pytest --maxfail=1 --disable-warnings -q` 결과).
-- `docker-compose.yml`: backend, postgres, redis, qdrant, frontend, celery-worker, flower 서비스 포함.
+### 프로젝트 상태 (2025-10-10)
+- 223 tests passed, 21 skipped, 83% coverage (`uv run pytest --disable-warnings -q` 결과).
+- `docker-compose.yml`: backend, postgres, redis, qdrant, frontend, celery-worker, flower, jaeger, prometheus, grafana 서비스 포함.
 - `docker-compose.prod.yml`: nginx 리버스 프록시 + 백엔드 스택으로 프로덕션 배포 가능.
-- uv.lock 기준 Docling 2.53.0, Python 3.13.5 환경 최신화 완료.
+- uv.lock 기준 Docling 2.53.0, Python 3.13.5, OpenTelemetry 1.37.0 환경 최신화 완료.
 
 ### 핵심 구현사항
 - Topic↔Context N:N 모델, ContextItem 청크 메타데이터, Docling 기반 PDF/Markdown/FAQ 처리 파이프라인.
@@ -93,6 +94,16 @@ docker compose -f docker-compose.prod.yml up -d
 - 임베딩 캐시: `REDIS_EMBEDDING_CACHE_*` 설정, TTL 30일, 실패 시 graceful fallback.
 - 쿼리 응답 캐시: Redis set + TTL 15분, 빈 결과 TTL 5분, 장애 시 캐시 비활성화 후 동작 지속.
 
+### Observability 스택 (2025-10-10)
+- **OpenTelemetry**: 분산 트레이싱 및 메트릭 수집 (`backend/observability.py`).
+- **Jaeger**: 트레이스 시각화, UI http://localhost:16686, OTLP gRPC :4317.
+- **Prometheus**: 메트릭 스크래핑, UI http://localhost:9090, 15초 간격.
+- **Grafana**: 대시보드, UI http://localhost:3001 (admin/admin).
+- **환경 변수**: `OTEL_ENABLED`, `OTEL_TRACES_SAMPLER_ARG`, `PROMETHEUS_METRICS_ENABLED`.
+- **문서**: `docs/OBSERVABILITY.md` (설정, 사용법, 트러블슈팅).
+- **성능 오버헤드**: ~4% (100% 샘플링 기준, 프로덕션 권장: 10% 샘플링).
+
 ### 프로덕션 기능
 - 헬스 체크, 구조화 로깅, Flower 모니터링, 백업 전략 `docs/BACKUP_STRATEGY.md`.
 - CI/CD: GitHub Actions에서 ruff/mypy/pytest/coverage 실행 (보안 스캔 TODO는 워크플로우에 기록).
+- Observability: OpenTelemetry 자동 계측 (FastAPI, HTTPX, Redis) + 커스텀 RAG 스팬 + Prometheus 메트릭.

@@ -69,7 +69,7 @@ def test_ask_question_success(mock_rag_service, mock_redis):
     assert data["citations"][0]["score"] == 0.95
 
 
-def test_ask_question_empty_question_fails():
+def test_ask_question_empty_question_fails(mock_rag_service, mock_redis):
     """Test that empty question returns 422 validation error."""
     response = client.post(
         "/api/rag/ask",
@@ -82,7 +82,7 @@ def test_ask_question_empty_question_fails():
     assert response.status_code == 422
 
 
-def test_ask_question_invalid_topic_id_fails():
+def test_ask_question_invalid_topic_id_fails(mock_rag_service, mock_redis):
     """Test that invalid topic_id returns 422 validation error."""
     response = client.post(
         "/api/rag/ask",

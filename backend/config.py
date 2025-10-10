@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     LLAMAINDEX_CACHE_DIR: str = Field(default="storage/llamaindex_cache")
     LLAMAINDEX_CACHE_NAMESPACE: str = Field(default="scholaria-default")
 
+    OTEL_ENABLED: bool = Field(default=True)
+    OTEL_SERVICE_NAME: str = Field(default="scholaria-backend")
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = Field(default="http://jaeger:4317")
+    OTEL_TRACES_SAMPLER: str = Field(default="parentbased_traceidratio")
+    OTEL_TRACES_SAMPLER_ARG: float = Field(default=1.0)
+    PROMETHEUS_METRICS_ENABLED: bool = Field(default=True)
+
     database_url_override: str | None = Field(default=None, alias="DATABASE_URL")
 
     @property

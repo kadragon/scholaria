@@ -6,8 +6,10 @@ Pure FastAPI implementation (Django removed).
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 
 from backend.config import settings
+from backend.observability import setup_observability
 from backend.routers import auth, contexts, history, rag, rag_streaming, setup, topics
 from backend.routers.admin import analytics_router as admin_analytics
 from backend.routers.admin import bulk_operations
@@ -29,6 +31,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+setup_observability(app, settings)
+
 app.include_router(setup.router, prefix="/api", tags=["setup"])
 app.include_router(auth.router, prefix="/api", tags=["auth"])
 app.include_router(topics.router, prefix="/api", tags=["topics"])
@@ -48,3 +52,17 @@ app.include_router(admin_analytics, prefix="/api/admin")
 async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy"}
+
+
+@app.get("/metrics")
+async def get_metrics() -> PlainTextResponse:
+    """
+    Prometheus metrics endpoint.
+
+    OpenTelemetry PrometheusMetricReader exposes metrics via its own collector
+    registered with the prometheus_client REGISTRY during initialization.
+    """
+    from prometheus_client import REGISTRY, generate_latest
+
+    metrics_output = generate_latest(REGISTRY)
+    return PlainTextResponse(content=metrics_output, media_type="text/plain")

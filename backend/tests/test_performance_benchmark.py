@@ -61,7 +61,7 @@ class TestRAGPerformance:
             }
         ]
         mocks["rerank"].return_value = mocks["search"].return_value
-        mocks["answer"].return_value = "Test answer"
+        mocks["answer"].return_value = ("Test answer", {})
 
         start_time = time.perf_counter()
         result = await service.query(
@@ -98,7 +98,7 @@ class TestRAGPerformance:
 
         async def mock_answer_with_timing(query, context):
             await asyncio.sleep(0.5)
-            return "Test answer"
+            return ("Test answer", {})
 
         mocks["embed"].side_effect = mock_embed_with_timing
         mocks["search"].side_effect = mock_search_with_timing
@@ -126,7 +126,7 @@ class TestRAGPerformance:
             }
         ]
         mocks["rerank"].return_value = mocks["search"].return_value
-        mocks["answer"].return_value = "Test answer"
+        mocks["answer"].return_value = ("Test answer", {})
 
         tasks = [service.query(query=f"Question {i}", topic_ids=[1]) for i in range(10)]
 
