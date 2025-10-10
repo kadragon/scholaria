@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useCustom } from "@refinedev/core";
 import { AnalyticsSkeleton } from "@/components/AnalyticsSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getFeedbackMeta } from "@/utils/feedback";
-import { apiClient } from "@/lib/apiClient";
 import {
   LineChart,
   Line,
@@ -65,52 +64,36 @@ export const Analytics = () => {
   const [days, setDays] = useState(7);
   const [selectedTopicId, setSelectedTopicId] = useState<"all" | number>("all");
 
-  const { data: summaryData, isLoading: summaryLoading } = useQuery({
-    queryKey: ["analytics", "summary"],
-    queryFn: async () => {
-      const response = await apiClient.get<AnalyticsSummary>(
-        "/admin/analytics/summary",
-      );
-      return response.data;
-    },
-  });
+  const { data: summaryData, isLoading: summaryLoading } =
+    useCustom<AnalyticsSummary>({
+      url: "analytics/summary",
+      method: "get",
+    });
 
-  const { data: topicsData, isLoading: topicsLoading } = useQuery({
-    queryKey: ["analytics", "topics"],
-    queryFn: async () => {
-      const response = await apiClient.get<TopicStats[]>(
-        "/admin/analytics/topics",
-      );
-      return response.data;
-    },
+  const { data: topicsData, isLoading: topicsLoading } = useCustom<
+    TopicStats[]
+  >({
+    url: "analytics/topics",
+    method: "get",
   });
 
   const {
     data: trendData,
     isLoading: trendLoading,
     refetch: refetchTrend,
-  } = useQuery({
-    queryKey: ["analytics", "questions", "trend", days],
-    queryFn: async () => {
-      const response = await apiClient.get<QuestionTrend[]>(
-        "/admin/analytics/questions/trend",
-        {
-          params: { days },
-        },
-      );
-      return response.data;
+  } = useCustom<QuestionTrend[]>({
+    url: "analytics/questions/trend",
+    method: "get",
+    config: {
+      query: { days },
     },
   });
 
-  const { data: feedbackData, isLoading: feedbackLoading } = useQuery({
-    queryKey: ["analytics", "feedback", "distribution"],
-    queryFn: async () => {
-      const response = await apiClient.get<FeedbackDistribution>(
-        "/admin/analytics/feedback/distribution",
-      );
-      return response.data;
-    },
-  });
+  const { data: feedbackData, isLoading: feedbackLoading } =
+    useCustom<FeedbackDistribution>({
+      url: "analytics/feedback/distribution",
+      method: "get",
+    });
 
   const commentsQuery = useMemo(() => {
     if (selectedTopicId === "all") {
@@ -123,19 +106,16 @@ export const Analytics = () => {
     data: commentsData,
     isFetching: commentsFetching,
     refetch: refetchComments,
-  } = useQuery({
-    queryKey: ["analytics", "feedback", "comments", commentsQuery],
-    queryFn: async () => {
-      const response = await apiClient.get<FeedbackComment[]>(
-        "/admin/analytics/feedback/comments",
-        {
-          params: commentsQuery,
-        },
-      );
-      return response.data;
+  } = useCustom<FeedbackComment[]>({
+    url: "analytics/feedback/comments",
+    method: "get",
+    config: {
+      query: commentsQuery,
     },
-    enabled: false,
-    keepPreviousData: true,
+    queryOptions: {
+      enabled: false,
+      keepPreviousData: true,
+    },
   });
 
   useEffect(() => {
@@ -153,16 +133,16 @@ export const Analytics = () => {
     feedbackLoading ||
     (!commentsData && commentsFetching);
 
-  const summary = summaryData;
+  const summary = summaryData?.data;
   const topics = useMemo(
-    () => (Array.isArray(topicsData) ? topicsData : []),
-    [topicsData],
+    () => (Array.isArray(topicsData?.data) ? topicsData.data : []),
+    [topicsData?.data],
   );
-  const trend = Array.isArray(trendData) ? trendData : [];
-  const feedback = feedbackData;
+  const trend = Array.isArray(trendData?.data) ? trendData.data : [];
+  const feedback = feedbackData?.data;
   const comments = useMemo(
-    () => (Array.isArray(commentsData) ? commentsData : []),
-    [commentsData],
+    () => (Array.isArray(commentsData?.data) ? commentsData.data : []),
+    [commentsData?.data],
   );
 
   const topicOptions = useMemo(() => {
