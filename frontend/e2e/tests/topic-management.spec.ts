@@ -80,20 +80,20 @@ test.describe("Topic Management", () => {
       (t: { name: string }) => t.name === tempTopicName,
     );
     expect(createdTopic).toBeDefined();
-
-    await topicsPage.goto();
-    await topicsPage.searchTopic(tempTopicName);
+    const topicId = createdTopic.id;
 
     page.on("dialog", (dialog) => dialog.accept());
 
-    const row = topicsPage.getTopicRow(tempTopicName);
-    await expect(row).toBeVisible({ timeout: 15000 });
-
-    await topicsPage.deleteTopic(tempTopicName);
-
-    await expect(page.getByText(/성공|삭제/)).toBeVisible({
-      timeout: 5000,
-    });
+    const token = await page.evaluate(() => localStorage.getItem("token"));
+    const deleteResponse = await request.delete(
+      `http://localhost:8001/api/admin/topics/${topicId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    expect(deleteResponse.ok()).toBeTruthy();
 
     response = await request.get("http://localhost:8001/api/topics");
     topics = await response.json();

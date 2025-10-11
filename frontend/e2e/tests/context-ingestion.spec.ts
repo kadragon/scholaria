@@ -45,7 +45,8 @@ test.describe("Context Ingestion", () => {
       },
     );
     expect(response.ok()).toBeTruthy();
-    const contexts = await response.json();
+    const json = await response.json();
+    const contexts = json.data || json;
     const createdContext = contexts.find(
       (c: { name: string }) => c.name === testContextName,
     );
@@ -77,7 +78,8 @@ test.describe("Context Ingestion", () => {
           },
         },
       );
-      const contexts = await response.json();
+      const json = await response.json();
+      const contexts = json.data || json;
       createdContext = contexts.find(
         (c: { name: string }) => c.name === pdfContextName,
       );
