@@ -29,7 +29,10 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
+    await page.waitForTimeout(1000);
+
     await topicsPage.searchTopic(testTopicName);
+    await page.waitForTimeout(1000);
 
     const row = topicsPage.getTopicRow(testTopicName);
     await expect(row).toBeVisible({ timeout: 15000 });
@@ -71,7 +74,10 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics");
     await page.waitForLoadState("networkidle");
 
+    await page.waitForTimeout(1000);
+
     await topicsPage.searchTopic(tempTopicName);
+    await page.waitForTimeout(1000);
 
     page.on("dialog", (dialog) => dialog.accept());
 
@@ -97,7 +103,10 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
+    await page.waitForTimeout(1000);
+
     await topicsPage.searchTopic(topicName);
+    await page.waitForTimeout(1000);
 
     const row = topicsPage.getTopicRow(topicName);
     await expect(row).toBeVisible({ timeout: 15000 });

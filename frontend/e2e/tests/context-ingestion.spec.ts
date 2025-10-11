@@ -35,7 +35,10 @@ test.describe("Context Ingestion", () => {
     await page.waitForURL("/admin/contexts", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
+    await page.waitForTimeout(1000);
+
     await contextsPage.searchContext(testContextName);
+    await page.waitForTimeout(1000);
 
     const row = contextsPage.getContextRow(testContextName);
     await expect(row).toBeVisible({ timeout: 15000 });
