@@ -3,7 +3,7 @@
 ## 상태 스냅샷
 
 - MVP 완성, FastAPI + Refine 스택 프로덕션 준비 완료
-- 106개 프런트엔드 테스트 (51.29% coverage, 45% threshold), 223개 백엔드 테스트 (83% coverage, 80% threshold)
+- 127개 프런트엔드 테스트 (62.17% coverage, 50% threshold), 223개 백엔드 테스트 (83% coverage, 80% threshold)
 - ruff/mypy 클린, Celery/Redis 비동기 인프라 운영 중
 - CI: 프런트엔드 4개 잡, 백엔드 3개 잡 (test+coverage, lint, typecheck)
 - Observability: OpenTelemetry + Jaeger + Prometheus + Grafana 완전 통합 (2025-10-10)
@@ -11,7 +11,7 @@
 
 ## 진행 중
 
-(없음)
+- [ ] **E2E 테스트 도입 (Playwright)** — 핵심 플로우 검증, App.tsx/ChatPage/Analytics 커버, 시각적 회귀 테스트 기반 마련
 
 ## 단기 백로그
 
@@ -21,6 +21,7 @@
 
 - [x] **성능 관측 강화 (OpenTelemetry)** — 8개 Phase 완료 (기반 구축, 커스텀 스팬, 메트릭, Jaeger, Prometheus, Grafana, 테스트, 문서화), 223개 테스트, 83% 커버리지, ~4% 오버헤드 (2025-10-10)
 - [x] **피드백 루프 확장** — 좋아요/싫어요 + 자유 서술 피드백 입력 UI (챗 인터페이스, `/api/history/{id}/feedback`)
+- [ ] **E2E 테스트 도입 (Playwright)** — 핵심 사용자 플로우 검증 (로그인→토픽 생성→Q&A, 컨텍스트 업로드→인제스션→검색, 피드백→분석), 시각적 회귀 테스트 기반 마련
 
 ## Frontend 테스트 계획
 
@@ -31,6 +32,9 @@
 - [x] **Phase 4 – 커버리지/회귀 가드** — 25% 커버리지 임계값 설정 (`vitest.config.ts`), CI coverage 잡 추가, PR 템플릿 생성 (백엔드/프런트엔드 체크리스트), `frontend/README.md` 업데이트 (2025-10-09)
 - [x] **Phase 5 – 커버리지 확대 (31.62% → 40.91%)** — dataProvider(4), Sidebar(3), LoginPage(4), MessageInput(5) 테스트 추가; 86개 테스트 통과; 임계값 35% 상향; dist/ 제외 설정 (2025-10-09)
 - [x] **Phase 6 – 추가 커버리지 확장 (40.91% → 51.29%)** — SetupPage(6), useCommandPalette(3), TopicSelector(3), MessageList(6), AnalyticsSkeleton(2) 테스트 추가; 106개 테스트 통과; 임계값 45% 상향 (2025-10-09)
+- [x] **Phase 7 – 현실적 범위 (32.79% → 47.87%)** — CRUD List 2개 (topics/list 6 tests, contexts/list 6 tests); 복잡한 통합 테스트 제외 (App.tsx, ChatPage, Analytics는 E2E 권장); 105개 테스트 통과 (+12); 임계값 40% 설정; Unit 85%, Integration 45%, Branch 78% 균형 전략 (2025-10-10)
+- [x] **Phase 8 – 점진적 확대 (47.87% → 55.97%)** — dataProvider custom 완전 커버(3), topics/create(5), topics/edit(5) 테스트 추가; 118개 테스트 통과 (+13); 임계값 50% 설정; Unit 95%+, Integration 57%+, Branch 80%+ 달성 (2025-10-10)
+- [x] **Phase 9 – 60% 돌파 (55.97% → 62.17%)** — contexts/edit(5), contexts/create(4) 테스트 추가; 127개 테스트 통과 (+9); 임계값 50% 유지; Unit 100%, Integration 61%+, Branch 79%+ 달성; 전체 +30.55%p 향상 (Phase 5-9) (2025-10-10)
 
 ## 최근 완료 하이라이트
 

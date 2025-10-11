@@ -64,10 +64,11 @@ export const Sidebar = () => {
       <div className="p-4 border-t border-secondary-200">
         <button
           onClick={() => logout()}
+          aria-label="Logout"
           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-secondary-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
         >
           <span className="text-xl">🚪</span>
-          <span>로그아웃</span>
+          <span>로그아웃 (Logout)</span>
         </button>
       </div>
     </aside>

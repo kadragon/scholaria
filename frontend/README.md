@@ -45,6 +45,9 @@ npm run build
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `VITE_API_URL` | `http://localhost:8001/api` | FastAPI backend URL |
+| `E2E_ADMIN_USERNAME` | `admin` | E2E test admin username |
+| `E2E_ADMIN_EMAIL` | `admin@scholaria.test` | E2E test admin email |
+| `E2E_ADMIN_PASSWORD` | `admin123!@#` | E2E test admin password |
 
 ## Project Structure
 
@@ -97,7 +100,46 @@ frontend/
 
 ## Testing
 
-Currently no E2E tests. Manual testing workflow:
+### Unit & Integration Tests
+
+```bash
+# Run tests
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Coverage report
+npm run test:coverage
+```
+
+**Current Coverage**: 62.17% (127 tests)
+- Unit tests: dataProvider, authProvider, hooks (useChat, useCommandPalette)
+- Integration tests: pages (Login, Setup, Topics, Contexts, Chat)
+
+### E2E Tests (Playwright)
+
+```bash
+# Run E2E tests
+npm run test:e2e
+
+# UI mode (recommended)
+npm run test:e2e:ui
+
+# Debug mode
+npm run test:e2e:debug
+```
+
+**Test Coverage**:
+- ✅ Authentication & Setup flow
+- ✅ Topic management (CRUD)
+- ✅ Context ingestion (PDF, Markdown)
+- ✅ Chat Q&A with streaming responses
+- ✅ Analytics dashboard
+
+See `e2e/README.md` for detailed E2E testing guide.
+
+### Manual Testing
 
 1. Start FastAPI backend (`uv run uvicorn backend.main:app --reload --port 8001`)
 2. Start frontend (`npm run dev`)

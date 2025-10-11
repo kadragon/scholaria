@@ -14,6 +14,7 @@ export const LoginPage = () => {
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const checkSetupStatus = useCallback(async () => {
     try {
@@ -33,10 +34,24 @@ export const LoginPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     login(
       { email, password },
       {
+        onSuccess: (data) => {
+          if (data?.success) {
+            setError(null);
+          } else {
+            setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+            toast({
+              variant: "destructive",
+              title: "로그인 실패",
+              description: "이메일 또는 비밀번호가 올바르지 않습니다.",
+            });
+          }
+        },
         onError: () => {
+          setError("이메일 또는 비밀번호가 올바르지 않습니다.");
           toast({
             variant: "destructive",
             title: "로그인 실패",
@@ -56,13 +71,21 @@ export const LoginPage = () => {
           </h1>
           <p className="text-secondary-500 text-sm">관리자 로그인</p>
         </div>
+        {error && (
+          <div
+            role="alert"
+            className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label
               htmlFor="email"
               className="block text-sm font-medium text-secondary-700 mb-2"
             >
-              이메일
+              이메일 (Email)
             </label>
             <input
               id="email"
@@ -70,8 +93,9 @@ export const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              aria-label="Email"
               className="w-full px-4 py-3 text-base border border-secondary-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-              placeholder="admin@example.com"
+              placeholder="admin@scholaria.test"
             />
           </div>
 
@@ -80,7 +104,7 @@ export const LoginPage = () => {
               htmlFor="password"
               className="block text-sm font-medium text-secondary-700 mb-2"
             >
-              비밀번호
+              비밀번호 (Password)
             </label>
             <input
               id="password"
@@ -88,6 +112,7 @@ export const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              aria-label="Password"
               className="w-full px-4 py-3 text-base border border-secondary-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               placeholder="••••••••"
             />
@@ -98,7 +123,7 @@ export const LoginPage = () => {
             disabled={isLoading}
             className="w-full py-3 text-base font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 disabled:from-secondary-400 disabled:to-secondary-500 rounded-md shadow-md hover:shadow-lg transition-all duration-200 disabled:cursor-not-allowed"
           >
-            {isLoading ? "로그인 중..." : "로그인"}
+            {isLoading ? "로그인 중..." : "로그인 (Login)"}
           </button>
         </form>
       </div>

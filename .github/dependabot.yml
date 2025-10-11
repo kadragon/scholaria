@@ -9,8 +9,6 @@ updates:
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 5
-    reviewers:
-      - "kadragon"
     assignees:
       - "kadragon"
     commit-message:
@@ -20,15 +18,26 @@ updates:
       - "dependencies"
       - "python"
     ignore:
-      # Ignore major version updates only for critical framework dependencies
-      - dependency-name: "django"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "djangorestframework"
-        update-types: ["version-update:semver-major"]
+      # Ignore major version updates only for critical runtime dependencies
       - dependency-name: "celery"
         update-types: ["version-update:semver-major"]
       - dependency-name: "psycopg2-binary"
         update-types: ["version-update:semver-major"]
+
+  # Frontend JavaScript dependencies
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "frontend"
+    labels:
+      - "dependencies"
+      - "frontend"
 
   # Docker dependencies
   - package-ecosystem: "docker"
@@ -39,8 +48,6 @@ updates:
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 3
-    reviewers:
-      - "kadragon"
     commit-message:
       prefix: "docker"
     labels:
@@ -56,8 +63,6 @@ updates:
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 3
-    reviewers:
-      - "kadragon"
     commit-message:
       prefix: "ci"
     labels:

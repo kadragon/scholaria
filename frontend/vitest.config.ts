@@ -13,6 +13,7 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./src/setupTests.ts"],
+    exclude: ["**/node_modules/**", "**/dist/**", "**/e2e/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
@@ -26,10 +27,10 @@ export default defineConfig({
         "dist/**",
       ],
       thresholds: {
-        lines: 45,
-        functions: 45,
-        branches: 45,
-        statements: 45,
+        lines: 50,
+        functions: 50,
+        branches: 65,
+        statements: 50,
       },
     },
   },

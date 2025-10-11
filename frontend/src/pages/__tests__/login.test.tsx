@@ -44,9 +44,11 @@ describe("LoginPage", () => {
       </BrowserRouter>,
     );
 
-    expect(screen.getByLabelText("이메일")).toBeInTheDocument();
-    expect(screen.getByLabelText("비밀번호")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "로그인" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Email")).toBeInTheDocument();
+    expect(screen.getByLabelText("Password")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /로그인|login/i }),
+    ).toBeInTheDocument();
   });
 
   it("should redirect to setup when needs_setup is true", async () => {
@@ -82,9 +84,9 @@ describe("LoginPage", () => {
       </BrowserRouter>,
     );
 
-    const emailInput = screen.getByLabelText("이메일");
-    const passwordInput = screen.getByLabelText("비밀번호");
-    const submitButton = screen.getByRole("button", { name: "로그인" });
+    const emailInput = screen.getByLabelText("Email");
+    const passwordInput = screen.getByLabelText("Password");
+    const submitButton = screen.getByRole("button", { name: /로그인|login/i });
 
     await user.type(emailInput, "test@example.com");
     await user.type(passwordInput, "password123");
@@ -115,9 +117,9 @@ describe("LoginPage", () => {
       </BrowserRouter>,
     );
 
-    const emailInput = screen.getByLabelText("이메일");
-    const passwordInput = screen.getByLabelText("비밀번호");
-    const submitButton = screen.getByRole("button", { name: "로그인" });
+    const emailInput = screen.getByLabelText("Email");
+    const passwordInput = screen.getByLabelText("Password");
+    const submitButton = screen.getByRole("button", { name: /로그인|login/i });
 
     await user.type(emailInput, "wrong@example.com");
     await user.type(passwordInput, "wrongpassword");

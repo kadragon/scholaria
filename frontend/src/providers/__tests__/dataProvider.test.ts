@@ -5,14 +5,25 @@ const mockInterceptors = {
   response: { use: vi.fn() },
 };
 
-const mockAxiosInstance = {
-  interceptors: mockInterceptors,
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-  patch: vi.fn(),
-};
+const mockAxiosInstance = Object.assign(
+  vi.fn((config) => {
+    if (config.method === "post" && mockAxiosInstance.post) {
+      return mockAxiosInstance.post(config);
+    }
+    if (config.method === "get" && mockAxiosInstance.get) {
+      return mockAxiosInstance.get(config);
+    }
+    return Promise.resolve({ data: {} });
+  }),
+  {
+    interceptors: mockInterceptors,
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+    patch: vi.fn(),
+  },
+);
 
 vi.mock("axios", () => ({
   default: {
@@ -119,6 +130,80 @@ describe("adminDataProvider", () => {
 
       expect(result.data).toEqual([{ id: 1 }, { id: 2 }]);
       expect(result.total).toBe(2);
+    });
+  });
+
+  describe("custom method", () => {
+    it("should construct URL with query params", async () => {
+      mockAxiosInstance.mockResolvedValue({ data: { result: "success" } });
+
+      vi.doMock("@refinedev/simple-rest", () => ({
+        default: vi.fn(() => ({
+          getList: vi.fn(),
+        })),
+      }));
+
+      const { adminDataProvider } = await import("../dataProvider");
+
+      await adminDataProvider.custom({
+        url: "analytics/summary",
+        method: "get",
+        query: { start_date: "2025-01-01", end_date: "2025-12-31" },
+      });
+
+      expect(mockAxiosInstance).toHaveBeenCalled();
+      const axiosCall = mockAxiosInstance.mock.calls[0][0];
+      expect(axiosCall.url).toContain("analytics/summary");
+      expect(axiosCall.url).toContain("start_date=2025-01-01");
+      expect(axiosCall.url).toContain("end_date=2025-12-31");
+    });
+
+    it("should send payload with POST method", async () => {
+      mockAxiosInstance.mockResolvedValue({ data: { id: 1 } });
+
+      vi.doMock("@refinedev/simple-rest", () => ({
+        default: vi.fn(() => ({
+          getList: vi.fn(),
+        })),
+      }));
+
+      const { adminDataProvider } = await import("../dataProvider");
+
+      await adminDataProvider.custom({
+        url: "topics",
+        method: "post",
+        payload: { name: "Test Topic", description: "Test" },
+      });
+
+      expect(mockAxiosInstance).toHaveBeenCalled();
+      const axiosCall = mockAxiosInstance.mock.calls[0][0];
+      expect(axiosCall.method).toBe("post");
+      expect(axiosCall.data).toEqual({
+        name: "Test Topic",
+        description: "Test",
+      });
+    });
+
+    it("should forward custom headers", async () => {
+      mockAxiosInstance.mockResolvedValue({ data: {} });
+
+      vi.doMock("@refinedev/simple-rest", () => ({
+        default: vi.fn(() => ({
+          getList: vi.fn(),
+        })),
+      }));
+
+      const { adminDataProvider } = await import("../dataProvider");
+
+      await adminDataProvider.custom({
+        url: "topics",
+        method: "get",
+        headers: { "X-Custom-Header": "test-value" },
+      });
+
+      expect(mockAxiosInstance).toHaveBeenCalled();
+      const axiosCall = mockAxiosInstance.mock.calls[0][0];
+      expect(axiosCall.headers).toEqual({ "X-Custom-Header": "test-value" });
     });
   });
 });
