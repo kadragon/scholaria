@@ -29,10 +29,8 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
-    await page.waitForTimeout(1000);
-
     await topicsPage.searchTopic(testTopicName);
-    await page.waitForTimeout(1000);
+    await expect(topicsPage.searchInput).toHaveValue(testTopicName);
 
     const row = topicsPage.getTopicRow(testTopicName);
     await expect(row).toBeVisible({ timeout: 15000 });
@@ -74,10 +72,8 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics");
     await page.waitForLoadState("networkidle");
 
-    await page.waitForTimeout(1000);
-
     await topicsPage.searchTopic(tempTopicName);
-    await page.waitForTimeout(1000);
+    await expect(topicsPage.searchInput).toHaveValue(tempTopicName);
 
     page.on("dialog", (dialog) => dialog.accept());
 
@@ -86,7 +82,9 @@ test.describe("Topic Management", () => {
 
     await topicsPage.deleteTopic(tempTopicName);
 
-    await page.waitForTimeout(2000);
+    await expect(page.getByText("성공적으로 삭제되었습니다")).toBeVisible({
+      timeout: 5000,
+    });
     await expect(topicsPage.getTopicRow(tempTopicName)).not.toBeVisible({
       timeout: 10000,
     });
@@ -103,10 +101,8 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
-    await page.waitForTimeout(1000);
-
     await topicsPage.searchTopic(topicName);
-    await page.waitForTimeout(1000);
+    await expect(topicsPage.searchInput).toHaveValue(topicName);
 
     const row = topicsPage.getTopicRow(topicName);
     await expect(row).toBeVisible({ timeout: 15000 });
@@ -118,8 +114,6 @@ test.describe("Topic Management", () => {
 
     await topicsPage.submitButton.click();
 
-    await page.waitForTimeout(500);
-    const currentUrl = page.url();
-    expect(currentUrl).toContain("/create");
+    await expect(page).toHaveURL(/\/create/, { timeout: 2000 });
   });
 });

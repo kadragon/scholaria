@@ -57,9 +57,7 @@ test.describe("Authentication & Setup", () => {
     await page.waitForURL(/\/admin(\/topics)?$/, { timeout: 30000 });
     await page.waitForLoadState("networkidle");
 
-    await page.waitForTimeout(2000);
-
-    await expect(page.locator("nav")).toBeVisible();
+    await expect(page.locator("nav")).toBeVisible({ timeout: 10000 });
 
     const token = await page.evaluate(() => localStorage.getItem("token"));
     expect(token).toBeTruthy();
@@ -82,8 +80,7 @@ test.describe("Authentication & Setup", () => {
     await loginPage.login("admin@scholaria.test", "admin123!@#");
     await page.waitForURL(/\/admin(\/topics)?$/, { timeout: 30000 });
     await page.waitForLoadState("networkidle");
-
-    await page.waitForTimeout(2000);
+    await expect(page.locator("nav")).toBeVisible({ timeout: 10000 });
 
     await page.reload();
     await page.waitForLoadState("networkidle");
@@ -99,8 +96,7 @@ test.describe("Authentication & Setup", () => {
     await loginPage.login("admin@scholaria.test", "admin123!@#");
     await page.waitForURL(/\/admin(\/topics)?$/, { timeout: 30000 });
     await page.waitForLoadState("networkidle");
-
-    await page.waitForTimeout(2000);
+    await expect(page.locator("nav")).toBeVisible({ timeout: 10000 });
 
     await page.getByLabel("Logout").click();
 

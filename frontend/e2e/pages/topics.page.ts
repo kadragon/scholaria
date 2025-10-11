@@ -62,7 +62,7 @@ export class TopicsPage {
 
   async searchTopic(query: string) {
     await this.searchInput.fill(query);
-    await this.page.waitForTimeout(500);
+    await this.page.waitForLoadState("networkidle");
   }
 
   getTopicRow(topicName: string) {

@@ -83,7 +83,7 @@ export class ContextsPage {
 
   async searchContext(query: string) {
     await this.searchInput.fill(query);
-    await this.page.waitForTimeout(500);
+    await this.page.waitForLoadState("networkidle");
   }
 
   getContextRow(contextName: string) {

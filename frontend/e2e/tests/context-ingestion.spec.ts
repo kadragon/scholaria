@@ -35,10 +35,8 @@ test.describe("Context Ingestion", () => {
     await page.waitForURL("/admin/contexts", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
-    await page.waitForTimeout(1000);
-
     await contextsPage.searchContext(testContextName);
-    await page.waitForTimeout(1000);
+    await expect(contextsPage.searchInput).toHaveValue(testContextName);
 
     const row = contextsPage.getContextRow(testContextName);
     await expect(row).toBeVisible({ timeout: 15000 });
@@ -67,17 +65,15 @@ test.describe("Context Ingestion", () => {
     // Topic assignment is only available in edit page, not create page
   });
 
-  test("should validate required fields", async ({ page }) => {
+  test("should validate required fields", async () => {
     await contextsPage.gotoCreate();
 
     await contextsPage.submitButton.click();
 
-    await page.waitForTimeout(500);
-    const currentUrl = page.url();
-    expect(currentUrl).toContain("/create");
+    await expect(contextsPage.page).toHaveURL(/\/create/, { timeout: 2000 });
   });
 
-  test("should switch between content type tabs", async ({ page }) => {
+  test("should switch between content type tabs", async () => {
     await contextsPage.gotoCreate();
 
     await expect(contextsPage.pdfTab).toBeVisible();
@@ -88,6 +84,6 @@ test.describe("Context Ingestion", () => {
     await expect(contextsPage.markdownTextarea).toBeVisible();
 
     await contextsPage.faqTab.click();
-    await page.waitForTimeout(500);
+    await expect(contextsPage.faqTab).toHaveAttribute("data-state", "active");
   });
 });

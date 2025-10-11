@@ -10,6 +10,38 @@ Phase 1-3 구현 완료, Page Object Model 수정 및 테스트 데이터 자동
 
 ## Latest Updates (2025-10-11)
 
+### Phase 5: Remove waitForTimeout Anti-pattern ✅ (2025-10-11)
+
+**완료**: 모든 `waitForTimeout()` 호출을 Playwright의 자동 대기 메커니즘과 명시적 assertion으로 교체
+
+#### 변경 사항
+- **제거된 `waitForTimeout()` 호출**: 총 17개
+  - `topic-management.spec.ts`: 8개
+  - `context-ingestion.spec.ts`: 4개
+  - `auth.spec.ts`: 3개
+  - `contexts.page.ts`: 1개
+  - `topics.page.ts`: 1개
+
+#### 적용된 패턴
+1. **검색 입력 대기** → `expect(searchInput).toHaveValue(query)` + `waitForLoadState("networkidle")`
+2. **Toast 메시지 대기** → `expect(toast).toBeVisible({ timeout: 5000 })`
+3. **네비게이션 완료 대기** → `expect(page.locator("nav")).toBeVisible({ timeout: 10000 })`
+4. **탭 전환 대기** → `expect(tab).toHaveAttribute("data-state", "active")`
+5. **URL 검증** → `expect(page).toHaveURL(pattern, { timeout: 2000 })`
+
+#### 효과
+- ✅ **안정성 향상**: 정확한 조건을 대기하므로 flakiness 감소
+- ✅ **실행 속도 개선**: 불필요한 고정 대기 시간 제거
+- ✅ **의도 명확화**: 각 대기의 이유가 코드에 명시됨
+- ✅ **유지보수성**: 변경 시 대기 조건을 쉽게 파악 가능
+
+#### 검증
+- `npm run lint` ✅ Pass
+- `npm run typecheck` ✅ Pass
+- `grep waitForTimeout e2e/**/*.ts` → 0 matches
+
+---
+
 ### Test Execution Results (2025-10-11 16:45 KST)
 
 **Local Run**: 15 passed / 15 failed / 3 skipped (45.5% pass rate)
