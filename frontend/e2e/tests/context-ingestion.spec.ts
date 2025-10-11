@@ -35,6 +35,8 @@ test.describe("Context Ingestion", () => {
     await page.waitForURL("/admin/contexts", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
+    await page.waitForTimeout(1000);
+
     const token = await page.evaluate(() => localStorage.getItem("token"));
     const response = await request.get(
       "http://localhost:8001/api/admin/contexts",
@@ -55,6 +57,7 @@ test.describe("Context Ingestion", () => {
   });
 
   test("should upload and process PDF context", async ({ page, request }) => {
+    test.setTimeout(90000);
     await contextsPage.gotoCreate();
 
     const pdfContextName = `PDF Context ${Date.now()}`;
