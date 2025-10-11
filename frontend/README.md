@@ -97,7 +97,46 @@ frontend/
 
 ## Testing
 
-Currently no E2E tests. Manual testing workflow:
+### Unit & Integration Tests
+
+```bash
+# Run tests
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Coverage report
+npm run test:coverage
+```
+
+**Current Coverage**: 62.17% (127 tests)
+- Unit tests: dataProvider, authProvider, hooks (useChat, useCommandPalette)
+- Integration tests: pages (Login, Setup, Topics, Contexts, Chat)
+
+### E2E Tests (Playwright)
+
+```bash
+# Run E2E tests
+npm run test:e2e
+
+# UI mode (recommended)
+npm run test:e2e:ui
+
+# Debug mode
+npm run test:e2e:debug
+```
+
+**Test Coverage**:
+- ✅ Authentication & Setup flow
+- ✅ Topic management (CRUD)
+- ✅ Context ingestion (PDF, Markdown)
+- ✅ Chat Q&A with streaming responses
+- ✅ Analytics dashboard
+
+See `e2e/README.md` for detailed E2E testing guide.
+
+### Manual Testing
 
 1. Start FastAPI backend (`uv run uvicorn backend.main:app --reload --port 8001`)
 2. Start frontend (`npm run dev`)
