@@ -2,6 +2,11 @@ import { test, expect } from "@playwright/test";
 import { ContextsPage } from "../pages/contexts.page";
 import { TopicsPage } from "../pages/topics.page";
 import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 test.describe("Context Ingestion", () => {
   let contextsPage: ContextsPage;

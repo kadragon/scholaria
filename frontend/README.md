@@ -45,6 +45,9 @@ npm run build
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `VITE_API_URL` | `http://localhost:8001/api` | FastAPI backend URL |
+| `E2E_ADMIN_USERNAME` | `admin` | E2E test admin username |
+| `E2E_ADMIN_EMAIL` | `admin@scholaria.test` | E2E test admin email |
+| `E2E_ADMIN_PASSWORD` | `admin123!@#` | E2E test admin password |
 
 ## Project Structure
 

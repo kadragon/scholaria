@@ -71,8 +71,6 @@ test.describe("Topic Management", () => {
 
     await page.getByRole("button", { name: /confirm|delete|yes/i }).click();
 
-    await page.waitForTimeout(1000);
-
     await expect(topicsPage.getTopicRow(tempTopicName)).not.toBeVisible();
   });
 

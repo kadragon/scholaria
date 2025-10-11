@@ -9,12 +9,18 @@ test.describe("Chat Q&A", () => {
   test.beforeAll(async ({ browser }) => {
     const page = await browser.newPage();
     const topicsPage = new TopicsPage(page);
+
+    topicName = `E2E Chat Test ${Date.now()}`;
+
     await topicsPage.goto();
+    await topicsPage.gotoCreate();
 
-    const firstRow = topicsPage.table.locator("tr").nth(1);
-    const name = await firstRow.locator("td").nth(1).textContent();
-    topicName = name || "General";
+    await topicsPage.createTopic({
+      name: topicName,
+      systemPrompt: "You are a helpful assistant for E2E testing.",
+    });
 
+    await page.waitForURL("/admin/topics");
     await page.close();
   });
 
