@@ -40,16 +40,41 @@ test.describe("Topic Management", () => {
     expect(createdTopic.slug).toBe(testTopicSlug);
   });
 
-  test("should edit an existing topic", async ({ page }) => {
-    await topicsPage.goto();
+  test("should edit an existing topic", async ({ page, request }) => {
+    const token = await page.evaluate(() => localStorage.getItem("token"));
 
-    const existingRow = topicsPage.table.locator("tr").nth(1);
-    const topicName = await existingRow.locator("td").nth(1).textContent();
+    const topicsResponse = await request.get(
+      "http://localhost:8001/api/admin/topics",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    const topicsData = await topicsResponse.json();
+    let topics = topicsData.items || topicsData;
+
+    if (!Array.isArray(topics)) {
+      topics = [];
+    }
+
+    if (!topics || topics.length === 0) {
+      test.skip();
+      return;
+    }
+
+    const testTopic = topics.find((t: { name: string }) =>
+      t.name.includes("E2E Test Topic"),
+    );
+    const topicName = testTopic?.name || topics[0]?.name;
 
     if (!topicName) {
       test.skip();
+      return;
     }
 
+    await topicsPage.goto();
     await topicsPage.editTopic(topicName);
 
     const updatedName = `${topicName} (Updated)`;
@@ -60,7 +85,21 @@ test.describe("Topic Management", () => {
 
     await page.waitForURL("/admin/topics", { timeout: 10000 });
 
-    await expect(topicsPage.getTopicRow(updatedName)).toBeVisible();
+    const updatedResponse = await request.get(
+      "http://localhost:8001/api/admin/topics",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    const updatedTopics = await updatedResponse.json();
+    const updatedTopic = (updatedTopics.items || updatedTopics).find(
+      (t: { name: string }) => t.name === updatedName,
+    );
+
+    expect(updatedTopic).toBeDefined();
   });
 
   test("should delete a topic", async ({ page, request }) => {

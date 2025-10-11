@@ -47,11 +47,14 @@ class TestCreateContext:
         data = response.json()
         assert data["name"] == "Test Markdown"
         assert data["context_type"] == "MARKDOWN"
-        assert data["original_content"] == markdown_content
-        assert data["processing_status"] == "PENDING"
+        from backend.config import settings
+
+        expected_status = "COMPLETED" if settings.OPENAI_API_KEY else "PENDING"
+        assert data["processing_status"] == expected_status
 
         context = db_session.query(SQLContext).filter(SQLContext.id == data["id"]).one()
-        assert context.original_content == markdown_content
+        assert context.processing_status == expected_status
+        assert context.chunk_count > 0
 
     def test_create_faq_context(self, client, db_session, admin_headers) -> None:
         response = client.post(

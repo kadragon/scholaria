@@ -11,7 +11,8 @@
 
 ## 진행 중
 
-- [ ] **E2E 테스트 도입 (Playwright)** — 핵심 플로우 검증, App.tsx/ChatPage/Analytics 커버, 시각적 회귀 테스트 기반 마련
+- [ ] **E2E 테스트 도입 (Playwright)** — 핵심 플로우 검증, App.tsx/ChatPage/Analytics 커버, 시각적 회귀 테스트 기반 마련 (Phase 1-2 완료, 23/33 통과 70%, Celery worker 이슈로 RAG 의존 테스트 5개 skip)
+- [ ] **Celery Worker Docker 설정 수정** — venv 경로 불일치 문제로 컨테이너 실행 실패, E2E 테스트에서 RAG 응답 생성 불가 (우선순위: 중, 영향: E2E 5개 테스트 skip)
 
 ## 단기 백로그
 

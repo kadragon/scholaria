@@ -7,6 +7,9 @@ x-common-env: &common-env
   DB_HOST: postgres
   DB_PORT: 5432
   REDIS_URL: redis://redis:6379/0
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_DB: 0
   QDRANT_HOST: qdrant
   QDRANT_PORT: 6333
   QDRANT_COLLECTION_NAME: ${QDRANT_COLLECTION_NAME:-scholaria_documents}
@@ -21,12 +24,15 @@ services:
       context: .
       dockerfile: Dockerfile.backend
       target: development
+    entrypoint:
+      - /app/scripts/docker/dev-entrypoint.sh
     ports:
       - "${FASTAPI_PORT:-8001}:8001"
     environment:
       <<: *common-env
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
       FASTAPI_ALLOWED_ORIGINS: ${FASTAPI_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      PYTHONPATH: /app
     volumes:
       - .:/app
       - uploads:/app/uploads
@@ -86,9 +92,12 @@ services:
       context: .
       dockerfile: Dockerfile.backend
       target: development
-    command: celery -A backend.celery_app worker --loglevel=info
+    entrypoint:
+      - /app/scripts/docker/celery-entrypoint.sh
+    command: []
     environment:
       <<: *common-env
+      UV_PROJECT_ENVIRONMENT: /tmp/uv/backend-worker
     volumes:
       - .:/app
     depends_on:

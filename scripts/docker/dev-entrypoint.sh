@@ -14,5 +14,6 @@ if [ "$#" -gt 0 ]; then
     exec "$@"
 else
     cd "${PROJECT_DIR}"
+    export PYTHONPATH="${PROJECT_DIR}/..:${PYTHONPATH:-}"
     exec "${DEFAULT_CMD[@]}"
 fi

@@ -1,4 +1,4 @@
-import { type Page, type Locator } from "@playwright/test";
+import { type Page, type Locator, expect } from "@playwright/test";
 
 export class ChatPage {
   readonly page: Page;
@@ -13,7 +13,9 @@ export class ChatPage {
   constructor(page: Page) {
     this.page = page;
     this.topicSelector = page.locator("aside").locator("button").first();
-    this.messageInput = page.locator("textarea");
+    this.messageInput = page.getByPlaceholder(
+      /질문을 입력하세요... \(Enter: 전송, Shift\+Enter: 줄바꿈\)/i,
+    );
     this.sendButton = page.getByRole("button", { name: /전송|send/i });
     this.messageList = page.locator("main");
     this.feedbackThumbsUp = page.getByRole("button", {
@@ -31,13 +33,16 @@ export class ChatPage {
   }
 
   async selectTopic(topicName: string) {
-    await this.page
+    const topicButton = this.page
       .locator("aside")
-      .getByRole("button", { name: topicName })
-      .click();
+      .getByRole("button", { name: topicName });
+    await topicButton.waitFor({ state: "visible", timeout: 15000 });
+    await topicButton.click();
+    await expect(this.messageInput).toBeEnabled({ timeout: 15000 });
   }
 
   async sendMessage(message: string) {
+    await this.waitUntilInputEnabled();
     await this.messageInput.fill(message);
     await this.sendButton.click();
   }
@@ -47,6 +52,27 @@ export class ChatPage {
       .locator(".bg-white.border-2.border-secondary-100")
       .last()
       .waitFor({ timeout: timeoutMs });
+  }
+
+  async waitForAssistantContent(index = 0, timeoutMs = 45000): Promise<string> {
+    await expect
+      .poll(
+        async () => {
+          const text =
+            (await this.getMessage("assistant", index).textContent()) ?? "";
+          return text.trim().length > 0 ? text.trim() : null;
+        },
+        { timeout: timeoutMs },
+      )
+      .toBeTruthy();
+
+    return (
+      (await this.getMessage("assistant", index).textContent()) ?? ""
+    ).trim();
+  }
+
+  async waitUntilInputEnabled(timeoutMs = 45000) {
+    await expect(this.messageInput).toBeEnabled({ timeout: timeoutMs });
   }
 
   async submitFeedback(type: "up" | "down", comment?: string) {
