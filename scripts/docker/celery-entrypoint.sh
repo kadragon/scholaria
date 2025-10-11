@@ -20,14 +20,6 @@ export HOME="${UV_HOME_DIR}"
 
 export PATH="${UV_BIN_DIR}:${PATH}"
 
-if ! command -v uv >/dev/null 2>&1; then
-    echo "[celery-entrypoint] Installing uv to ${UV_BIN_DIR}..."
-    if ! curl -LsSf https://astral.sh/uv/install.sh | sh; then
-        echo "[celery-entrypoint] Failed to install uv" >&2
-        exit 1
-    fi
-fi
-
 export PATH="${PROJECT_ENV}/bin:${PATH}"
 
 cd "${PROJECT_DIR}"

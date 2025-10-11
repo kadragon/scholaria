@@ -1,16 +1,13 @@
 x-common-env: &common-env
   DEBUG: 'True'
-  DB_ENGINE: postgresql
+  DB_ENGINE: "postgresql"
   DB_NAME: ${POSTGRES_DB:-scholaria}
   DB_USER: ${POSTGRES_USER:-postgres}
   DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-  DB_HOST: postgres
+  DB_HOST: "postgres"
   DB_PORT: 5432
-  REDIS_URL: redis://redis:6379/0
-  REDIS_HOST: redis
-  REDIS_PORT: 6379
-  REDIS_DB: 0
-  QDRANT_HOST: qdrant
+  REDIS_URL: "redis://redis:6379/0"
+  QDRANT_HOST: "qdrant"
   QDRANT_PORT: 6333
   QDRANT_COLLECTION_NAME: ${QDRANT_COLLECTION_NAME:-scholaria_documents}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-changeme}

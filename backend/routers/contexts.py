@@ -190,7 +190,6 @@ def _process_markdown_content(context: Context, content: str, db: Session) -> No
     """Process raw markdown content by persisting it, chunking, and generating embeddings."""
     from backend.services.ingestion import (
         delete_temp_file,
-        generate_context_item_embedding,
         ingest_document,
         save_uploaded_file,
     )
@@ -220,28 +219,17 @@ def _process_markdown_content(context: Context, content: str, db: Session) -> No
             return
 
         if num_chunks > 0:
+            from backend.tasks.embeddings import regenerate_embedding_task
+
+            context.processing_status = "PENDING"
+            db.commit()
+
             item_ids = db.scalars(
                 select(ContextItem.id).where(ContextItem.context_id == context.id)
             ).all()
 
             for item_id in item_ids:
-                try:
-                    generate_context_item_embedding(db, item_id)
-                except Exception as exc:  # pragma: no cover
-                    logger.error(
-                        "Failed to generate embedding for ContextItem %s: %s",
-                        item_id,
-                        exc,
-                        exc_info=True,
-                    )
-                    context.processing_status = "FAILED"
-                    db.commit()
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Failed to generate embeddings for markdown context items.",
-                    ) from exc
-
-            db.commit()
+                regenerate_embedding_task.delay(item_id)
 
     except HTTPException:
         if temp_path:

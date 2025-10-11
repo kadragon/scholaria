@@ -36,26 +36,37 @@ test.describe("Context Ingestion", () => {
     await page.waitForURL("/admin/contexts", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
-    await page.waitForTimeout(1000);
-
     const token = await page.evaluate(() => localStorage.getItem("token"));
-    const response = await request.get(getApiUrl("/api/admin/contexts"), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    expect(response.ok()).toBeTruthy();
-    const json = await response.json();
-    const contexts = json.data || json;
-    const createdContext = contexts.find(
-      (c: { name: string }) => c.name === testContextName,
-    );
-    expect(createdContext).toBeDefined();
+
+    const createdContext = await expect
+      .poll(
+        async () => {
+          const response = await request.get(getApiUrl("/api/admin/contexts"), {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (!response.ok()) return null;
+          const json = await response.json();
+          const contexts = json.data || json;
+          if (!Array.isArray(contexts)) return null;
+          return contexts.find(
+            (c: { name: string }) => c.name === testContextName,
+          );
+        },
+        {
+          message: `Expected context "${testContextName}" to be created`,
+          intervals: [1000, 2000, 3000],
+          timeout: 10000,
+        },
+      )
+      .toBeDefined();
+
     expect(createdContext.context_type).toBe("MARKDOWN");
   });
 
   test("should upload and process PDF context", async ({ page, request }) => {
-    test.setTimeout(90000);
+    test.setTimeout(120000);
     await contextsPage.gotoCreate();
 
     const pdfContextName = `PDF Context ${Date.now()}`;
@@ -72,21 +83,33 @@ test.describe("Context Ingestion", () => {
     const createdContext = await expect
       .poll(
         async () => {
-          const response = await request.get(getApiUrl("/api/admin/contexts"), {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          const json = await response.json();
-          const contexts = json.data || json;
-          const context = contexts.find(
-            (c: { name: string }) => c.name === pdfContextName,
-          );
-          return context;
+          try {
+            const response = await request.get(
+              getApiUrl("/api/admin/contexts"),
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+                timeout: 10000,
+              },
+            );
+            if (!response.ok()) return null;
+            const json = await response.json();
+            const contexts = json.data || json;
+            if (!Array.isArray(contexts)) return null;
+            const context = contexts.find(
+              (c: { name: string }) => c.name === pdfContextName,
+            );
+            return context;
+          } catch (error) {
+            console.log("Polling error:", error);
+            return null;
+          }
         },
         {
-          intervals: [5000],
-          timeout: 60000,
+          message: `Expected PDF context "${pdfContextName}" to be processed`,
+          intervals: [5000, 5000, 5000],
+          timeout: 90000,
         },
       )
       .toEqual(
@@ -98,8 +121,85 @@ test.describe("Context Ingestion", () => {
     expect(createdContext.context_type).toBe("PDF");
   });
 
-  test.skip("should assign context to topics", async () => {
-    // Topic assignment is only available in edit page, not create page
+  test("should assign context to topics", async ({ page, request }) => {
+    const token = await page.evaluate(() => localStorage.getItem("token"));
+    const contextName = `E2E Context Assignment ${Date.now()}`;
+
+    await contextsPage.gotoCreate();
+    await contextsPage.createMarkdownContext({
+      name: contextName,
+      description: "Test context for topic assignment",
+      content: "# Assignment Test\n\nThis context will be assigned to topics.",
+    });
+
+    await page.waitForURL("/admin/contexts", { timeout: 10000 });
+    await page.waitForLoadState("networkidle");
+
+    const contextsResponse = await request.get(
+      getApiUrl("/api/admin/contexts"),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    const contextsData = await contextsResponse.json();
+    let contexts = contextsData.data || contextsData;
+    if (!Array.isArray(contexts)) {
+      contexts = [];
+    }
+    const context = contexts.find(
+      (c: { name: string }) => c.name === contextName,
+    );
+
+    if (!context) {
+      throw new Error(`Context "${contextName}" not found`);
+    }
+
+    await page.goto(`/admin/contexts/${context.id}/edit`);
+    await page.waitForLoadState("networkidle");
+
+    const topicsResponse = await request.get(
+      "http://localhost:8001/api/admin/topics",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    const topicsData = await topicsResponse.json();
+    const topics = topicsData.items || topicsData;
+    const testTopic = topics.find((t: { name: string }) =>
+      t.name.includes("E2E Test Topic"),
+    );
+
+    if (!testTopic) {
+      test.skip();
+      return;
+    }
+
+    await contextsPage.assignTopics([testTopic.name]);
+    await contextsPage.submitButton.click();
+
+    await expect(page.getByText(/successfully|성공/i)).toBeVisible({
+      timeout: 5000,
+    });
+
+    const updatedContextResponse = await request.get(
+      getApiUrl(`/api/admin/contexts/${context.id}`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    const updatedContext = await updatedContextResponse.json();
+    expect(updatedContext.topics).toContainEqual(
+      expect.objectContaining({ name: testTopic.name }),
+    );
   });
 
   test("should validate required fields", async () => {
