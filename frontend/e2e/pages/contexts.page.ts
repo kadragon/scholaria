@@ -13,6 +13,7 @@ export class ContextsPage {
   readonly submitButton: Locator;
   readonly table: Locator;
   readonly topicMultiSelect: Locator;
+  readonly searchInput: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -29,6 +30,7 @@ export class ContextsPage {
     });
     this.table = page.getByRole("table");
     this.topicMultiSelect = page.getByRole("combobox", { name: /토픽|topic/i });
+    this.searchInput = page.getByPlaceholder("컨텍스트 검색...");
   }
 
   async goto() {
@@ -77,6 +79,11 @@ export class ContextsPage {
       await this.topicMultiSelect.click();
       await this.page.getByRole("option", { name: topic }).click();
     }
+  }
+
+  async searchContext(query: string) {
+    await this.searchInput.fill(query);
+    await this.page.waitForTimeout(500);
   }
 
   getContextRow(contextName: string) {

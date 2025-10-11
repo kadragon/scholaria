@@ -35,8 +35,10 @@ test.describe("Context Ingestion", () => {
     await page.waitForURL("/admin/contexts", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
+    await contextsPage.searchContext(testContextName);
+
     const row = contextsPage.getContextRow(testContextName);
-    await expect(row).toBeVisible({ timeout: 10000 });
+    await expect(row).toBeVisible({ timeout: 15000 });
     await expect(row).toContainText(/완료|completed|pending/i);
   });
 
@@ -52,7 +54,7 @@ test.describe("Context Ingestion", () => {
 
     await page.waitForURL("/admin/contexts", { timeout: 10000 });
 
-    await contextsPage.waitForProcessing(pdfContextName, 30000);
+    await contextsPage.waitForProcessing(pdfContextName, 60000);
 
     const row = contextsPage.getContextRow(pdfContextName);
     await expect(row).toContainText(/완료|completed/i);

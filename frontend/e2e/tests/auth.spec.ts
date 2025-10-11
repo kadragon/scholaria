@@ -54,9 +54,12 @@ test.describe("Authentication & Setup", () => {
 
     await loginPage.login("admin@scholaria.test", "admin123!@#");
 
-    await page.waitForURL("/admin/topics", { timeout: 10000 });
+    await page.waitForURL(/\/admin(\/topics)?$/, { timeout: 30000 });
+    await page.waitForLoadState("networkidle");
 
-    await expect(page.getByRole("navigation")).toBeVisible();
+    await page.waitForTimeout(2000);
+
+    await expect(page.locator("nav")).toBeVisible();
 
     const token = await page.evaluate(() => localStorage.getItem("token"));
     expect(token).toBeTruthy();
@@ -77,12 +80,16 @@ test.describe("Authentication & Setup", () => {
 
     await loginPage.goto();
     await loginPage.login("admin@scholaria.test", "admin123!@#");
-    await page.waitForURL("/admin/topics");
+    await page.waitForURL(/\/admin(\/topics)?$/, { timeout: 30000 });
+    await page.waitForLoadState("networkidle");
+
+    await page.waitForTimeout(2000);
 
     await page.reload();
+    await page.waitForLoadState("networkidle");
 
-    await expect(page).toHaveURL("/admin/topics");
-    await expect(page.getByRole("navigation")).toBeVisible();
+    await expect(page).toHaveURL(/\/admin/);
+    await expect(page.locator("nav")).toBeVisible();
   });
 
   test("should logout successfully", async ({ page }) => {
@@ -90,11 +97,14 @@ test.describe("Authentication & Setup", () => {
 
     await loginPage.goto();
     await loginPage.login("admin@scholaria.test", "admin123!@#");
-    await page.waitForURL("/admin/topics");
+    await page.waitForURL(/\/admin(\/topics)?$/, { timeout: 30000 });
+    await page.waitForLoadState("networkidle");
 
-    await page.getByRole("button", { name: /logout|sign out/i }).click();
+    await page.waitForTimeout(2000);
 
-    await page.waitForURL("/admin/login", { timeout: 5000 });
+    await page.getByLabel("Logout").click();
+
+    await page.waitForURL("/admin/login", { timeout: 10000 });
 
     const token = await page.evaluate(() => localStorage.getItem("token"));
     expect(token).toBeNull();

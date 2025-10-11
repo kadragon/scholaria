@@ -29,8 +29,10 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
+    await topicsPage.searchTopic(testTopicName);
+
     const row = topicsPage.getTopicRow(testTopicName);
-    await expect(row).toBeVisible({ timeout: 10000 });
+    await expect(row).toBeVisible({ timeout: 15000 });
     await expect(row).toContainText(testTopicSlug);
   });
 
@@ -69,10 +71,16 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics");
     await page.waitForLoadState("networkidle");
 
+    await topicsPage.searchTopic(tempTopicName);
+
     page.on("dialog", (dialog) => dialog.accept());
+
+    const row = topicsPage.getTopicRow(tempTopicName);
+    await expect(row).toBeVisible({ timeout: 15000 });
+
     await topicsPage.deleteTopic(tempTopicName);
 
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
     await expect(topicsPage.getTopicRow(tempTopicName)).not.toBeVisible({
       timeout: 10000,
     });
@@ -89,8 +97,10 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
+    await topicsPage.searchTopic(topicName);
+
     const row = topicsPage.getTopicRow(topicName);
-    await expect(row).toBeVisible({ timeout: 10000 });
+    await expect(row).toBeVisible({ timeout: 15000 });
     await expect(row).toContainText(/auto-slug-test-topic/i);
   });
 

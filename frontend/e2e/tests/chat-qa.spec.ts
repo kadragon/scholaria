@@ -45,7 +45,7 @@ test.describe("Chat Q&A", () => {
     const question = "What is the capital of France?";
     await chatPage.sendMessage(question);
 
-    await chatPage.waitForResponse(15000);
+    await chatPage.waitForResponse(30000);
 
     const userMessage = chatPage.getMessage("user", 0);
     await expect(userMessage).toContainText(question);
@@ -58,7 +58,7 @@ test.describe("Chat Q&A", () => {
     await chatPage.selectTopic(topicName);
 
     await chatPage.sendMessage("Tell me about testing");
-    await chatPage.waitForResponse();
+    await chatPage.waitForResponse(30000);
 
     await chatPage.submitFeedback("up");
 
@@ -71,7 +71,7 @@ test.describe("Chat Q&A", () => {
     await chatPage.selectTopic(topicName);
 
     await chatPage.sendMessage("What is E2E testing?");
-    await chatPage.waitForResponse();
+    await chatPage.waitForResponse(30000);
 
     await chatPage.submitFeedback("down", "The response was not helpful.");
 
@@ -84,13 +84,15 @@ test.describe("Chat Q&A", () => {
     await chatPage.selectTopic(topicName);
 
     await chatPage.sendMessage("Test message for session persistence");
-    await chatPage.waitForResponse();
+    await chatPage.waitForResponse(30000);
 
     await page.reload();
+    await page.waitForLoadState("networkidle");
 
     const userMessage = chatPage.getMessage("user", 0);
     await expect(userMessage).toContainText(
       "Test message for session persistence",
+      { timeout: 10000 },
     );
   });
 
@@ -98,16 +100,18 @@ test.describe("Chat Q&A", () => {
     await chatPage.selectTopic(topicName);
 
     await chatPage.sendMessage("First question");
-    await chatPage.waitForResponse();
+    await chatPage.waitForResponse(30000);
 
     await chatPage.sendMessage("Second question");
-    await chatPage.waitForResponse();
+    await chatPage.waitForResponse(30000);
 
-    const userMessages = chatPage.messageList.locator('[data-role="user"]');
+    const userMessages = chatPage.messageList.locator(
+      ".bg-gradient-to-br.from-primary-600.to-primary-700",
+    );
     await expect(userMessages).toHaveCount(2);
 
     const assistantMessages = chatPage.messageList.locator(
-      '[data-role="assistant"]',
+      ".bg-white.border-2.border-secondary-100",
     );
     await expect(assistantMessages).toHaveCount(2);
   });

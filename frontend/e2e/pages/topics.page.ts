@@ -9,6 +9,7 @@ export class TopicsPage {
   readonly systemPromptInput: Locator;
   readonly submitButton: Locator;
   readonly table: Locator;
+  readonly searchInput: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -21,6 +22,7 @@ export class TopicsPage {
       name: /생성/,
     });
     this.table = page.getByRole("table");
+    this.searchInput = page.getByPlaceholder("토픽 검색...");
   }
 
   async goto() {
@@ -56,6 +58,11 @@ export class TopicsPage {
   async deleteTopic(topicName: string) {
     const row = this.table.locator("tr", { hasText: topicName });
     await row.getByRole("button", { name: "삭제" }).click();
+  }
+
+  async searchTopic(query: string) {
+    await this.searchInput.fill(query);
+    await this.page.waitForTimeout(500);
   }
 
   getTopicRow(topicName: string) {

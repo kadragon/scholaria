@@ -49,7 +49,7 @@ describe("Sidebar", () => {
       </BrowserRouter>,
     );
 
-    const logoutButton = screen.getByText("로그아웃");
+    const logoutButton = screen.getByLabelText("Logout");
     await user.click(logoutButton);
 
     expect(mockLogout).toHaveBeenCalledOnce();
