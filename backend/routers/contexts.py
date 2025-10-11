@@ -3,10 +3,13 @@ FastAPI router for Context resource.
 """
 
 import logging
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.config import settings
 from backend.dependencies.auth import require_admin
 from backend.models.base import get_db
 from backend.models.context import Context, ContextItem
@@ -115,8 +118,12 @@ def create_context(
 
     if context_type == "PDF" and file:
         _process_pdf_upload(context, file, db)
+    elif context_type == "MARKDOWN" and original_content:
+        _process_markdown_content(context, original_content, db)
     elif context_type == "WEBSCRAPER" and url:
         _process_webscraper_upload(context, url, db)
+
+    db.refresh(context)
 
     return context
 
@@ -177,6 +184,87 @@ def _process_webscraper_upload(context: Context, url: str, db: Session) -> None:
         context.processing_status = "FAILED"
         db.commit()
         raise
+
+
+def _process_markdown_content(context: Context, content: str, db: Session) -> None:
+    """Process raw markdown content by persisting it, chunking, and generating embeddings."""
+    from backend.services.ingestion import (
+        delete_temp_file,
+        generate_context_item_embedding,
+        ingest_document,
+        save_uploaded_file,
+    )
+
+    temp_path: Path | None = None
+
+    try:
+        temp_path = save_uploaded_file(content.encode("utf-8"), suffix=".md")
+
+        num_chunks, normalized_content = ingest_document(
+            db=db,
+            context_id=context.id,
+            title=context.name,
+            context_type="MARKDOWN",
+            file_path=str(temp_path),
+        )
+
+        context.original_content = normalized_content or content
+        context.chunk_count = num_chunks
+        context.processing_status = "COMPLETED" if num_chunks > 0 else "FAILED"
+        db.commit()
+
+        if not settings.OPENAI_API_KEY:
+            if num_chunks > 0:
+                context.processing_status = "PENDING"
+                db.commit()
+            return
+
+        if num_chunks > 0:
+            item_ids = db.scalars(
+                select(ContextItem.id).where(ContextItem.context_id == context.id)
+            ).all()
+
+            for item_id in item_ids:
+                try:
+                    generate_context_item_embedding(db, item_id)
+                except Exception as exc:  # pragma: no cover
+                    logger.error(
+                        "Failed to generate embedding for ContextItem %s: %s",
+                        item_id,
+                        exc,
+                        exc_info=True,
+                    )
+                    context.processing_status = "FAILED"
+                    db.commit()
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Failed to generate embeddings for markdown context items.",
+                    ) from exc
+
+            db.commit()
+
+    except HTTPException:
+        if temp_path:
+            delete_temp_file(temp_path)
+        raise
+    except Exception as exc:
+        logger.error(
+            "Markdown processing failed for context %s: %s",
+            context.id,
+            exc,
+            exc_info=True,
+        )
+        context.processing_status = "FAILED"
+        db.commit()
+        if temp_path:
+            delete_temp_file(temp_path)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Markdown processing failed.",
+        ) from exc
+    else:
+        if temp_path:
+            delete_temp_file(temp_path)
 
 
 @router.put(

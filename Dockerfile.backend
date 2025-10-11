@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Scholaria Backend (FastAPI)
 
 # Builder stage
-FROM python:3.14-slim as builder
+FROM python:3.13-slim as builder
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -19,7 +19,7 @@ COPY backend/uv.lock ./uv.lock
 RUN uv sync --frozen --no-dev
 
 # Development stage
-FROM python:3.14-slim as development
+FROM python:3.13-slim as development
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -47,7 +47,7 @@ EXPOSE 8001
 CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8001"]
 
 # Production stage
-FROM python:3.14-slim as production
+FROM python:3.13-slim as production
 
 RUN apt-get update && apt-get install -y \
     curl \
