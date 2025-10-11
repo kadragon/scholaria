@@ -1,5 +1,5 @@
 {
-  "venvPath": ".",
+  "venvPath": "backend",
   "venv": ".venv",
   "pythonVersion": "3.13",
   "pythonPlatform": "Darwin",
@@ -14,7 +14,8 @@
       "pythonPlatform": "Darwin",
       "extraPaths": [
         ".",
-        ".venv/lib/python3.13/site-packages"
+        "backend",
+        "backend/.venv/lib/python3.13/site-packages"
       ]
     }
   ],

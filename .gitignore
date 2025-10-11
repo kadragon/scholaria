@@ -8,6 +8,11 @@ wheels/
 
 # Virtual environments
 .venv
+backend/.venv
+
+# uv cache / metadata
+.uv_cache/
+backend/.uv_cache/
 
 # uv lock file - committed for reproducible builds
 

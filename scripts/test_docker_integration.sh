@@ -136,12 +136,12 @@ fi
 
 print_status "Running database migrations..."
 export DOCKER_INTEGRATION_TESTS=true
-uv run alembic upgrade head
+(cd backend && uv run alembic -c ../alembic.ini upgrade head)
 
 print_status "Running Docker integration tests..."
 
 # Run the integration tests with detailed output
-if uv run pytest backend/tests/test_rag_endpoint.py backend/tests/test_rag_streaming.py -v --tb=short; then
+if (cd backend && uv run pytest tests/test_rag_endpoint.py tests/test_rag_streaming.py -v --tb=short); then
     print_success "All integration tests passed! ✅"
     test_result=0
 else

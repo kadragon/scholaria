@@ -2,7 +2,7 @@
 Integration tests for Grafana dashboard provisioning.
 
 These tests verify that Grafana datasources and dashboards are properly configured.
-Run with: docker compose up -d grafana && pytest backend/tests/test_grafana_integration.py
+Run with: docker compose up -d grafana && (cd backend && uv run pytest tests/test_grafana_integration.py)
 """
 
 import os

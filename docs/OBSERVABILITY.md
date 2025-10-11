@@ -198,14 +198,14 @@ curl http://localhost:8001/metrics
 
 ```bash
 # Test observability setup
-uv run pytest backend/tests/test_observability.py -xvs
+(cd backend && uv run pytest tests/test_observability.py -xvs)
 
 # Test metrics recording
-uv run pytest backend/tests/test_metrics_endpoint.py -xvs
-uv run pytest backend/tests/test_openai_usage_monitor_metrics.py -xvs
+(cd backend && uv run pytest tests/test_metrics_endpoint.py -xvs)
+(cd backend && uv run pytest tests/test_openai_usage_monitor_metrics.py -xvs)
 
 # Test RAG metrics
-uv run pytest backend/tests/test_rag_metrics.py -xvs
+(cd backend && uv run pytest tests/test_rag_metrics.py -xvs)
 ```
 
 ### Integration Tests
@@ -215,7 +215,7 @@ uv run pytest backend/tests/test_rag_metrics.py -xvs
 docker compose up -d jaeger
 
 # Run Jaeger integration tests
-SKIP_JAEGER_TESTS=false uv run pytest backend/tests/test_jaeger_integration.py -xvs
+(cd backend && SKIP_JAEGER_TESTS=false uv run pytest tests/test_jaeger_integration.py -xvs)
 
 # Verify traces in UI
 open http://localhost:16686
@@ -291,7 +291,7 @@ OTEL_TRACES_SAMPLER_ARG=0.1 docker compose up -d backend
 
 3. **Disable observability for benchmarks**:
    ```bash
-   OTEL_ENABLED=false uv run pytest backend/tests/test_golden_accuracy.py
+   (cd backend && OTEL_ENABLED=false uv run pytest tests/test_golden_accuracy.py)
    ```
 
 ---
