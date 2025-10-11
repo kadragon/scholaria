@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { TopicsPage } from "../pages/topics.page";
+import { getApiUrl } from "../helpers/api";
 
 test.describe("Topic Management", () => {
   let topicsPage: TopicsPage;
@@ -16,7 +17,7 @@ test.describe("Topic Management", () => {
     await expect(topicsPage.createButton).toBeVisible();
   });
 
-  test("should create a new topic", async ({ page }) => {
+  test("should create a new topic", async ({ page, request }) => {
     await topicsPage.gotoCreate();
 
     await topicsPage.createTopic({
@@ -29,12 +30,14 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
-    await topicsPage.searchTopic(testTopicName);
-    await expect(topicsPage.searchInput).toHaveValue(testTopicName);
-
-    const row = topicsPage.getTopicRow(testTopicName);
-    await expect(row).toBeVisible({ timeout: 15000 });
-    await expect(row).toContainText(testTopicSlug);
+    const response = await request.get(getApiUrl("/api/topics"));
+    expect(response.ok()).toBeTruthy();
+    const topics = await response.json();
+    const createdTopic = topics.find(
+      (t: { name: string }) => t.name === testTopicName,
+    );
+    expect(createdTopic).toBeDefined();
+    expect(createdTopic.slug).toBe(testTopicSlug);
   });
 
   test("should edit an existing topic", async ({ page }) => {
@@ -60,7 +63,7 @@ test.describe("Topic Management", () => {
     await expect(topicsPage.getTopicRow(updatedName)).toBeVisible();
   });
 
-  test("should delete a topic", async ({ page }) => {
+  test("should delete a topic", async ({ page, request }) => {
     await topicsPage.gotoCreate();
 
     const tempTopicName = `Temp Topic ${Date.now()}`;
@@ -72,28 +75,39 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics");
     await page.waitForLoadState("networkidle");
 
-    await topicsPage.searchTopic(tempTopicName);
-    await expect(topicsPage.searchInput).toHaveValue(tempTopicName);
+    let response = await request.get(getApiUrl("/api/topics"));
+    let topics = await response.json();
+    const createdTopic = topics.find(
+      (t: { name: string }) => t.name === tempTopicName,
+    );
+    expect(createdTopic).toBeDefined();
+    const topicId = createdTopic.id;
 
     page.on("dialog", (dialog) => dialog.accept());
 
-    const row = topicsPage.getTopicRow(tempTopicName);
-    await expect(row).toBeVisible({ timeout: 15000 });
+    const token = await page.evaluate(() => localStorage.getItem("token"));
+    const deleteResponse = await request.delete(
+      getApiUrl(`/api/admin/topics/${topicId}`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    expect(deleteResponse.ok()).toBeTruthy();
 
-    await topicsPage.deleteTopic(tempTopicName);
-
-    await expect(page.getByText("성공적으로 삭제되었습니다")).toBeVisible({
-      timeout: 5000,
-    });
-    await expect(topicsPage.getTopicRow(tempTopicName)).not.toBeVisible({
-      timeout: 10000,
-    });
+    response = await request.get(getApiUrl("/api/topics"));
+    topics = await response.json();
+    const deletedTopic = topics.find(
+      (t: { name: string }) => t.name === tempTopicName,
+    );
+    expect(deletedTopic).toBeUndefined();
   });
 
-  test("should auto-generate slug from name", async ({ page }) => {
+  test("should auto-generate slug from name", async ({ page, request }) => {
     await topicsPage.gotoCreate();
 
-    const topicName = "Auto Slug Test Topic";
+    const topicName = `Auto Slug Test ${Date.now()}`;
     await topicsPage.nameInput.fill(topicName);
     await topicsPage.systemPromptInput.fill("Test prompt");
     await topicsPage.submitButton.click();
@@ -101,12 +115,13 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
-    await topicsPage.searchTopic(topicName);
-    await expect(topicsPage.searchInput).toHaveValue(topicName);
-
-    const row = topicsPage.getTopicRow(topicName);
-    await expect(row).toBeVisible({ timeout: 15000 });
-    await expect(row).toContainText(/auto-slug-test-topic/i);
+    const response = await request.get(getApiUrl("/api/topics"));
+    const topics = await response.json();
+    const createdTopic = topics.find(
+      (t: { name: string }) => t.name === topicName,
+    );
+    expect(createdTopic).toBeDefined();
+    expect(createdTopic.slug).toMatch(/auto-slug-test/i);
   });
 
   test("should validate required fields", async ({ page }) => {

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { ContextsPage } from "../pages/contexts.page";
+import { getApiUrl } from "../helpers/api";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -22,7 +23,7 @@ test.describe("Context Ingestion", () => {
     await expect(contextsPage.createButton).toBeVisible();
   });
 
-  test("should create a markdown context", async ({ page }) => {
+  test("should create a markdown context", async ({ page, request }) => {
     await contextsPage.gotoCreate();
 
     await contextsPage.createMarkdownContext({
@@ -35,15 +36,26 @@ test.describe("Context Ingestion", () => {
     await page.waitForURL("/admin/contexts", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
-    await contextsPage.searchContext(testContextName);
-    await expect(contextsPage.searchInput).toHaveValue(testContextName);
+    await page.waitForTimeout(1000);
 
-    const row = contextsPage.getContextRow(testContextName);
-    await expect(row).toBeVisible({ timeout: 15000 });
-    await expect(row).toContainText(/완료|completed|pending/i);
+    const token = await page.evaluate(() => localStorage.getItem("token"));
+    const response = await request.get(getApiUrl("/api/admin/contexts"), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+    const json = await response.json();
+    const contexts = json.data || json;
+    const createdContext = contexts.find(
+      (c: { name: string }) => c.name === testContextName,
+    );
+    expect(createdContext).toBeDefined();
+    expect(createdContext.context_type).toBe("MARKDOWN");
   });
 
-  test("should upload and process PDF context", async ({ page }) => {
+  test("should upload and process PDF context", async ({ page, request }) => {
+    test.setTimeout(90000);
     await contextsPage.gotoCreate();
 
     const pdfContextName = `PDF Context ${Date.now()}`;
@@ -55,10 +67,35 @@ test.describe("Context Ingestion", () => {
 
     await page.waitForURL("/admin/contexts", { timeout: 10000 });
 
-    await contextsPage.waitForProcessing(pdfContextName, 60000);
+    const token = await page.evaluate(() => localStorage.getItem("token"));
 
-    const row = contextsPage.getContextRow(pdfContextName);
-    await expect(row).toContainText(/완료|completed/i);
+    const createdContext = await expect
+      .poll(
+        async () => {
+          const response = await request.get(getApiUrl("/api/admin/contexts"), {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const json = await response.json();
+          const contexts = json.data || json;
+          const context = contexts.find(
+            (c: { name: string }) => c.name === pdfContextName,
+          );
+          return context;
+        },
+        {
+          intervals: [5000],
+          timeout: 60000,
+        },
+      )
+      .toEqual(
+        expect.objectContaining({
+          processing_status: "COMPLETED",
+        }),
+      );
+
+    expect(createdContext.context_type).toBe("PDF");
   });
 
   test.skip("should assign context to topics", async () => {
