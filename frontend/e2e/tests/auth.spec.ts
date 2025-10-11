@@ -52,7 +52,10 @@ test.describe("Authentication & Setup", () => {
 
     await loginPage.goto();
 
-    await loginPage.login("admin@scholaria.test", "admin123!@#");
+    const adminEmail = process.env.E2E_ADMIN_EMAIL || "admin@example.com";
+    const adminPassword = process.env.E2E_ADMIN_PASSWORD || "admin123!@#";
+
+    await loginPage.login(adminEmail, adminPassword);
 
     await page.waitForURL(/\/admin(\/topics)?$/, { timeout: 30000 });
     await page.waitForLoadState("networkidle");
@@ -77,7 +80,10 @@ test.describe("Authentication & Setup", () => {
     const loginPage = new LoginPage(page);
 
     await loginPage.goto();
-    await loginPage.login("admin@scholaria.test", "admin123!@#");
+    const adminEmail = process.env.E2E_ADMIN_EMAIL || "admin@example.com";
+    const adminPassword = process.env.E2E_ADMIN_PASSWORD || "admin123!@#";
+
+    await loginPage.login(adminEmail, adminPassword);
     await page.waitForURL(/\/admin(\/topics)?$/, { timeout: 30000 });
     await page.waitForLoadState("networkidle");
     await expect(page.locator("nav")).toBeVisible({ timeout: 10000 });
@@ -93,7 +99,10 @@ test.describe("Authentication & Setup", () => {
     const loginPage = new LoginPage(page);
 
     await loginPage.goto();
-    await loginPage.login("admin@scholaria.test", "admin123!@#");
+    const adminEmail = process.env.E2E_ADMIN_EMAIL || "admin@example.com";
+    const adminPassword = process.env.E2E_ADMIN_PASSWORD || "admin123!@#";
+
+    await loginPage.login(adminEmail, adminPassword);
     await page.waitForURL(/\/admin(\/topics)?$/, { timeout: 30000 });
     await page.waitForLoadState("networkidle");
     await expect(page.locator("nav")).toBeVisible({ timeout: 10000 });
