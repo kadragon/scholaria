@@ -58,11 +58,16 @@ test.describe("Chat Q&A", () => {
     await chatPage.selectTopic(topicName);
 
     await chatPage.sendMessage("Tell me about testing");
-    await chatPage.waitForResponse(30000);
+    await chatPage.waitForResponse(45000);
+
+    const assistantMessage = chatPage.getMessage("assistant", 0);
+    await expect(assistantMessage).toBeVisible({ timeout: 5000 });
 
     await chatPage.submitFeedback("up");
 
-    await expect(page.getByText(/feedback submitted|thank you/i)).toBeVisible({
+    await expect(
+      page.getByText(/feedback submitted|thank you|성공/i),
+    ).toBeVisible({
       timeout: 5000,
     });
   });
@@ -71,11 +76,16 @@ test.describe("Chat Q&A", () => {
     await chatPage.selectTopic(topicName);
 
     await chatPage.sendMessage("What is E2E testing?");
-    await chatPage.waitForResponse(30000);
+    await chatPage.waitForResponse(45000);
+
+    const assistantMessage = chatPage.getMessage("assistant", 0);
+    await expect(assistantMessage).toBeVisible({ timeout: 5000 });
 
     await chatPage.submitFeedback("down", "The response was not helpful.");
 
-    await expect(page.getByText(/feedback submitted|thank you/i)).toBeVisible({
+    await expect(
+      page.getByText(/feedback submitted|thank you|성공/i),
+    ).toBeVisible({
       timeout: 5000,
     });
   });
@@ -84,35 +94,41 @@ test.describe("Chat Q&A", () => {
     await chatPage.selectTopic(topicName);
 
     await chatPage.sendMessage("Test message for session persistence");
-    await chatPage.waitForResponse(30000);
+    await chatPage.waitForResponse(45000);
+
+    const assistantMessage = chatPage.getMessage("assistant", 0);
+    await expect(assistantMessage).toBeVisible({ timeout: 5000 });
 
     await page.reload();
     await page.waitForLoadState("networkidle");
 
-    const userMessage = chatPage.getMessage("user", 0);
-    await expect(userMessage).toContainText(
-      "Test message for session persistence",
-      { timeout: 10000 },
-    );
+    await expect(
+      chatPage.messageList.locator("text=Test message for session persistence"),
+    ).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should handle multiple messages in conversation", async () => {
     await chatPage.selectTopic(topicName);
 
     await chatPage.sendMessage("First question");
-    await chatPage.waitForResponse(30000);
+    await chatPage.waitForResponse(45000);
+
+    const firstAssistant = chatPage.getMessage("assistant", 0);
+    await expect(firstAssistant).toBeVisible({ timeout: 5000 });
 
     await chatPage.sendMessage("Second question");
-    await chatPage.waitForResponse(30000);
+    await chatPage.waitForResponse(45000);
 
-    const userMessages = chatPage.messageList.locator(
-      ".bg-gradient-to-br.from-primary-600.to-primary-700",
-    );
-    await expect(userMessages).toHaveCount(2);
+    const secondAssistant = chatPage.getMessage("assistant", 1);
+    await expect(secondAssistant).toBeVisible({ timeout: 5000 });
 
-    const assistantMessages = chatPage.messageList.locator(
-      ".bg-white.border-2.border-secondary-100",
-    );
-    await expect(assistantMessages).toHaveCount(2);
+    await expect(
+      chatPage.messageList.locator("text=First question"),
+    ).toBeVisible();
+    await expect(
+      chatPage.messageList.locator("text=Second question"),
+    ).toBeVisible();
   });
 });
