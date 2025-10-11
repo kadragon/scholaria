@@ -16,17 +16,19 @@ export class ContextsPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.createButton = page.getByRole("link", { name: /create/i });
-    this.nameInput = page.getByLabel(/name/i);
-    this.descriptionInput = page.getByLabel(/description/i);
+    this.createButton = page.getByRole("button", { name: /생성|create/i });
+    this.nameInput = page.getByLabel(/이름|name/i);
+    this.descriptionInput = page.getByLabel(/설명|description/i);
     this.pdfTab = page.getByRole("tab", { name: /pdf/i });
-    this.markdownTab = page.getByRole("tab", { name: /markdown/i });
+    this.markdownTab = page.getByRole("tab", { name: /markdown|마크다운/i });
     this.faqTab = page.getByRole("tab", { name: /faq/i });
-    this.fileInput = page.getByLabel(/upload|file/i);
-    this.markdownTextarea = page.getByLabel(/content|text/i);
-    this.submitButton = page.getByRole("button", { name: /save|create/i });
+    this.fileInput = page.getByLabel(/업로드|upload|file/i);
+    this.markdownTextarea = page.getByLabel(/내용|content|text/i);
+    this.submitButton = page.getByRole("button", {
+      name: /저장|save|생성|create/i,
+    });
     this.table = page.getByRole("table");
-    this.topicMultiSelect = page.getByRole("combobox", { name: /topic/i });
+    this.topicMultiSelect = page.getByRole("combobox", { name: /토픽|topic/i });
   }
 
   async goto() {
@@ -67,7 +69,7 @@ export class ContextsPage {
 
   async editContext(contextName: string) {
     const row = this.table.locator("tr", { hasText: contextName });
-    await row.getByRole("button", { name: /edit/i }).click();
+    await row.getByRole("button", { name: /수정|edit/i }).click();
   }
 
   async assignTopics(topics: string[]) {
@@ -83,6 +85,6 @@ export class ContextsPage {
 
   async waitForProcessing(contextName: string, timeoutMs = 30000) {
     const row = this.getContextRow(contextName);
-    await row.getByText(/completed/i).waitFor({ timeout: timeoutMs });
+    await row.getByText(/완료|completed/i).waitFor({ timeout: timeoutMs });
   }
 }

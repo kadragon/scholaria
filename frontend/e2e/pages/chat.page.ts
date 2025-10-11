@@ -12,9 +12,11 @@ export class ChatPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.topicSelector = page.getByRole("combobox", { name: /topic|select/i });
-    this.messageInput = page.getByPlaceholder(/ask|question|message/i);
-    this.sendButton = page.getByRole("button", { name: /send/i });
+    this.topicSelector = page.getByRole("combobox", {
+      name: /토픽|topic|select/i,
+    });
+    this.messageInput = page.getByPlaceholder(/질문|ask|question|message/i);
+    this.sendButton = page.getByRole("button", { name: /전송|send/i });
     this.messageList = page.getByTestId("message-list");
     this.feedbackThumbsUp = page.getByRole("button", {
       name: /thumbs up|like/i,
@@ -22,7 +24,8 @@ export class ChatPage {
     this.feedbackThumbsDown = page.getByRole("button", {
       name: /thumbs down|dislike/i,
     });
-    this.feedbackCommentInput = page.getByPlaceholder(/comment|feedback/i);
+    this.feedbackCommentInput =
+      page.getByPlaceholder(/코멘트|comment|feedback/i);
   }
 
   async goto() {
@@ -53,7 +56,7 @@ export class ChatPage {
 
     if (comment) {
       await this.feedbackCommentInput.fill(comment);
-      await this.page.getByRole("button", { name: /submit/i }).click();
+      await this.page.getByRole("button", { name: /제출|submit/i }).click();
     }
   }
 

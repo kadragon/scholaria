@@ -39,11 +39,12 @@ describe("SetupPage", () => {
 
     expect(screen.getByText("초기 설정")).toBeInTheDocument();
     expect(screen.getByText("첫 관리자 계정을 생성하세요")).toBeInTheDocument();
-    expect(screen.getByLabelText("사용자명")).toBeInTheDocument();
-    expect(screen.getByLabelText("이메일")).toBeInTheDocument();
-    expect(screen.getAllByLabelText(/비밀번호/)).toHaveLength(2);
+    expect(screen.getByLabelText("Username")).toBeInTheDocument();
+    expect(screen.getByLabelText("Email")).toBeInTheDocument();
+    expect(screen.getByLabelText("Password")).toBeInTheDocument();
+    expect(screen.getByLabelText("Confirm Password")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "관리자 계정 생성" }),
+      screen.getByRole("button", { name: /관리자 계정 생성|create account/i }),
     ).toBeInTheDocument();
   });
 
@@ -69,14 +70,15 @@ describe("SetupPage", () => {
       expect(screen.queryByText("확인 중...")).not.toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText("사용자명"), "testuser");
-    await user.type(screen.getByLabelText("이메일"), "test@test.com");
+    await user.type(screen.getByLabelText("Username"), "testuser");
+    await user.type(screen.getByLabelText("Email"), "test@test.com");
 
-    const passwordInputs = screen.getAllByLabelText(/비밀번호/);
-    await user.type(passwordInputs[0], "password123");
-    await user.type(passwordInputs[1], "password456");
+    await user.type(screen.getByLabelText("Password"), "password123");
+    await user.type(screen.getByLabelText("Confirm Password"), "password456");
 
-    await user.click(screen.getByRole("button", { name: "관리자 계정 생성" }));
+    await user.click(
+      screen.getByRole("button", { name: /관리자 계정 생성|create account/i }),
+    );
 
     await waitFor(() => {
       expect(
@@ -93,14 +95,15 @@ describe("SetupPage", () => {
       expect(screen.queryByText("확인 중...")).not.toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText("사용자명"), "testuser");
-    await user.type(screen.getByLabelText("이메일"), "test@test.com");
+    await user.type(screen.getByLabelText("Username"), "testuser");
+    await user.type(screen.getByLabelText("Email"), "test@test.com");
 
-    const passwordInputs = screen.getAllByLabelText(/비밀번호/);
-    await user.type(passwordInputs[0], "short");
-    await user.type(passwordInputs[1], "short");
+    await user.type(screen.getByLabelText("Password"), "short");
+    await user.type(screen.getByLabelText("Confirm Password"), "short");
 
-    await user.click(screen.getByRole("button", { name: "관리자 계정 생성" }));
+    await user.click(
+      screen.getByRole("button", { name: /관리자 계정 생성|create account/i }),
+    );
 
     await waitFor(() => {
       expect(
@@ -118,14 +121,15 @@ describe("SetupPage", () => {
       expect(screen.queryByText("확인 중...")).not.toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText("사용자명"), "admin");
-    await user.type(screen.getByLabelText("이메일"), "admin@test.com");
+    await user.type(screen.getByLabelText("Username"), "admin");
+    await user.type(screen.getByLabelText("Email"), "admin@test.com");
 
-    const passwordInputs = screen.getAllByLabelText(/비밀번호/);
-    await user.type(passwordInputs[0], "password123");
-    await user.type(passwordInputs[1], "password123");
+    await user.type(screen.getByLabelText("Password"), "password123");
+    await user.type(screen.getByLabelText("Confirm Password"), "password123");
 
-    await user.click(screen.getByRole("button", { name: "관리자 계정 생성" }));
+    await user.click(
+      screen.getByRole("button", { name: /관리자 계정 생성|create account/i }),
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Login Page")).toBeInTheDocument();
@@ -140,14 +144,15 @@ describe("SetupPage", () => {
       expect(screen.queryByText("확인 중...")).not.toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText("사용자명"), "testuser");
-    await user.type(screen.getByLabelText("이메일"), "existing@test.com");
+    await user.type(screen.getByLabelText("Username"), "testuser");
+    await user.type(screen.getByLabelText("Email"), "existing@test.com");
 
-    const passwordInputs = screen.getAllByLabelText(/비밀번호/);
-    await user.type(passwordInputs[0], "password123");
-    await user.type(passwordInputs[1], "password123");
+    await user.type(screen.getByLabelText("Password"), "password123");
+    await user.type(screen.getByLabelText("Confirm Password"), "password123");
 
-    await user.click(screen.getByRole("button", { name: "관리자 계정 생성" }));
+    await user.click(
+      screen.getByRole("button", { name: /관리자 계정 생성|create account/i }),
+    );
 
     await waitFor(() => {
       expect(

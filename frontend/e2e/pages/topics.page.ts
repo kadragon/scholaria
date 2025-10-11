@@ -12,12 +12,14 @@ export class TopicsPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.createButton = page.getByRole("link", { name: /create/i });
-    this.nameInput = page.getByLabel(/name/i);
-    this.slugInput = page.getByLabel(/slug/i);
-    this.descriptionInput = page.getByLabel(/description/i);
-    this.systemPromptInput = page.getByLabel(/system prompt/i);
-    this.submitButton = page.getByRole("button", { name: /save|create/i });
+    this.createButton = page.getByRole("button", { name: /생성|create/i });
+    this.nameInput = page.getByLabel(/이름|name/i);
+    this.slugInput = page.getByLabel(/슬러그|slug/i);
+    this.descriptionInput = page.getByLabel(/설명|description/i);
+    this.systemPromptInput = page.getByLabel(/시스템 프롬프트|system prompt/i);
+    this.submitButton = page.getByRole("button", {
+      name: /저장|save|생성|create/i,
+    });
     this.table = page.getByRole("table");
   }
 
@@ -48,12 +50,12 @@ export class TopicsPage {
 
   async editTopic(topicName: string) {
     const row = this.table.locator("tr", { hasText: topicName });
-    await row.getByRole("button", { name: /edit/i }).click();
+    await row.getByRole("button", { name: /수정|edit/i }).click();
   }
 
   async deleteTopic(topicName: string) {
     const row = this.table.locator("tr", { hasText: topicName });
-    await row.getByRole("button", { name: /delete/i }).click();
+    await row.getByRole("button", { name: /삭제|delete/i }).click();
   }
 
   getTopicRow(topicName: string) {

@@ -29,7 +29,7 @@ export const SetupPage = () => {
         `${API_URL}/setup/check`,
       );
       if (!response.data.needs_setup) {
-        navigate("/login");
+        navigate("/admin/login");
       }
     } catch (err) {
       console.error("Setup check failed:", err);
@@ -70,7 +70,7 @@ export const SetupPage = () => {
         description:
           "관리자 계정이 생성되었습니다. 로그인 페이지로 이동합니다.",
       });
-      navigate("/login");
+      navigate("/admin/login");
     } catch (err: unknown) {
       const errorMessage =
         (err as { response?: { data?: { detail?: string } } })?.response?.data
@@ -113,7 +113,7 @@ export const SetupPage = () => {
               htmlFor="username"
               className="block text-sm font-medium text-secondary-700 mb-2"
             >
-              사용자명
+              사용자명 (Username)
             </label>
             <input
               id="username"
@@ -122,6 +122,7 @@ export const SetupPage = () => {
               onChange={(e) => setUsername(e.target.value)}
               required
               minLength={3}
+              aria-label="Username"
               className="w-full px-4 py-3 text-base border border-secondary-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               placeholder="admin"
             />
@@ -132,7 +133,7 @@ export const SetupPage = () => {
               htmlFor="email"
               className="block text-sm font-medium text-secondary-700 mb-2"
             >
-              이메일
+              이메일 (Email)
             </label>
             <input
               id="email"
@@ -140,6 +141,7 @@ export const SetupPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              aria-label="Email"
               className="w-full px-4 py-3 text-base border border-secondary-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               placeholder="admin@scholaria.com"
             />
@@ -150,7 +152,7 @@ export const SetupPage = () => {
               htmlFor="password"
               className="block text-sm font-medium text-secondary-700 mb-2"
             >
-              비밀번호
+              비밀번호 (Password)
             </label>
             <input
               id="password"
@@ -159,6 +161,7 @@ export const SetupPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
+              aria-label="Password"
               className="w-full px-4 py-3 text-base border border-secondary-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               placeholder="••••••••"
             />
@@ -172,7 +175,7 @@ export const SetupPage = () => {
               htmlFor="confirmPassword"
               className="block text-sm font-medium text-secondary-700 mb-2"
             >
-              비밀번호 확인
+              비밀번호 확인 (Confirm Password)
             </label>
             <input
               id="confirmPassword"
@@ -181,6 +184,7 @@ export const SetupPage = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength={8}
+              aria-label="Confirm Password"
               className="w-full px-4 py-3 text-base border border-secondary-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               placeholder="••••••••"
             />
@@ -191,7 +195,7 @@ export const SetupPage = () => {
             disabled={isLoading}
             className="w-full py-3 text-base font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 disabled:from-secondary-400 disabled:to-secondary-500 rounded-md shadow-md hover:shadow-lg transition-all duration-200 disabled:cursor-not-allowed"
           >
-            {isLoading ? "생성 중..." : "관리자 계정 생성"}
+            {isLoading ? "생성 중..." : "관리자 계정 생성 (Create Account)"}
           </button>
         </form>
       </div>

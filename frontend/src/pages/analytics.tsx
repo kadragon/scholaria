@@ -60,9 +60,22 @@ const COLORS = {
   primary: "#3b82f6",
 };
 
+const formatDateInput = (date: Date): string =>
+  date.toISOString().split("T")[0];
+
 export const Analytics = () => {
-  const [days, setDays] = useState(7);
+  const defaultDays = 7;
+  const [days, setDays] = useState(defaultDays);
   const [selectedTopicId, setSelectedTopicId] = useState<"all" | number>("all");
+  const [dateRange, setDateRange] = useState(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - (defaultDays - 1));
+    return {
+      start: formatDateInput(start),
+      end: formatDateInput(end),
+    };
+  });
 
   const { data: summaryData, isLoading: summaryLoading } =
     useCustom<AnalyticsSummary>({
@@ -165,6 +178,35 @@ export const Analytics = () => {
     [],
   );
 
+  const handleSelectDays = (value: number) => {
+    setDays(value);
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - (value - 1));
+    setDateRange({
+      start: formatDateInput(start),
+      end: formatDateInput(end),
+    });
+  };
+
+  const handleDateRangeChange = (key: "start" | "end", value: string) => {
+    setDateRange((prev) => {
+      const next = { ...prev, [key]: value };
+      const startDate = new Date(next.start);
+      const endDate = new Date(next.end);
+      if (
+        !Number.isNaN(startDate.getTime()) &&
+        !Number.isNaN(endDate.getTime()) &&
+        startDate <= endDate
+      ) {
+        const diffMs = endDate.getTime() - startDate.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+        setDays(Math.max(1, diffDays));
+      }
+      return next;
+    });
+  };
+
   if (isInitialLoading) {
     return <AnalyticsSkeleton />;
   }
@@ -181,7 +223,7 @@ export const Analytics = () => {
     <div className="p-8 space-y-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-secondary-900 mb-2">
-          분석 대시보드
+          분석 대시보드 (Analytics Dashboard)
         </h1>
         <p className="text-secondary-600">
           시스템 사용 현황과 통계를 확인합니다
@@ -189,24 +231,37 @@ export const Analytics = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 auto-rows-fr">
-        <div className="md:col-span-2 p-6 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
-          <h3 className="text-sm text-gray-500 mb-1">총 질문 수</h3>
+        <div
+          data-testid="stat-card"
+          className="md:col-span-2 p-6 bg-gradient-to-br from-white to-primary-50 rounded-lg shadow-md border border-primary-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200"
+        >
+          <h3 className="text-sm text-gray-500 mb-1">
+            총 질문 수 (Total Questions)
+          </h3>
           <p className="text-3xl font-bold text-primary-700">
             {summary?.total_questions || 0}
           </p>
         </div>
-        <div className="md:col-span-2 p-6 bg-gradient-to-br from-white to-green-50 rounded-lg shadow-md border border-green-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
-          <h3 className="text-sm text-gray-500 mb-1">피드백 수</h3>
+        <div
+          data-testid="stat-card"
+          className="md:col-span-2 p-6 bg-gradient-to-br from-white to-green-50 rounded-lg shadow-md border border-green-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200"
+        >
+          <h3 className="text-sm text-gray-500 mb-1">
+            피드백 수 (Feedback Total)
+          </h3>
           <p className="text-3xl font-bold text-green-700">
             {summary?.total_feedback || 0}
           </p>
         </div>
-        <div className="md:col-span-2 md:row-span-2 p-6 bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-xl transition-all duration-200">
+        <div
+          data-testid="question-trends-chart"
+          className="md:col-span-2 md:row-span-2 p-6 bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-xl transition-all duration-200"
+        >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold">질문 추세</h2>
+            <h2 className="text-lg font-bold">질문 추세 (Question Trends)</h2>
             <select
               value={days}
-              onChange={(e) => setDays(Number(e.target.value))}
+              onChange={(e) => handleSelectDays(Number(e.target.value))}
               className="border rounded px-3 py-1 text-sm"
             >
               <option value={1}>1일</option>
@@ -214,6 +269,40 @@ export const Analytics = () => {
               <option value={30}>30일</option>
               <option value={90}>90일</option>
             </select>
+          </div>
+          <div className="flex flex-col gap-2 mb-4 md:flex-row md:items-center md:justify-start">
+            <label
+              htmlFor="analytics-start-date"
+              className="text-sm text-secondary-600"
+            >
+              시작일 (Start Date)
+            </label>
+            <input
+              id="analytics-start-date"
+              type="date"
+              value={dateRange.start}
+              aria-label="Start Date"
+              onChange={(event) =>
+                handleDateRangeChange("start", event.target.value)
+              }
+              className="border rounded px-3 py-1 text-sm"
+            />
+            <label
+              htmlFor="analytics-end-date"
+              className="text-sm text-secondary-600"
+            >
+              종료일 (End Date)
+            </label>
+            <input
+              id="analytics-end-date"
+              type="date"
+              value={dateRange.end}
+              aria-label="End Date"
+              onChange={(event) =>
+                handleDateRangeChange("end", event.target.value)
+              }
+              className="border rounded px-3 py-1 text-sm"
+            />
           </div>
           {trend.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
@@ -233,18 +322,29 @@ export const Analytics = () => {
             </ResponsiveContainer>
           ) : (
             <p className="text-gray-500 text-center py-12 text-sm">
-              선택한 기간에 데이터가 없습니다.
+              선택한 기간에 데이터가 없습니다. (No data available for the
+              selected period.)
             </p>
           )}
         </div>
-        <div className="md:col-span-2 p-6 bg-gradient-to-br from-white to-purple-50 rounded-lg shadow-md border border-purple-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
-          <h3 className="text-sm text-gray-500 mb-1">활성 세션</h3>
+        <div
+          data-testid="stat-card"
+          className="md:col-span-2 p-6 bg-gradient-to-br from-white to-purple-50 rounded-lg shadow-md border border-purple-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200"
+        >
+          <h3 className="text-sm text-gray-500 mb-1">
+            활성 세션 (Active Sessions)
+          </h3>
           <p className="text-3xl font-bold text-purple-700">
             {summary?.active_sessions || 0}
           </p>
         </div>
-        <div className="md:col-span-2 p-6 bg-gradient-to-br from-white to-orange-50 rounded-lg shadow-md border border-orange-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
-          <h3 className="text-sm text-gray-500 mb-1">평균 피드백 점수</h3>
+        <div
+          data-testid="stat-card"
+          className="md:col-span-2 p-6 bg-gradient-to-br from-white to-orange-50 rounded-lg shadow-md border border-orange-100 hover:scale-[1.02] hover:shadow-lg transition-all duration-200"
+        >
+          <h3 className="text-sm text-gray-500 mb-1">
+            평균 피드백 점수 (Average Feedback Score)
+          </h3>
           <p className="text-3xl font-bold text-orange-700">
             {summary?.average_feedback_score?.toFixed(2) || "0.00"}
           </p>
@@ -252,8 +352,13 @@ export const Analytics = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100">
-          <h2 className="text-xl font-bold mb-4">토픽별 활동</h2>
+        <div
+          data-testid="topic-activity-chart"
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100"
+        >
+          <h2 className="text-xl font-bold mb-4">
+            토픽별 활동 (Topic Activity)
+          </h2>
           {topics.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={topics}>
@@ -271,13 +376,18 @@ export const Analytics = () => {
             </ResponsiveContainer>
           ) : (
             <p className="text-gray-500 text-center py-12">
-              토픽 데이터가 없습니다.
+              토픽 데이터가 없습니다. (No topic data available.)
             </p>
           )}
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100">
-          <h2 className="text-xl font-bold mb-4">피드백 분포</h2>
+        <div
+          data-testid="feedback-distribution-chart"
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100"
+        >
+          <h2 className="text-xl font-bold mb-4">
+            피드백 분포 (Feedback Distribution)
+          </h2>
           {feedbackPieData.length > 0 &&
           feedbackPieData.some((d) => d.value > 0) ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -301,7 +411,7 @@ export const Analytics = () => {
             </ResponsiveContainer>
           ) : (
             <p className="text-gray-500 text-center py-12">
-              피드백 데이터가 없습니다.
+              피드백 데이터가 없습니다. (No feedback data available.)
             </p>
           )}
         </div>
@@ -316,13 +426,26 @@ export const Analytics = () => {
             <p className="text-sm text-secondary-500">
               사용자들이 남긴 자유 서술 피드백을 모아 확인합니다.
             </p>
+            <div
+              role="tablist"
+              aria-label="Analytics Views"
+              className="mt-2 flex gap-2"
+            >
+              <button
+                role="tab"
+                aria-selected="true"
+                className="rounded-md bg-secondary-100 px-3 py-1 text-sm text-secondary-700"
+              >
+                피드백 코멘트 (Feedback Comments)
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <label
               htmlFor="feedback-topic-filter"
               className="text-sm text-secondary-600"
             >
-              토픽 필터
+              토픽 필터 (Topic Filter)
             </label>
             <select
               id="feedback-topic-filter"
@@ -333,6 +456,7 @@ export const Analytics = () => {
                 const value = event.target.value;
                 setSelectedTopicId(value === "all" ? "all" : Number(value));
               }}
+              aria-label="Topic Filter"
               className="border border-gray-200 rounded-md px-3 py-1 text-sm"
             >
               <option value="all">전체</option>
@@ -390,7 +514,7 @@ export const Analytics = () => {
           </div>
         ) : (
           <p className="text-gray-500 text-center py-12 text-sm">
-            표시할 피드백 코멘트가 없습니다.
+            표시할 피드백 코멘트가 없습니다. (No feedback comments available.)
           </p>
         )}
       </div>

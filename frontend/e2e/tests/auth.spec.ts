@@ -4,6 +4,7 @@ import { SetupPage } from "../pages/setup.page";
 
 test.describe("Authentication & Setup", () => {
   test.beforeEach(async ({ page }) => {
+    await page.goto("/");
     await page.context().clearCookies();
     await page.evaluate(() => localStorage.clear());
   });

@@ -18,11 +18,11 @@ export class AnalyticsPage {
     this.feedbackDistributionChart = page.getByTestId(
       "feedback-distribution-chart",
     );
-    this.topicFilter = page.getByRole("combobox", { name: /topic/i });
-    this.dateRangeStart = page.getByLabel(/start date/i);
-    this.dateRangeEnd = page.getByLabel(/end date/i);
+    this.topicFilter = page.getByRole("combobox", { name: /토픽|topic/i });
+    this.dateRangeStart = page.getByLabel(/시작.*날짜|start date/i);
+    this.dateRangeEnd = page.getByLabel(/종료.*날짜|end date/i);
     this.feedbackCommentsTab = page.getByRole("tab", {
-      name: /feedback|comments/i,
+      name: /피드백|코멘트|feedback|comments/i,
     });
     this.commentsTable = page.getByRole("table");
   }
