@@ -12,12 +12,10 @@ export class ChatPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.topicSelector = page.getByRole("combobox", {
-      name: /토픽|topic|select/i,
-    });
-    this.messageInput = page.getByPlaceholder(/질문|ask|question|message/i);
+    this.topicSelector = page.locator("aside").locator("button").first();
+    this.messageInput = page.locator("textarea");
     this.sendButton = page.getByRole("button", { name: /전송|send/i });
-    this.messageList = page.getByTestId("message-list");
+    this.messageList = page.locator("main");
     this.feedbackThumbsUp = page.getByRole("button", {
       name: /thumbs up|like/i,
     });
@@ -33,8 +31,10 @@ export class ChatPage {
   }
 
   async selectTopic(topicName: string) {
-    await this.topicSelector.click();
-    await this.page.getByRole("option", { name: topicName }).click();
+    await this.page
+      .locator("aside")
+      .getByRole("button", { name: topicName })
+      .click();
   }
 
   async sendMessage(message: string) {
@@ -43,8 +43,8 @@ export class ChatPage {
   }
 
   async waitForResponse(timeoutMs = 10000) {
-    await this.messageList
-      .locator('[data-role="assistant"]')
+    await this.page
+      .locator(".bg-white.border-2.border-secondary-100")
       .last()
       .waitFor({ timeout: timeoutMs });
   }
@@ -61,6 +61,13 @@ export class ChatPage {
   }
 
   getMessage(role: "user" | "assistant", index = 0) {
-    return this.messageList.locator(`[data-role="${role}"]`).nth(index);
+    if (role === "user") {
+      return this.page
+        .locator(".bg-gradient-to-br.from-primary-600.to-primary-700")
+        .nth(index);
+    }
+    return this.page
+      .locator(".bg-white.border-2.border-secondary-100")
+      .nth(index);
   }
 }

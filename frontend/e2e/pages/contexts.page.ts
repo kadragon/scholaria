@@ -17,13 +17,13 @@ export class ContextsPage {
   constructor(page: Page) {
     this.page = page;
     this.createButton = page.getByRole("button", { name: /생성|create/i });
-    this.nameInput = page.getByLabel(/이름|name/i);
-    this.descriptionInput = page.getByLabel(/설명|description/i);
+    this.nameInput = page.locator("#name");
+    this.descriptionInput = page.locator("#description");
     this.pdfTab = page.getByRole("tab", { name: /pdf/i });
     this.markdownTab = page.getByRole("tab", { name: /markdown|마크다운/i });
     this.faqTab = page.getByRole("tab", { name: /faq/i });
-    this.fileInput = page.getByLabel(/업로드|upload|file/i);
-    this.markdownTextarea = page.getByLabel(/내용|content|text/i);
+    this.fileInput = page.locator("#pdf");
+    this.markdownTextarea = page.locator("#markdown");
     this.submitButton = page.getByRole("button", {
       name: /저장|save|생성|create/i,
     });
@@ -85,6 +85,8 @@ export class ContextsPage {
 
   async waitForProcessing(contextName: string, timeoutMs = 30000) {
     const row = this.getContextRow(contextName);
-    await row.getByText(/완료|completed/i).waitFor({ timeout: timeoutMs });
+    await row
+      .getByText(/완료|completed/i, { exact: false })
+      .waitFor({ timeout: timeoutMs });
   }
 }
