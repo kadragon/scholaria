@@ -1,10 +1,10 @@
 {
-  "venvPath": "backend",
+  "venvPath": ".",
   "venv": ".venv",
   "pythonVersion": "3.13",
   "pythonPlatform": "Darwin",
   "include": [
-    "backend",
+    ".",
     "alembic"
   ],
   "executionEnvironments": [
@@ -14,8 +14,7 @@
       "pythonPlatform": "Darwin",
       "extraPaths": [
         ".",
-        "backend",
-        "backend/.venv/lib/python3.13/site-packages"
+        ".venv/lib/python3.13/site-packages"
       ]
     }
   ],

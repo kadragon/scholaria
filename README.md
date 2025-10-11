@@ -37,7 +37,7 @@
    ```bash
    (
      cd backend
-     uv run alembic -c ../alembic.ini upgrade head
+     uv run alembic upgrade head
    )
    ```
 
@@ -98,10 +98,10 @@
 
 ### Database
 ```bash
-(cd backend && uv run alembic -c ../alembic.ini revision --autogenerate -m "description")
-(cd backend && uv run alembic -c ../alembic.ini upgrade head)
-(cd backend && uv run alembic -c ../alembic.ini downgrade -1)
-(cd backend && uv run alembic -c ../alembic.ini history)
+(cd backend && uv run alembic revision --autogenerate -m "description")
+(cd backend && uv run alembic upgrade head)
+(cd backend && uv run alembic downgrade -1)
+(cd backend && uv run alembic history)
 ```
 
 ### Pre-commit

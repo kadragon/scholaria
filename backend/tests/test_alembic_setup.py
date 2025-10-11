@@ -7,12 +7,13 @@ from pathlib import Path
 from alembic.config import Config
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ALEMBIC_INI = REPO_ROOT / "alembic.ini"
-ALEMBIC_SCRIPT = REPO_ROOT / "alembic" / "env.py"
+BACKEND_ROOT = REPO_ROOT / "backend"
+ALEMBIC_INI = BACKEND_ROOT / "alembic.ini"
+ALEMBIC_SCRIPT = BACKEND_ROOT / "alembic" / "env.py"
 
 
 def test_alembic_ini_exists() -> None:
-    """Alembic configuration file should exist at project root."""
+    """Alembic configuration file should exist at backend root."""
     assert ALEMBIC_INI.exists()
 
 
@@ -25,7 +26,7 @@ def test_alembic_metadata_includes_topic_table() -> None:
     assert ALEMBIC_SCRIPT.exists()
 
     cwd = os.getcwd()
-    os.chdir(REPO_ROOT)
+    os.chdir(BACKEND_ROOT)
     spec = importlib.util.spec_from_file_location("alembic_env", ALEMBIC_SCRIPT)
     assert spec is not None
     assert spec.loader is not None

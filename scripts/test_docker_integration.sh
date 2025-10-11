@@ -136,7 +136,7 @@ fi
 
 print_status "Running database migrations..."
 export DOCKER_INTEGRATION_TESTS=true
-(cd backend && uv run alembic -c ../alembic.ini upgrade head)
+(cd backend && uv run alembic upgrade head)
 
 print_status "Running Docker integration tests..."
 
