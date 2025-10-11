@@ -20,10 +20,10 @@ beforeEach(() => {
 
 const renderSetupPage = () => {
   return render(
-    <MemoryRouter initialEntries={["/setup"]}>
+    <MemoryRouter initialEntries={["/admin/setup"]}>
       <Routes>
-        <Route path="/setup" element={<SetupPage />} />
-        <Route path="/login" element={<div>Login Page</div>} />
+        <Route path="/admin/setup" element={<SetupPage />} />
+        <Route path="/admin/login" element={<div>Login Page</div>} />
       </Routes>
     </MemoryRouter>,
   );
