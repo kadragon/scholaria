@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { ContextsPage } from "../pages/contexts.page";
+import { getApiUrl } from "../helpers/api";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -38,14 +39,11 @@ test.describe("Context Ingestion", () => {
     await page.waitForTimeout(1000);
 
     const token = await page.evaluate(() => localStorage.getItem("token"));
-    const response = await request.get(
-      "http://localhost:8001/api/admin/contexts",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const response = await request.get(getApiUrl("/api/admin/contexts"), {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
     expect(response.ok()).toBeTruthy();
     const json = await response.json();
     const contexts = json.data || json;
@@ -71,30 +69,33 @@ test.describe("Context Ingestion", () => {
 
     const token = await page.evaluate(() => localStorage.getItem("token"));
 
-    let createdContext;
-    for (let i = 0; i < 12; i++) {
-      const response = await request.get(
-        "http://localhost:8001/api/admin/contexts",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+    const createdContext = await expect
+      .poll(
+        async () => {
+          const response = await request.get(getApiUrl("/api/admin/contexts"), {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const json = await response.json();
+          const contexts = json.data || json;
+          const context = contexts.find(
+            (c: { name: string }) => c.name === pdfContextName,
+          );
+          return context;
         },
+        {
+          intervals: [5000],
+          timeout: 60000,
+        },
+      )
+      .toEqual(
+        expect.objectContaining({
+          processing_status: "COMPLETED",
+        }),
       );
-      const json = await response.json();
-      const contexts = json.data || json;
-      createdContext = contexts.find(
-        (c: { name: string }) => c.name === pdfContextName,
-      );
-      if (createdContext && createdContext.processing_status === "COMPLETED") {
-        break;
-      }
-      await page.waitForTimeout(5000);
-    }
 
-    expect(createdContext).toBeDefined();
     expect(createdContext.context_type).toBe("PDF");
-    expect(createdContext.processing_status).toBe("COMPLETED");
   });
 
   test.skip("should assign context to topics", async () => {

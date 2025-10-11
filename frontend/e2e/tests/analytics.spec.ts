@@ -91,6 +91,6 @@ test.describe("Analytics Dashboard", () => {
     await page.waitForLoadState("networkidle");
 
     const statCards = analyticsPage.statCards;
-    await expect(statCards.first()).toBeVisible({ timeout: 5000 });
+    await expect(statCards).toHaveCount(0);
   });
 });

@@ -1,4 +1,5 @@
 import { test as setup, expect, type Page } from "@playwright/test";
+import { getApiUrl } from "../helpers/api";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -18,13 +19,10 @@ async function getAccessToken(page: Page): Promise<string> {
 }
 
 setup("authenticate as admin", async ({ page, request }) => {
-  const baseURL =
-    process.env.VITE_API_URL?.replace("/api", "") || "http://localhost:8001";
   const adminUsername = process.env.E2E_ADMIN_USERNAME || "admin";
   const adminEmail = process.env.E2E_ADMIN_EMAIL || "admin@example.com";
   const adminPassword = process.env.E2E_ADMIN_PASSWORD || "admin123!@#";
 
-  // Listen for network requests
   const setupRequests: string[] = [];
   page.on("request", (req) => {
     if (req.url().includes("/setup/")) {
@@ -36,7 +34,7 @@ setup("authenticate as admin", async ({ page, request }) => {
     console.log(`BROWSER LOG: ${msg.text()}`);
   });
 
-  const checkResponse = await request.get(`${baseURL}/api/setup/check`);
+  const checkResponse = await request.get(getApiUrl("/api/setup/check"));
   const responseData = await checkResponse.json();
   const { needs_setup } = responseData;
 
@@ -73,7 +71,7 @@ setup("authenticate as admin", async ({ page, request }) => {
   const topicName = `E2E Test Topic ${Date.now()}`;
   const topicSlug = topicName.toLowerCase().replace(/\s+/g, "-");
 
-  const topicResponse = await request.post(`${baseURL}/api/admin/topics`, {
+  const topicResponse = await request.post(getApiUrl("/api/admin/topics"), {
     headers: {
       Authorization: `Bearer ${await getAccessToken(page)}`,
       "Content-Type": "application/json",
@@ -105,7 +103,7 @@ setup("authenticate as admin", async ({ page, request }) => {
     `# Test Documentation\n\n## Overview\nThis is test documentation for E2E testing.\n\n## Features\n- Feature 1: Authentication\n- Feature 2: Topic Management\n- Feature 3: Context Ingestion\n\n## FAQ\nQ: What is this?\nA: This is a test context for E2E testing.`,
   );
 
-  const contextResponse = await request.post(`${baseURL}/api/admin/contexts`, {
+  const contextResponse = await request.post(getApiUrl("/api/admin/contexts"), {
     headers: {
       Authorization: `Bearer ${await getAccessToken(page)}`,
     },
@@ -126,7 +124,7 @@ setup("authenticate as admin", async ({ page, request }) => {
   console.log(`Created context: ${context.name} (ID: ${context.id})`);
 
   const assignResponse = await request.patch(
-    `${baseURL}/api/admin/contexts/${context.id}`,
+    getApiUrl(`/api/admin/contexts/${context.id}`),
     {
       headers: {
         Authorization: `Bearer ${await getAccessToken(page)}`,

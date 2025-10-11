@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { TopicsPage } from "../pages/topics.page";
+import { getApiUrl } from "../helpers/api";
 
 test.describe("Topic Management", () => {
   let topicsPage: TopicsPage;
@@ -29,7 +30,7 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
-    const response = await request.get("http://localhost:8001/api/topics");
+    const response = await request.get(getApiUrl("/api/topics"));
     expect(response.ok()).toBeTruthy();
     const topics = await response.json();
     const createdTopic = topics.find(
@@ -74,7 +75,7 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics");
     await page.waitForLoadState("networkidle");
 
-    let response = await request.get("http://localhost:8001/api/topics");
+    let response = await request.get(getApiUrl("/api/topics"));
     let topics = await response.json();
     const createdTopic = topics.find(
       (t: { name: string }) => t.name === tempTopicName,
@@ -86,7 +87,7 @@ test.describe("Topic Management", () => {
 
     const token = await page.evaluate(() => localStorage.getItem("token"));
     const deleteResponse = await request.delete(
-      `http://localhost:8001/api/admin/topics/${topicId}`,
+      getApiUrl(`/api/admin/topics/${topicId}`),
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -95,7 +96,7 @@ test.describe("Topic Management", () => {
     );
     expect(deleteResponse.ok()).toBeTruthy();
 
-    response = await request.get("http://localhost:8001/api/topics");
+    response = await request.get(getApiUrl("/api/topics"));
     topics = await response.json();
     const deletedTopic = topics.find(
       (t: { name: string }) => t.name === tempTopicName,
@@ -114,7 +115,7 @@ test.describe("Topic Management", () => {
     await page.waitForURL("/admin/topics", { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
-    const response = await request.get("http://localhost:8001/api/topics");
+    const response = await request.get(getApiUrl("/api/topics"));
     const topics = await response.json();
     const createdTopic = topics.find(
       (t: { name: string }) => t.name === topicName,

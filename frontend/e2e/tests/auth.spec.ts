@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { LoginPage } from "../pages/login.page";
 import { SetupPage } from "../pages/setup.page";
+import { getApiUrl } from "../helpers/api";
 
 test.describe("Authentication & Setup", () => {
   test.beforeEach(async ({ page }) => {
@@ -14,9 +15,7 @@ test.describe("Authentication & Setup", () => {
 
     await page.goto("/admin/login");
 
-    const response = await page.request.get(
-      "http://localhost:8001/api/setup/check",
-    );
+    const response = await page.request.get(getApiUrl("/api/setup/check"));
     const { setup_needed } = await response.json();
 
     if (setup_needed) {
@@ -29,9 +28,7 @@ test.describe("Authentication & Setup", () => {
     const setupPage = new SetupPage(page);
     const loginPage = new LoginPage(page);
 
-    const response = await page.request.get(
-      "http://localhost:8001/api/setup/check",
-    );
+    const response = await page.request.get(getApiUrl("/api/setup/check"));
     const { setup_needed } = await response.json();
 
     if (!setup_needed) {
