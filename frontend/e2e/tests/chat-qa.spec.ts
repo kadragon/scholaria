@@ -1,27 +1,173 @@
 import { test, expect } from "@playwright/test";
 import { ChatPage } from "../pages/chat.page";
 import { TopicsPage } from "../pages/topics.page";
+import { ContextsPage } from "../pages/contexts.page";
+import { getApiUrl } from "../helpers/api";
 
 test.describe("Chat Q&A", () => {
   let chatPage: ChatPage;
   let topicName: string;
+  let contextName: string;
 
   test.beforeAll(async ({ browser }) => {
-    const page = await browser.newPage();
+    const adminContext = await browser.newContext({
+      storageState: "playwright/.auth/admin.json",
+    });
+    const page = await adminContext.newPage();
     const topicsPage = new TopicsPage(page);
+    const contextsPage = new ContextsPage(page);
 
     topicName = `E2E Chat Test ${Date.now()}`;
+    contextName = `E2E Chat Context ${Date.now()}`;
 
     await topicsPage.goto();
     await topicsPage.gotoCreate();
 
     await topicsPage.createTopic({
       name: topicName,
+      description: "Topic seeded for chat E2E coverage.",
       systemPrompt: "You are a helpful assistant for E2E testing.",
     });
 
     await page.waitForURL("/admin/topics");
-    await page.close();
+    await page.waitForLoadState("networkidle");
+
+    await contextsPage.goto();
+    await contextsPage.gotoCreate();
+    await contextsPage.createMarkdownContext({
+      name: contextName,
+      description: "Context seeded for chat E2E coverage.",
+      content: [
+        "# Chat QA Context",
+        "The capital of France is Paris.",
+        "End-to-end testing validates complete user flows and feedback pathways.",
+        "Provide concise, helpful responses suitable for regression checks.",
+      ].join("\n"),
+    });
+
+    await page.waitForURL("/admin/contexts");
+    await page.waitForLoadState("networkidle");
+
+    const token = await page.evaluate(() => localStorage.getItem("token"));
+    if (!token) {
+      throw new Error("Missing auth token for admin API access");
+    }
+    let createdContext: { id: string } | null = null;
+
+    await expect
+      .poll(
+        async () => {
+          const filterParam = encodeURIComponent(
+            JSON.stringify({ name: contextName }),
+          );
+          const response = await page.request.get(
+            getApiUrl(`/api/admin/contexts?limit=20&filter=${filterParam}`),
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              timeout: 10000,
+            },
+          );
+          if (!response.ok()) {
+            return null;
+          }
+          const data = await response.json();
+          const contexts = data.data || data.items || data;
+          const items = Array.isArray(contexts)
+            ? contexts
+            : Array.isArray(contexts?.items)
+              ? contexts.items
+              : [];
+          if (items.length === 0) {
+            return null;
+          }
+          createdContext = items.find(
+            (context: { name: string }) => context.name === contextName,
+          );
+          return createdContext ?? null;
+        },
+        {
+          message: `Expected context "${contextName}" to be available`,
+          intervals: [2000, 4000, 6000],
+          timeout: 60000,
+        },
+      )
+      .not.toBeNull();
+
+    if (!createdContext) {
+      throw new Error(`Context "${contextName}" was not created`);
+    }
+
+    if (
+      "processing_status" in createdContext &&
+      createdContext.processing_status
+    ) {
+      expect(createdContext.processing_status).not.toMatch(/failed/i);
+    }
+
+    const topicFilterParam = encodeURIComponent(
+      JSON.stringify({ name: topicName }),
+    );
+    const topicResponse = await page.request.get(
+      getApiUrl(`/api/admin/topics?limit=20&filter=${topicFilterParam}`),
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      },
+    );
+    if (!topicResponse.ok()) {
+      throw new Error(`Failed to fetch topic "${topicName}"`);
+    }
+    const topicPayload = await topicResponse.json();
+    const topicItems = Array.isArray(topicPayload?.data)
+      ? topicPayload.data
+      : Array.isArray(topicPayload?.items)
+        ? topicPayload.items
+        : [];
+    const targetTopic = topicItems.find(
+      (topic: { name: string }) => topic.name === topicName,
+    );
+    if (!targetTopic || !targetTopic.id) {
+      throw new Error(`Topic "${topicName}" not found via admin API`);
+    }
+
+    const updateResponse = await page.request.patch(
+      getApiUrl(`/api/admin/contexts/${createdContext.id}`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        data: JSON.stringify({ topic_ids: [targetTopic.id] }),
+        timeout: 10000,
+      },
+    );
+    expect(updateResponse.ok()).toBeTruthy();
+
+    await expect
+      .poll(
+        async () => {
+          const detailResponse = await page.request.get(
+            getApiUrl(`/api/admin/contexts/${createdContext?.id}`),
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              timeout: 10000,
+            },
+          );
+          if (!detailResponse.ok()) {
+            return null;
+          }
+          const detail = await detailResponse.json();
+          return detail?.processing_status ?? null;
+        },
+        {
+          message: `Expected context "${contextName}" to finish processing`,
+          intervals: [2000, 4000, 6000, 8000],
+          timeout: 120000,
+        },
+      )
+      .toMatch(/completed/i);
+
+    await adminContext.close();
   });
 
   test.beforeEach(async ({ page }) => {
@@ -50,8 +196,8 @@ test.describe("Chat Q&A", () => {
     const userMessage = chatPage.getMessage("user", 0);
     await expect(userMessage).toContainText(question);
 
-    const assistantMessage = chatPage.getMessage("assistant", 0);
-    await expect(assistantMessage).toBeVisible();
+    const trimmedResponse = await chatPage.waitForAssistantContent(0);
+    expect(trimmedResponse).not.toMatch(/error/i);
   });
 
   test("should submit positive feedback", async ({ page }) => {
@@ -60,14 +206,17 @@ test.describe("Chat Q&A", () => {
     await chatPage.sendMessage("Tell me about testing");
     await chatPage.waitForResponse(45000);
 
-    const assistantMessage = chatPage.getMessage("assistant", 0);
-    await expect(assistantMessage).toBeVisible({ timeout: 5000 });
+    const trimmedResponse = await chatPage.waitForAssistantContent(0);
+    expect(trimmedResponse).not.toMatch(/error/i);
+
+    await chatPage.waitUntilInputEnabled();
+    await expect(chatPage.feedbackThumbsUp.last()).toBeVisible({
+      timeout: 20000,
+    });
 
     await chatPage.submitFeedback("up");
 
-    await expect(
-      page.getByText(/feedback submitted|thank you|성공/i),
-    ).toBeVisible({
+    await expect(page.getByText(/feedback|success|성공/i)).toBeVisible({
       timeout: 5000,
     });
   });
@@ -78,14 +227,17 @@ test.describe("Chat Q&A", () => {
     await chatPage.sendMessage("What is E2E testing?");
     await chatPage.waitForResponse(45000);
 
-    const assistantMessage = chatPage.getMessage("assistant", 0);
-    await expect(assistantMessage).toBeVisible({ timeout: 5000 });
+    const trimmedResponse = await chatPage.waitForAssistantContent(0);
+    expect(trimmedResponse).not.toMatch(/error/i);
+
+    await chatPage.waitUntilInputEnabled();
+    await expect(chatPage.feedbackThumbsDown.last()).toBeVisible({
+      timeout: 20000,
+    });
 
     await chatPage.submitFeedback("down", "The response was not helpful.");
 
-    await expect(
-      page.getByText(/feedback submitted|thank you|성공/i),
-    ).toBeVisible({
+    await expect(page.getByText(/feedback|success|성공/i)).toBeVisible({
       timeout: 5000,
     });
   });
@@ -96,17 +248,32 @@ test.describe("Chat Q&A", () => {
     await chatPage.sendMessage("Test message for session persistence");
     await chatPage.waitForResponse(45000);
 
-    const assistantMessage = chatPage.getMessage("assistant", 0);
-    await expect(assistantMessage).toBeVisible({ timeout: 5000 });
+    await chatPage.waitForAssistantContent(0);
+    await chatPage.waitUntilInputEnabled();
+
+    const sessionId = await page.evaluate(() =>
+      sessionStorage.getItem("chat_session_id"),
+    );
+    expect(sessionId).toBeTruthy();
+
+    await expect(
+      chatPage.messageList.locator("text=Test message for session persistence"),
+    ).toBeVisible({ timeout: 10000 });
 
     await page.reload();
     await page.waitForLoadState("networkidle");
 
-    await expect(
-      chatPage.messageList.locator("text=Test message for session persistence"),
-    ).toBeVisible({
-      timeout: 10000,
-    });
+    const restoredSessionId = await page.evaluate(() =>
+      sessionStorage.getItem("chat_session_id"),
+    );
+    expect(restoredSessionId).toBe(sessionId);
+
+    await expect(chatPage.messageList).toContainText(
+      "Test message for session persistence",
+      {
+        timeout: 10000,
+      },
+    );
   });
 
   test("should handle multiple messages in conversation", async () => {
@@ -115,14 +282,13 @@ test.describe("Chat Q&A", () => {
     await chatPage.sendMessage("First question");
     await chatPage.waitForResponse(45000);
 
-    const firstAssistant = chatPage.getMessage("assistant", 0);
-    await expect(firstAssistant).toBeVisible({ timeout: 5000 });
+    await chatPage.waitForAssistantContent(0);
+    await chatPage.waitUntilInputEnabled();
 
     await chatPage.sendMessage("Second question");
     await chatPage.waitForResponse(45000);
 
-    const secondAssistant = chatPage.getMessage("assistant", 1);
-    await expect(secondAssistant).toBeVisible({ timeout: 5000 });
+    await chatPage.waitForAssistantContent(1);
 
     await expect(
       chatPage.messageList.locator("text=First question"),

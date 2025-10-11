@@ -51,12 +51,22 @@ export class TopicsPage {
   }
 
   async editTopic(topicName: string) {
-    const row = this.table.locator("tr", { hasText: topicName });
+    const row = await this.table
+      .locator("tr")
+      .filter({
+        has: this.page.locator(`td:nth-child(2):text-is("${topicName}")`),
+      })
+      .first();
     await row.getByRole("button", { name: "편집" }).click();
   }
 
   async deleteTopic(topicName: string) {
-    const row = this.table.locator("tr", { hasText: topicName });
+    const row = await this.table
+      .locator("tr")
+      .filter({
+        has: this.page.locator(`td:nth-child(2):text-is("${topicName}")`),
+      })
+      .first();
     await row.getByRole("button", { name: "삭제" }).click();
   }
 
@@ -66,6 +76,11 @@ export class TopicsPage {
   }
 
   getTopicRow(topicName: string) {
-    return this.table.locator("tr", { hasText: topicName });
+    return this.table
+      .locator("tr")
+      .filter({
+        has: this.page.locator(`td:nth-child(2):text-is("${topicName}")`),
+      })
+      .first();
   }
 }
