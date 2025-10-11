@@ -11,10 +11,16 @@
 
 ### Development Setup
 
+> ℹ️ `uv` 명령은 `backend/` 디렉터리 기준입니다. 아래 예시는 하위 셸(`( cd backend; ... )`)을 사용해 루트 위치를 유지합니다.
+
 1. **Install dependencies:**
    ```bash
-   uv sync
+   (
+     cd backend
+     uv sync
+   )
    ```
+   > 기존 루트 `.venv` / `.uv_cache` 디렉터리가 남아 있다면 정리하세요.
 
 2. **Set up environment:**
    ```bash
@@ -29,18 +35,27 @@
 
 4. **Run migrations:**
    ```bash
-   uv run alembic upgrade head
+   (
+     cd backend
+     uv run alembic upgrade head
+   )
    ```
 
 5. **Run tests:**
    ```bash
-   uv run pytest backend/tests/
+   (
+     cd backend
+     uv run pytest
+   )
    ```
 
 6. **Start development server:**
    ```bash
    # 로컬 개발 (빠른 iteration)
-   uv run uvicorn backend.main:app --reload --port 8001
+   (
+     cd backend
+     uv run uvicorn backend.main:app --reload --port 8001
+   )
 
    # 또는 Docker 개발 환경
    docker compose up -d
@@ -56,27 +71,24 @@
 
 ### Code Quality
 ```bash
-# Lint and format code
-uv run ruff check --fix .
-uv run ruff format .
-
-# Type checking
-uv run mypy .
+(cd backend && uv run ruff check .)
+(cd backend && uv run ruff format .)
+(cd backend && uv run mypy .)
 
 # Run all checks
-uv run ruff check . && uv run ruff format --check . && uv run mypy . && uv run pytest backend/tests/
+(cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy . && uv run pytest)
 ```
 
 ### Testing
 ```bash
 # All tests (with coverage, 80% threshold enforced)
-uv run pytest
+(cd backend && uv run pytest)
 
 # Watch mode (parallel execution)
-uv run pytest -n auto --looponfail
+(cd backend && uv run pytest -n auto --looponfail)
 
 # Specific test file
-uv run pytest backend/tests/test_auth.py -v
+(cd backend && uv run pytest tests/test_auth.py -v)
 
 # Coverage report
 # - Terminal: automatic with every pytest run
@@ -86,26 +98,16 @@ uv run pytest backend/tests/test_auth.py -v
 
 ### Database
 ```bash
-# Create new migration
-uv run alembic revision --autogenerate -m "description"
-
-# Apply migrations
-uv run alembic upgrade head
-
-# Rollback last migration
-uv run alembic downgrade -1
-
-# View migration history
-uv run alembic history
+(cd backend && uv run alembic revision --autogenerate -m "description")
+(cd backend && uv run alembic upgrade head)
+(cd backend && uv run alembic downgrade -1)
+(cd backend && uv run alembic history)
 ```
 
 ### Pre-commit
 ```bash
-# Install pre-commit hooks
-uv run pre-commit install
-
-# Run pre-commit on all files
-uv run pre-commit run --all-files
+(cd backend && uv run pre-commit install)
+(cd backend && uv run pre-commit run --all-files)
 ```
 
 ## ✅ Project Status

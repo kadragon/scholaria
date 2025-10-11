@@ -54,9 +54,9 @@ Scholaria is built around disciplined engineering:
 Run the full suite locally before pushing:
 
 ```bash
-uv run ruff check .
-uv run mypy .
-uv run pytest
+(cd backend && uv run ruff check .)
+(cd backend && uv run mypy .)
+(cd backend && uv run pytest)
 docker-compose up -d --build
 ```
 
@@ -76,7 +76,7 @@ docker-compose up -d --build
 Before requesting review:
 
 - [ ] Confirm the branch rebases cleanly onto `main`.
-- [ ] Ensure all checks pass locally (`uv run ruff check .`, `uv run mypy .`, `uv run pytest`).
+- [ ] Ensure all checks pass locally (`(cd backend && uv run ruff check .)`, `(cd backend && uv run mypy .)`, `(cd backend && uv run pytest)`).
 - [ ] Provide screenshots or logs for UI or operational changes.
 - [ ] Link to the relevant entry in `docs/tasks.md` and any related issues.
 - [ ] Verify new docs or code reference the correct `AGENTS.md` learnings.

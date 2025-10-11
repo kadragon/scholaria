@@ -85,19 +85,19 @@ Tests rely on pytest fixtures in `backend/tests/conftest.py`:
 ### 1. Red Phase
 ```bash
 # Write failing test first
-uv run pytest backend/tests/test_new_feature.py
+(cd backend && uv run pytest tests/test_new_feature.py)
 ```
 
 ### 2. Green Phase
 ```bash
 # Implement minimal code to pass
-uv run pytest backend/tests/test_new_feature.py
+(cd backend && uv run pytest tests/test_new_feature.py)
 ```
 
 ### 3. Refactor Phase
 ```bash
 # Run full test suite after refactoring
-uv run pytest backend/tests -q
+(cd backend && uv run pytest -q)
 ```
 
 ## Test Commands
@@ -105,34 +105,34 @@ uv run pytest backend/tests -q
 ### Basic Test Execution
 ```bash
 # Run all backend tests
-uv run pytest backend/tests -q
+(cd backend && uv run pytest -q)
 
 # Run specific test module
-uv run pytest backend/tests/test_contexts_write.py
+(cd backend && uv run pytest tests/test_contexts_write.py)
 
 # Run specific test class
-uv run pytest backend/tests/admin/test_bulk_operations.py::TestBulkRegenerateEmbeddings
+(cd backend && uv run pytest tests/admin/test_bulk_operations.py::TestBulkRegenerateEmbeddings)
 
 # Run specific test method
-uv run pytest backend/tests/test_contexts_write.py::TestCreateContext::test_create_pdf_context_with_file
+(cd backend && uv run pytest tests/test_contexts_write.py::TestCreateContext::test_create_pdf_context_with_file)
 ```
 
 ### Pytest Integration
 ```bash
 # Run with verbose output
-uv run pytest backend/tests/test_contexts_write.py -v
+(cd backend && uv run pytest tests/test_contexts_write.py -v)
 
 # Run with parallel execution
-uv run pytest backend/tests -n auto
+(cd backend && uv run pytest -n auto)
 
 # Run specific test pattern
-uv run pytest -k "test_parse" -v
+(cd backend && uv run pytest -k "test_parse" -v)
 ```
 
 ### Quality Assurance Pipeline
 ```bash
 # Complete quality check sequence
-uv run ruff check . && uv run mypy . && uv run pytest
+(cd backend && uv run ruff check . && uv run mypy . && uv run pytest)
 ```
 
 ## Test Organization Principles
@@ -185,10 +185,10 @@ class ComponentTest(TestCase):
 ### Test Failures
 ```bash
 # Run with verbose output for debugging
-uv run pytest backend/tests/test_contexts_write.py --verbosity=2
+(cd backend && uv run pytest tests/test_contexts_write.py --verbosity=2)
 
 # Debug specific test with pdb
-uv run pytest backend/tests/test_contexts_write.py::TestCreateContext::test_create_markdown_context --pdb
+(cd backend && uv run pytest tests/test_contexts_write.py::TestCreateContext::test_create_markdown_context --pdb)
 ```
 
 ### Common Issues

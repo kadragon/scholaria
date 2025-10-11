@@ -30,7 +30,7 @@ git clone <repository-url>
 cd scholaria
 
 # Install dependencies (for management commands)
-uv sync
+(cd backend && uv sync)
 ```
 
 ### 2. Environment Configuration
@@ -554,10 +554,10 @@ Access:
 docker compose up -d postgres redis qdrant
 
 # Backend 로컬 실행
-uv run uvicorn backend.main:app --reload --port 8001
+(cd backend && uv run uvicorn backend.main:app --reload --port 8001)
 
 # Celery worker 로컬 실행
-uv run celery -A backend.celery_app worker --loglevel=info
+(cd backend && uv run celery -A backend.celery_app worker --loglevel=info)
 ```
 
 ## 추가 참조

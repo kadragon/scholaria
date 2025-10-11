@@ -319,7 +319,7 @@ Adopted strict TDD methodology with "Red → Green → Refactor" cycle and "Tidy
 
 ```bash
 # Quality pipeline
-uv run ruff check . && uv run mypy . && uv run pytest
+(cd backend && uv run ruff check . && uv run mypy . && uv run pytest)
 ```
 
 ### Consequences

@@ -21,6 +21,8 @@ def test_backend_contains_no_django_imports(target_dir: Path) -> None:
         # Skip compiled artifacts or migration stubs if present
         if path.name.endswith(".pyc"):
             continue
+        if ".venv" in path.parts:
+            continue
         for line in path.read_text(encoding="utf-8").splitlines():
             stripped = line.strip()
             if stripped.startswith("from django") or stripped.startswith(

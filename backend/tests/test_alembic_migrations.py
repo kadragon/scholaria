@@ -8,7 +8,7 @@ from backend.models.base import _ensure_engine
 
 @pytest.mark.skipif(
     True,
-    reason="Migration tests require Postgres. Run in Docker: docker compose exec backend uv run pytest backend/tests/test_alembic_migrations.py",
+    reason="Migration tests require Postgres. Run in Docker: docker compose exec backend bash -lc 'cd backend && uv run pytest tests/test_alembic_migrations.py'",
 )
 def test_0004_order_index_exists_after_migration() -> None:
     """Migration 0004 should create ix_rag_contextitem_order_index."""
@@ -20,7 +20,7 @@ def test_0004_order_index_exists_after_migration() -> None:
 
 @pytest.mark.skipif(
     True,
-    reason="Migration tests require Postgres. Run in Docker: docker compose exec backend uv run pytest backend/tests/test_alembic_migrations.py",
+    reason="Migration tests require Postgres. Run in Docker: docker compose exec backend bash -lc 'cd backend && uv run pytest tests/test_alembic_migrations.py'",
 )
 def test_0004_order_index_covers_order_index_column() -> None:
     """Index should cover order_index column."""
@@ -37,7 +37,7 @@ def test_0004_order_index_covers_order_index_column() -> None:
 
 @pytest.mark.skipif(
     True,
-    reason="Migration tests require Postgres. Run in Docker: docker compose exec backend uv run pytest backend/tests/test_alembic_migrations.py",
+    reason="Migration tests require Postgres. Run in Docker: docker compose exec backend bash -lc 'cd backend && uv run pytest tests/test_alembic_migrations.py'",
 )
 def test_0004_order_index_is_btree() -> None:
     """Index should use btree (Postgres default)."""

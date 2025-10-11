@@ -2,7 +2,7 @@
 Integration tests for Prometheus metrics scraping.
 
 These tests verify that Prometheus can scrape metrics from the backend.
-Run with: docker compose up -d prometheus backend && pytest backend/tests/test_prometheus_integration.py
+Run with: docker compose up -d prometheus backend && (cd backend && uv run pytest tests/test_prometheus_integration.py)
 """
 
 import os
