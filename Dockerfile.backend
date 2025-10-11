@@ -44,7 +44,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 EXPOSE 8001
 
-CMD ["uvicorn", "backend.main:app", "--reload", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8001"]
 
 # Production stage
 FROM python:3.14-slim as production
@@ -64,10 +64,6 @@ COPY --from=builder /app/backend/.venv /app/backend/.venv
 ENV PATH="/app/backend/.venv/bin:$PATH"
 
 COPY --chown=scholaria:scholaria backend/ /app/backend/
-COPY --chown=scholaria:scholaria alembic/ /app/alembic/
-COPY --chown=scholaria:scholaria alembic.ini /app/
-COPY --chown=scholaria:scholaria backend/pyproject.toml /app/backend/
-COPY --chown=scholaria:scholaria backend/uv.lock /app/backend/
 
 RUN mkdir -p uploads logs && \
     chown -R scholaria:scholaria /app
@@ -82,4 +78,6 @@ USER scholaria
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8001/health || exit 1
 
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "4"]
+WORKDIR /app/backend
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "4"]

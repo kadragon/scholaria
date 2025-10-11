@@ -8,7 +8,7 @@ if [ ! -x "${UV_PROJECT_ENVIRONMENT:-${PROJECT_DIR}/.venv}/bin/python" ]; then
     (cd "${PROJECT_DIR}" && uv sync --dev)
 fi
 
-DEFAULT_CMD=(uv run uvicorn backend.main:app --reload --host 0.0.0.0 --port 8001)
+DEFAULT_CMD=(uv run uvicorn main:app --reload --host 0.0.0.0 --port 8001)
 
 if [ "$#" -gt 0 ]; then
     exec "$@"
