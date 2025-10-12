@@ -12,20 +12,15 @@ export class ChatPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.topicSelector = page.locator("aside").locator("button").first();
+    this.topicSelector = page.getByTestId("topic-selector-option");
     this.messageInput = page.getByPlaceholder(
       /질문을 입력하세요... \(Enter: 전송, Shift\+Enter: 줄바꿈\)/i,
     );
     this.sendButton = page.getByRole("button", { name: /전송|send/i });
-    this.messageList = page.locator("main");
-    this.feedbackThumbsUp = page.getByRole("button", {
-      name: /thumbs up|like/i,
-    });
-    this.feedbackThumbsDown = page.getByRole("button", {
-      name: /thumbs down|dislike/i,
-    });
-    this.feedbackCommentInput =
-      page.getByPlaceholder(/코멘트|comment|feedback/i);
+    this.messageList = page.getByTestId("chat-message-list");
+    this.feedbackThumbsUp = page.getByTestId("feedback-option-positive");
+    this.feedbackThumbsDown = page.getByTestId("feedback-option-negative");
+    this.feedbackCommentInput = page.getByTestId("feedback-comment-input");
   }
 
   async goto() {
@@ -34,8 +29,9 @@ export class ChatPage {
 
   async selectTopic(topicName: string) {
     const topicButton = this.page
-      .locator("aside")
-      .getByRole("button", { name: topicName });
+      .getByTestId("topic-selector-option")
+      .filter({ hasText: topicName })
+      .first();
     await topicButton.waitFor({ state: "visible", timeout: 15000 });
     await topicButton.click();
     await expect(this.messageInput).toBeEnabled({ timeout: 15000 });
@@ -49,7 +45,7 @@ export class ChatPage {
 
   async waitForResponse(timeoutMs = 10000) {
     await this.page
-      .locator(".bg-white.border-2.border-secondary-100")
+      .getByTestId("chat-message-assistant")
       .last()
       .waitFor({ timeout: timeoutMs });
   }
@@ -80,20 +76,17 @@ export class ChatPage {
       type === "up" ? this.feedbackThumbsUp : this.feedbackThumbsDown;
     await button.last().click();
 
-    if (comment) {
+    if (typeof comment === "string") {
       await this.feedbackCommentInput.fill(comment);
-      await this.page.getByRole("button", { name: /제출|submit/i }).click();
     }
+
+    await this.page.getByTestId("feedback-submit-button").click();
   }
 
   getMessage(role: "user" | "assistant", index = 0) {
     if (role === "user") {
-      return this.page
-        .locator(".bg-gradient-to-br.from-primary-600.to-primary-700")
-        .nth(index);
+      return this.page.getByTestId("chat-message-user").nth(index);
     }
-    return this.page
-      .locator(".bg-white.border-2.border-secondary-100")
-      .nth(index);
+    return this.page.getByTestId("chat-message-assistant").nth(index);
   }
 }

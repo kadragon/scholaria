@@ -1,23 +1,37 @@
 # E2E Test Status Report
 
-**Last Updated**: 2025-10-11 18:30 KST
+**Last Updated**: 2025-10-11 22:05 KST
 **Branch**: `feat/e2e-testing-fixes` (committed)
-**Test Run**: Local development + stability fixes
-**Pass Rate**: 80%+ (estimated, 27/33 tests)
+**Test Run**: Local targeted suites (`topic-management`, `chat-qa`)
+**Pass Rate**: Topics 100% (7/7) — Chat blocked (context ingestion failure, 0/4 executed)
 
 ---
 
 ## Quick Summary
 
-| Category | Total | Passed (Est.) | Failed (Est.) | Skipped |
-|----------|-------|---------------|---------------|---------|
-| **Overall** | 33 | 27 | 3 | 3 |
-| Setup | 1 | 1 | 0 | 0 |
-| Auth | 6 | 6 | 0 | 0 |
-| Topics | 6 | 4 | 1 | 1 |
-| Contexts | 6 | 5 | 0 | 1 |
-| Chat | 7 | 5 | 2 | 0 |
-| Analytics | 6 | 6 | 0 | 0 |
+| Category | Total | Passed | Failed | Skipped/Not Run | Notes |
+|----------|-------|--------|--------|-----------------|-------|
+| Topics (`topic-management.spec.ts`) | 7 | 7 | 0 | 0 | Deterministic data + API 검증으로 안정화 |
+| Chat (`chat-qa.spec.ts`) | 8 | 0 | 4 | 4 | 컨텍스트 `processing_status=FAILED` (OpenAI API 키 미설정)로 RAG 응답 생성 불가 |
+| Others (auth / contexts / analytics) | 18 | – | – | – | 미실행 — 이전 세션 결과 유지, 재실행 필요 |
+
+> 전체 통과율 집계는 Celery/RAG 환경 복구 후 재측정 필요
+
+---
+
+## Latest Findings (2025-10-11 22:05 KST)
+
+- **Topics 플로우 안정화**
+  - `topic-management.spec.ts` 전 케이스 통과 (7/7)
+  - 신규 Test ID 활용 + Admin API 필터 기반 검증으로 페이지네이션 문제 제거
+- **Chat 플로우 차단 요인**
+  - Markdown 컨텍스트 생성 시 `processing_status=FAILED` → Celery worker가 유효한 OpenAI 키 없이 실행 중
+  - 결과적으로 assistant 메시지/피드백 관련 테스트 모두 실패
+  - 해결책: `OPENAI_API_KEY` 설정 또는 테스트 전용 임베딩 모킹 계층 도입 필요
+
+---
+
+## Historical Log (Phase 6 Snapshot — 2025-10-11 18:30 KST)
 
 ---
 
@@ -48,9 +62,13 @@
 **Impact**: Delete confirmation flow
 **Result**: Test now passing
 
-### 🟡 Remaining: Edit Topic (1 test)
-**Cause**: Depends on existing data (non-deterministic)
-**Solution**: Create dedicated test topic before edit
+### ✅ Resolved: Edit Topic (2025-10-11 22:05 KST)
+**Fix**: Dedicated topic 생성 + Admin API 필터 기반 검증, `/admin/topics/edit/:id` 직접 이동
+**Result**: `topic-management.spec.ts` 전체 통과 (7/7)
+
+### 🟡 Remaining: Chat RAG Pipeline (4 tests)
+**Cause**: Markdown 컨텍스트 처리 실패 (`processing_status=FAILED`) — Celery worker가 OpenAI Embed/Chat 키 없이 실행
+**Solution**: 유효한 `OPENAI_API_KEY` 주입 or 테스트용 임베딩/응답 모킹 계층 도입
 
 ### 🟡 Remaining: Chat Visual (2 tests)
 **Cause**: CSS selector changes, data-role attribute removal
@@ -97,6 +115,6 @@
 - [ ] Push to remote and create PR
 
 ### Optional Future Improvements
-- [ ] Fix edit topic test (create dedicated test data)
-- [ ] Fix 2 chat visual tests (CSS selector updates)
+- [ ] Restore Chat RAG pipeline for deterministic runs (inject OpenAI key or provide mock service)
+- [ ] Fix 2 chat visual tests (CSS selector updates) — 대화 응답이 생성되는 환경 복구 후 진행
 - [ ] Add visual regression tests (Phase 4)

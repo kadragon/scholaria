@@ -42,60 +42,85 @@ test.describe("Topic Management", () => {
 
   test("should edit an existing topic", async ({ page, request }) => {
     const token = await page.evaluate(() => localStorage.getItem("token"));
+    if (!token) {
+      throw new Error("Missing auth token for admin API access");
+    }
 
-    const topicsResponse = await request.get(
-      "http://localhost:8001/api/admin/topics",
+    const originalName = `E2E Edit Topic ${Date.now()}`;
+    const updatedName = `${originalName} (Updated)`;
+
+    await topicsPage.gotoCreate();
+    await topicsPage.createTopic({
+      name: originalName,
+      description: "Topic created for edit flow verification.",
+      systemPrompt: "Respond with precise and concise answers.",
+    });
+
+    await page.waitForURL("/admin/topics", { timeout: 10000 });
+    await page.waitForLoadState("networkidle");
+
+    const filterParam = encodeURIComponent(
+      JSON.stringify({ name: originalName }),
+    );
+    const createdTopicResponse = await request.get(
+      getApiUrl(`/api/admin/topics?limit=20&filter=${filterParam}`),
       {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       },
     );
-
-    const topicsData = await topicsResponse.json();
-    let topics = topicsData.items || topicsData;
-
-    if (!Array.isArray(topics)) {
-      topics = [];
-    }
-
-    if (!topics || topics.length === 0) {
-      test.skip();
-      return;
-    }
-
-    const testTopic = topics.find((t: { name: string }) =>
-      t.name.includes("E2E Test Topic"),
+    expect(createdTopicResponse.ok()).toBeTruthy();
+    const createdTopicPayload = await createdTopicResponse.json();
+    const createdTopicItems = Array.isArray(createdTopicPayload?.items)
+      ? createdTopicPayload.items
+      : Array.isArray(createdTopicPayload?.data)
+        ? createdTopicPayload.data
+        : Array.isArray(createdTopicPayload)
+          ? createdTopicPayload
+          : [];
+    const createdTopic = createdTopicItems.find(
+      (t: { name: string }) => t.name === originalName,
     );
-    const topicName = testTopic?.name || topics[0]?.name;
+    expect(createdTopic?.id).toBeDefined();
 
-    if (!topicName) {
-      test.skip();
-      return;
-    }
+    await page.goto(`/admin/topics/edit/${createdTopic!.id}`);
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/topics/edit/${createdTopic!.id}`),
+    );
 
-    await topicsPage.goto();
-    await topicsPage.editTopic(topicName);
-
-    const updatedName = `${topicName} (Updated)`;
     await topicsPage.nameInput.clear();
     await topicsPage.nameInput.fill(updatedName);
 
     await topicsPage.submitButton.click();
 
     await page.waitForURL("/admin/topics", { timeout: 10000 });
+    await page.waitForLoadState("networkidle");
 
+    const verifyFilterParam = encodeURIComponent(
+      JSON.stringify({ name: updatedName }),
+    );
     const updatedResponse = await request.get(
-      "http://localhost:8001/api/admin/topics",
+      getApiUrl(`/api/admin/topics?limit=20&filter=${verifyFilterParam}`),
       {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       },
     );
+    expect(updatedResponse.ok()).toBeTruthy();
 
-    const updatedTopics = await updatedResponse.json();
-    const updatedTopic = (updatedTopics.items || updatedTopics).find(
+    const updatedData = await updatedResponse.json();
+    const updatedItems = Array.isArray(updatedData?.items)
+      ? updatedData.items
+      : Array.isArray(updatedData?.data)
+        ? updatedData.data
+        : Array.isArray(updatedData)
+          ? updatedData
+          : [];
+
+    const updatedTopic = updatedItems.find(
       (t: { name: string }) => t.name === updatedName,
     );
 
