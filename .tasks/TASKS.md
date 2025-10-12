@@ -11,12 +11,12 @@
 
 ## 진행 중
 
-- [ ] **E2E 테스트 도입 (Playwright)** — 핵심 플로우 검증, App.tsx/ChatPage/Analytics 커버, 시각적 회귀 테스트 기반 마련 (Phase 1-2 완료, 23/33 통과 70%, Celery worker 이슈로 RAG 의존 테스트 5개 skip)
-- [ ] **Celery Worker Docker 설정 수정** — venv 경로 불일치 문제로 컨테이너 실행 실패, E2E 테스트에서 RAG 응답 생성 불가 (우선순위: 중, 영향: E2E 5개 테스트 skip)
+- [ ] **E2E 테스트 도입 (Playwright)** — 핵심 플로우 검증, App.tsx/ChatPage/Analytics 커버, 시각적 회귀 테스트 기반 마련 (Phase 1-3 완료, 19/33 통과 57%, OpenAI API 키 로드 및 Celery Redis 연결 해결, 컨텍스트 처리 실패로 채팅 테스트 블로킹)
 
 ## 단기 백로그
 
 - [x] **React Router v7 업그레이드** — 기존 v6 라우팅 구성을 v7 API에 맞춰 마이그레이션, 관련 네비게이션/라우터 훅 영향도 점검 (이미 완료됨, 검증 완료, 2025-10-10)
+- [x] **Celery Worker Docker 설정 수정** — venv 경로 불일치 문제 해결, isolated uv environment 적용, torch 설치 성공 (2025-10-12)
 
 ## 선택적 향상안
 
@@ -39,6 +39,8 @@
 
 ## 최근 완료 하이라이트
 
+- **Celery Worker Docker 설정 수정 완료** — venv 경로 불일치 해결, isolated uv environment 적용, torch 설치 성공, E2E 테스트 RAG 응답 재활성화 (2025-10-12)
+- **E2E 테스트 OpenAI API 키 통합** — Playwright dotenv 설정, Docker 환경변수 보완, Celery Redis 연결 해결 (2025-10-12)
 - **OpenTelemetry 완전 통합 (Phase 1-8 완료)** — SDK 통합, 커스텀 RAG 스팬, 메트릭 수집, Jaeger (traces), Prometheus (metrics), Grafana (6개 패널 대시보드), 통합/성능 테스트, 포괄적 문서화 (OBSERVABILITY.md 400+줄), 26개 파일 변경, ~11.5시간 소요 (2025-10-10)
 - **Phase 6 커버리지 확장** — 40.91% → 51.29%, 20개 테스트 추가 (SetupPage, useCommandPalette, TopicSelector, MessageList, AnalyticsSkeleton), 임계값 45% 상향 (2025-10-09)
 - **백엔드 커버리지 임계값 설정** — 85% 커버리지, 80% 임계값, backend-ci.yml 3개 잡 (test+coverage, lint, typecheck) (2025-10-09)

@@ -6,6 +6,9 @@ x-common-env: &common-env
   DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
   DB_HOST: "postgres"
   DB_PORT: 5432
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
   REDIS_URL: "redis://redis:6379/0"
   QDRANT_HOST: "qdrant"
   QDRANT_PORT: 6333
