@@ -103,7 +103,7 @@ setup("authenticate as admin", async ({ page, request }) => {
     `# Test Documentation\n\n## Overview\nThis is test documentation for E2E testing.\n\n## Features\n- Feature 1: Authentication\n- Feature 2: Topic Management\n- Feature 3: Context Ingestion\n\n## FAQ\nQ: What is this?\nA: This is a test context for E2E testing.`,
   );
 
-  const contextResponse = await request.post(getApiUrl("/api/admin/contexts"), {
+  const contextResponse = await request.post(getApiUrl("/api/contexts"), {
     headers: {
       Authorization: `Bearer ${await getAccessToken(page)}`,
     },

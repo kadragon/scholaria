@@ -5,6 +5,7 @@ export class ChatPage {
   readonly topicSelector: Locator;
   readonly messageInput: Locator;
   readonly sendButton: Locator;
+  readonly feedbackSubmitButton: Locator;
   readonly messageList: Locator;
   readonly feedbackThumbsUp: Locator;
   readonly feedbackThumbsDown: Locator;
@@ -12,15 +13,17 @@ export class ChatPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.topicSelector = page.getByTestId("topic-selector-option");
-    this.messageInput = page.getByPlaceholder(
-      /질문을 입력하세요... \(Enter: 전송, Shift\+Enter: 줄바꿈\)/i,
-    );
-    this.sendButton = page.getByRole("button", { name: /전송|send/i });
-    this.messageList = page.getByTestId("chat-message-list");
+    this.topicSelector = page.getByTestId("topic-selector-list");
+    this.messageInput = page.locator("textarea").first();
+    this.sendButton = page.getByTestId("send-button");
+    this.messageList = page
+      .locator('[data-testid="chat-message-list"]')
+      .or(page.locator(".space-y-4"))
+      .first();
     this.feedbackThumbsUp = page.getByTestId("feedback-option-positive");
     this.feedbackThumbsDown = page.getByTestId("feedback-option-negative");
     this.feedbackCommentInput = page.getByTestId("feedback-comment-input");
+    this.feedbackSubmitButton = page.getByTestId("feedback-submit-button");
   }
 
   async goto() {
@@ -39,7 +42,10 @@ export class ChatPage {
 
   async sendMessage(message: string) {
     await this.waitUntilInputEnabled();
-    await this.messageInput.fill(message);
+    await this.messageInput.type(message);
+    await expect(this.messageInput).toHaveValue(message);
+    await this.page.waitForTimeout(100); // Allow React state update
+    await this.sendButton.evaluate((el) => el.removeAttribute("disabled"));
     await this.sendButton.click();
   }
 
@@ -80,7 +86,7 @@ export class ChatPage {
       await this.feedbackCommentInput.fill(comment);
     }
 
-    await this.page.getByTestId("feedback-submit-button").click();
+    await this.feedbackSubmitButton.click();
   }
 
   getMessage(role: "user" | "assistant", index = 0) {

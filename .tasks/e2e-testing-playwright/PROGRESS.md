@@ -1,12 +1,24 @@
 # Progress: E2E Testing with Playwright
 
-## Status: 🟡 In Progress — Topic flows Green, Chat blocked by context ingestion failures
+## Status: 🟢 Major Progress — Core Chat Flow Working, Multi-Message Test Issue
 
-Phase 1-3 구현 완료, Page Object Model 지속 개선 중. 셀렉터 안정화 및 토픽 편집 플로우 신뢰도 향상.
+Phase 1-8 구현 완료. Redis/Celery 구성 수정, 컨텍스트 처리 파이프라인 복구, Chat 핵심 플로우 검증 성공. 다중 메시지 테스트에서 백엔드 호환성 이슈 발견.
 
-**Current Test Results (2025-10-11 22:05 KST)**:
+**Current Test Results (2025-10-12 14:30 KST)**:
 - `topic-management.spec.ts`: 7 passed / 0 failed / 0 skipped ✅
-- `chat-qa.spec.ts`: 0 passed / 4 failed / 4 not-run — 컨텍스트 `processing_status=FAILED` (OpenAI 키 미설정)로 인한 RAG 파이프라인 장애 🚧
+- `chat-qa.spec.ts`: 6 passed / 1 failed / 0 skipped 🟡 (다중 메시지 테스트 실패, 백엔드 세션 처리 이슈)
+- `context-ingestion.spec.ts`: 6 passed / 0 failed / 1 skipped ✅ (관리자 UI 네비게이션 및 폴링 문제 해결)
+- `analytics.spec.ts`: 5 passed / 0 failed / 0 skipped ✅
+- `auth.spec.ts`: 6 passed / 0 failed / 0 skipped ✅
+
+**Chat Tests Status**:
+- ✅ should display chat interface
+- ✅ should select a topic
+- ✅ should send a message and receive response
+- ✅ should submit positive feedback
+- ✅ should submit negative feedback with comment
+- ✅ should persist session after reload
+- ❌ should handle multiple messages (백엔드 세션 처리 이슈)
 
 ---
 

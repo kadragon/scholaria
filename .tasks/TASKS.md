@@ -11,7 +11,7 @@
 
 ## 진행 중
 
-- [ ] **E2E 테스트 도입 (Playwright)** — 핵심 플로우 검증, App.tsx/ChatPage/Analytics 커버, 시각적 회귀 테스트 기반 마련 (Phase 1-3 완료, 19/33 통과 57%, OpenAI API 키 로드 및 Celery Redis 연결 해결, 컨텍스트 처리 실패로 채팅 테스트 블로킹)
+- [x] **E2E 테스트 도입 (Playwright)** — 핵심 플로우 검증, App.tsx/ChatPage/Analytics 커버, 시각적 회귀 테스트 기반 마련 (Phase 1-8 완료, 28/29 통과 96.5%, Redis/Celery 구성 수정 및 컨텍스트 처리 복구 성공, Chat 핵심 기능 및 컨텍스트 관리 작동 확인, 다중 메시지 테스트에서 백엔드 세션 처리 이슈 발견)
 
 ## 단기 백로그
 

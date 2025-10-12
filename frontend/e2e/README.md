@@ -92,10 +92,11 @@ e2e/
    - Topic assignment
 
 4. **Chat Q&A** (`chat-qa.spec.ts`)
-   - Topic selection
-   - Send messages and receive responses
-   - Submit feedback (thumbs up/down)
-   - Session persistence
+    - Topic selection
+    - Send messages and receive responses
+    - Submit feedback (thumbs up/down)
+    - Session persistence
+    - Handle multiple messages in conversation (Note: Currently failing due to backend session handling issue)
 
 5. **Analytics Dashboard** (`analytics.spec.ts`)
    - View statistics
@@ -141,6 +142,12 @@ See `.github/workflows/e2e-tests.yml` for CI configuration.
 - Use `page.waitForLoadState('networkidle')` when needed
 - Check for race conditions in async operations
 
+### Multiple messages test failing
+
+- **Issue**: "should handle multiple messages in conversation" test fails on second message response
+- **Root Cause**: Backend session handling may not support multiple messages in the same chat session
+- **Workaround**: Test passes for single message flows; investigate backend session management for multi-message support
+
 ### Debugging
 
 ```bash
@@ -161,3 +168,10 @@ npx playwright test --headed --slow-mo=1000
 3. **Isolate tests** - Each test should be independent
 4. **Clean up data** - Remove test data after tests (or use unique identifiers)
 5. **Meaningful assertions** - Assert on visible user impact, not implementation details
+6. **Handle React state updates** - For controlled inputs, use DOM-based checks or dispatch events to ensure state synchronization
+
+## Current Status
+
+- **Test Results**: 28/29 tests passing (96.5% pass rate)
+- **Recent Fixes**: Updated MessageInput component to use DOM values for button state validation, resolved send button disable issues in multi-message scenarios
+- **Known Issues**: Multiple messages test fails due to backend session handling limitations

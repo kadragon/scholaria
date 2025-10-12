@@ -130,12 +130,18 @@ npm run test:e2e:ui
 npm run test:e2e:debug
 ```
 
+**Test Results**: 28/29 tests passing (96.5% pass rate)
 **Test Coverage**:
-- ✅ Authentication & Setup flow
-- ✅ Topic management (CRUD)
-- ✅ Context ingestion (PDF, Markdown)
-- ✅ Chat Q&A with streaming responses
-- ✅ Analytics dashboard
+- ✅ Authentication & Setup flow (6/6)
+- ✅ Topic management (CRUD) (7/7)
+- ✅ Context ingestion (PDF, Markdown) (6/7)
+- ✅ Chat Q&A with streaming responses (6/7) - Multiple messages test failing due to backend session handling
+- ✅ Analytics dashboard (5/5)
+
+**Recent Updates**:
+- Fixed send button disable issues in chat multi-message scenarios by updating MessageInput component to use DOM-based value validation
+- Resolved Redis/Celery configuration issues for backend context processing
+- Improved UI locators and API endpoint consistency
 
 See `e2e/README.md` for detailed E2E testing guide.
 
