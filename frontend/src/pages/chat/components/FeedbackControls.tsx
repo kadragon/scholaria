@@ -89,6 +89,20 @@ export const FeedbackControls = ({
                   : "border-secondary-200 bg-white text-secondary-600 hover:border-primary-300 hover:text-primary-600"
               } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
               disabled={disabled || isSubmitting}
+              data-testid={
+                option.value === 1
+                  ? "feedback-option-positive"
+                  : option.value === -1
+                    ? "feedback-option-negative"
+                    : "feedback-option-neutral"
+              }
+              aria-label={
+                option.value === 1
+                  ? "positive feedback"
+                  : option.value === -1
+                    ? "negative feedback"
+                    : "neutral feedback"
+              }
             >
               <span>{option.emoji}</span>
               <span>{option.label}</span>
@@ -104,6 +118,7 @@ export const FeedbackControls = ({
         className="w-full rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:opacity-60"
         rows={3}
         disabled={disabled || isSubmitting}
+        data-testid="feedback-comment-input"
       />
 
       <div className="flex items-center gap-2">
@@ -111,6 +126,7 @@ export const FeedbackControls = ({
           type="submit"
           className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={disabled || isSubmitting}
+          data-testid="feedback-submit-button"
         >
           {isSubmitting ? "저장 중..." : "피드백 저장"}
         </button>

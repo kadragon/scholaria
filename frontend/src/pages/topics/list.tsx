@@ -266,7 +266,13 @@ export const TopicList = () => {
             </TableHeader>
             <TableBody>
               {filteredData.map((topic) => (
-                <TableRow key={topic.id}>
+                <TableRow
+                  key={topic.id ?? topic.name}
+                  data-topic-id={
+                    typeof topic.id === "number" ? topic.id : undefined
+                  }
+                  data-topic-name={topic.name}
+                >
                   <TableCell>
                     <Checkbox
                       checked={
@@ -320,6 +326,10 @@ export const TopicList = () => {
                             edit("topics", topic.id);
                           }
                         }}
+                        data-testid="topic-edit-button"
+                        data-topic-id={
+                          typeof topic.id === "number" ? topic.id : undefined
+                        }
                       >
                         편집
                       </Button>

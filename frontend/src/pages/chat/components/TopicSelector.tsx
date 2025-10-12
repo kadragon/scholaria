@@ -53,7 +53,7 @@ export const TopicSelector = ({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="topic-selector-list">
       {topics.map((topic) => {
         const isSelected = selectedTopicId === topic.id;
         return (
@@ -65,6 +65,8 @@ export const TopicSelector = ({
                 ? "bg-primary-600 text-white font-semibold border-primary-600 shadow-md"
                 : "hover:bg-primary-50 text-secondary-700 border-transparent hover:border-primary-200"
             }`}
+            data-testid="topic-selector-option"
+            data-topic-id={topic.id}
           >
             <div className="text-sm font-medium">{topic.name}</div>
             {topic.description && (

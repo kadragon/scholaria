@@ -166,7 +166,10 @@ export const MessageList = ({
   }, [messages, isStreaming]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-secondary-50 to-white">
+    <div
+      className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-secondary-50 to-white"
+      data-testid="chat-message-list"
+    >
       {messages.map((message) => (
         <div
           key={message.id}
@@ -180,6 +183,13 @@ export const MessageList = ({
                 ? "bg-gradient-to-br from-primary-600 to-primary-700 text-white"
                 : "bg-white border-2 border-secondary-100"
             }`}
+            data-testid={
+              message.role === "user"
+                ? "chat-message-user"
+                : "chat-message-assistant"
+            }
+            data-role={message.role}
+            data-message-id={String(message.id)}
           >
             <div className="prose prose-sm max-w-none">
               {message.role === "user" ? (

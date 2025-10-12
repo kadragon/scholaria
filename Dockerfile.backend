@@ -3,7 +3,7 @@
 ARG PYTHON_VERSION=3.13
 
 # Builder stage
-FROM python:${PYTHON_VERSION}-slim as builder
+FROM python:${PYTHON_VERSION}-slim AS builder
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -21,7 +21,7 @@ COPY backend/uv.lock ./uv.lock
 RUN uv sync --frozen --no-dev
 
 # Development stage
-FROM python:${PYTHON_VERSION}-slim as development
+FROM python:${PYTHON_VERSION}-slim AS development
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -49,7 +49,7 @@ EXPOSE 8001
 CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8001"]
 
 # Production stage
-FROM python:${PYTHON_VERSION}-slim as production
+FROM python:${PYTHON_VERSION}-slim AS production
 
 RUN apt-get update && apt-get install -y \
     curl \
