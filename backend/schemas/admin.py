@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -208,7 +209,7 @@ class FeedbackCommentOut(BaseModel):
 class ProcessingStatusResponse(BaseModel):
     """Response schema for context processing status."""
 
-    status: str = Field(
-        description="Processing status: PENDING, PROCESSING, COMPLETED, FAILED"
+    status: Literal["PENDING", "PROCESSING", "COMPLETED", "FAILED"] = Field(
+        description="Processing status"
     )
     progress: int = Field(ge=0, le=100, description="Progress percentage (0-100)")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status
 from sqlalchemy import func
@@ -332,15 +333,18 @@ async def get_context_processing_status(
         )
 
     # Calculate progress based on processing status
-    if ctx.processing_status == "COMPLETED":
-        progress = 100
-    elif ctx.processing_status == "FAILED":
-        progress = 0
-    elif ctx.processing_status == "PROCESSING":
-        # For simplicity, assume 50% progress when processing
-        # In a real implementation, you might track actual progress
-        progress = 50
-    else:  # PENDING
-        progress = 0
+    progress_map = {
+        "COMPLETED": 100,
+        "FAILED": 0,
+        "PROCESSING": 50,  # For simplicity, assume 50% progress when processing
+        "PENDING": 0,
+    }
+    progress = progress_map.get(ctx.processing_status, 0)
 
-    return ProcessingStatusResponse(status=ctx.processing_status, progress=progress)
+    return ProcessingStatusResponse(
+        status=cast(
+            Literal["PENDING", "PROCESSING", "COMPLETED", "FAILED"],
+            ctx.processing_status,
+        ),
+        progress=progress,
+    )
