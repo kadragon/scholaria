@@ -3,7 +3,7 @@
 ## 상태 스냅샷
 
 - MVP 완성, FastAPI + Refine 스택 프로덕션 준비 완료
-- 127개 프런트엔드 테스트 (62.17% coverage, 50% threshold), 223개 백엔드 테스트 (83% coverage, 80% threshold)
+- 127개 프런트엔드 테스트 (56.47% coverage, 55% threshold), 223개 백엔드 테스트 (83% coverage, 80% threshold)
 - ruff/mypy 클린, Celery/Redis 비동기 인프라 운영 중
 - CI: 프런트엔드 4개 잡, 백엔드 3개 잡 (test+coverage, lint, typecheck)
 - Observability: OpenTelemetry + Jaeger + Prometheus + Grafana 완전 통합 (2025-10-10)
@@ -36,6 +36,8 @@
 - [x] **Phase 7 – 현실적 범위 (32.79% → 47.87%)** — CRUD List 2개 (topics/list 6 tests, contexts/list 6 tests); 복잡한 통합 테스트 제외 (App.tsx, ChatPage, Analytics는 E2E 권장); 105개 테스트 통과 (+12); 임계값 40% 설정; Unit 85%, Integration 45%, Branch 78% 균형 전략 (2025-10-10)
 - [x] **Phase 8 – 점진적 확대 (47.87% → 55.97%)** — dataProvider custom 완전 커버(3), topics/create(5), topics/edit(5) 테스트 추가; 118개 테스트 통과 (+13); 임계값 50% 설정; Unit 95%+, Integration 57%+, Branch 80%+ 달성 (2025-10-10)
 - [x] **Phase 9 – 60% 돌파 (55.97% → 62.17%)** — contexts/edit(5), contexts/create(4) 테스트 추가; 127개 테스트 통과 (+9); 임계값 50% 유지; Unit 100%, Integration 61%+, Branch 79%+ 달성; 전체 +30.55%p 향상 (Phase 5-9) (2025-10-10)
+- [x] **Phase 10 – 임계값 상향 (62.17% 유지)** — 커버리지 56.47% 확인, 임계값 lines: 55, functions: 55, branches: 70, statements: 55로 상향; 127개 테스트 통과 유지 (2025-10-12)
+- [x] **Refine Admin Panel Step 6.1** — FastAPI bulk operations API 및 processing status endpoint 구현 완료; 16개 테스트 통과 (2025-10-12)
 
 ## 최근 완료 하이라이트
 

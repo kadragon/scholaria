@@ -432,3 +432,99 @@ class TestContextsDatetimeSerialization:
         updated_dt = datetime.fromisoformat(data["updated_at"])
         assert created_dt.tzinfo is not None
         assert updated_dt.tzinfo is not None
+
+
+class TestContextProcessingStatus:
+    """Test Context processing status endpoint."""
+
+    def test_get_processing_status_completed(self, admin_headers, db_session):
+        """Test getting processing status for completed context."""
+        ctx = SQLContext(
+            name="Completed Context",
+            description="Test",
+            context_type="MARKDOWN",
+            processing_status="COMPLETED",
+            chunk_count=5,
+        )
+        db_session.add(ctx)
+        db_session.commit()
+
+        response = client.get(
+            f"/api/admin/contexts/{ctx.id}/processing-status", headers=admin_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "COMPLETED"
+        assert data["progress"] == 100
+
+    def test_get_processing_status_pending(self, admin_headers, db_session):
+        """Test getting processing status for pending context."""
+        ctx = SQLContext(
+            name="Pending Context",
+            description="Test",
+            context_type="PDF",
+            processing_status="PENDING",
+            chunk_count=0,
+        )
+        db_session.add(ctx)
+        db_session.commit()
+
+        response = client.get(
+            f"/api/admin/contexts/{ctx.id}/processing-status", headers=admin_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "PENDING"
+        assert data["progress"] == 0
+
+    def test_get_processing_status_processing(self, admin_headers, db_session):
+        """Test getting processing status for processing context."""
+        ctx = SQLContext(
+            name="Processing Context",
+            description="Test",
+            context_type="PDF",
+            processing_status="PROCESSING",
+            chunk_count=2,
+        )
+        db_session.add(ctx)
+        db_session.commit()
+
+        response = client.get(
+            f"/api/admin/contexts/{ctx.id}/processing-status", headers=admin_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "PROCESSING"
+        assert data["progress"] == 50
+
+    def test_get_processing_status_failed(self, admin_headers, db_session):
+        """Test getting processing status for failed context."""
+        ctx = SQLContext(
+            name="Failed Context",
+            description="Test",
+            context_type="PDF",
+            processing_status="FAILED",
+            chunk_count=0,
+        )
+        db_session.add(ctx)
+        db_session.commit()
+
+        response = client.get(
+            f"/api/admin/contexts/{ctx.id}/processing-status", headers=admin_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "FAILED"
+        assert data["progress"] == 0
+
+    def test_get_processing_status_not_found(self, admin_headers):
+        """Test getting processing status for non-existent context."""
+        response = client.get(
+            "/api/admin/contexts/99999/processing-status", headers=admin_headers
+        )
+        assert response.status_code == 404
+
+    def test_get_processing_status_requires_admin(self):
+        """Test that processing status requires admin authentication."""
+        response = client.get("/api/admin/contexts/1/processing-status")
+        assert response.status_code == 401

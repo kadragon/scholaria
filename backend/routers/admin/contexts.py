@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status
 from sqlalchemy import func
@@ -19,6 +20,7 @@ from backend.schemas.admin import (
     AdminContextUpdate,
     AdminFaqQaCreate,
     ContextListResponse,
+    ProcessingStatusResponse,
 )
 from backend.schemas.context import ContextItemOut
 from backend.tasks.embeddings import regenerate_embedding_task
@@ -315,3 +317,34 @@ async def update_context_item(
         regenerate_embedding_task.delay(item.id)
 
     return item
+
+
+@router.get("/{id}/processing-status", response_model=ProcessingStatusResponse)
+async def get_context_processing_status(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> ProcessingStatusResponse:
+    """Get processing status for a context."""
+    ctx = db.query(Context).filter(Context.id == id).first()
+    if not ctx:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Context not found"
+        )
+
+    # Calculate progress based on processing status
+    progress_map = {
+        "COMPLETED": 100,
+        "FAILED": 0,
+        "PROCESSING": 50,  # For simplicity, assume 50% progress when processing
+        "PENDING": 0,
+    }
+    progress = progress_map.get(ctx.processing_status, 0)
+
+    return ProcessingStatusResponse(
+        status=cast(
+            Literal["PENDING", "PROCESSING", "COMPLETED", "FAILED"],
+            ctx.processing_status,
+        ),
+        progress=progress,
+    )
