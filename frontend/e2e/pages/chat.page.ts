@@ -45,7 +45,7 @@ export class ChatPage {
     await this.messageInput.type(message);
     await expect(this.messageInput).toHaveValue(message);
     await this.page.waitForTimeout(100); // Allow React state update
-    await this.sendButton.evaluate((el) => el.removeAttribute("disabled"));
+    await expect(this.sendButton).toBeEnabled();
     await this.sendButton.click();
   }
 

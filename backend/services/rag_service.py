@@ -339,8 +339,8 @@ Please provide a comprehensive answer based on the context above. If the context
     ) -> str:
         """Retrieve and format conversation history for the current session."""
         try:
-            histories = (
-                db.query(QuestionHistory)
+            histories = await asyncio.to_thread(
+                lambda: db.query(QuestionHistory)
                 .filter(QuestionHistory.session_id == session_id)
                 .order_by(QuestionHistory.created_at.asc())
                 .all()

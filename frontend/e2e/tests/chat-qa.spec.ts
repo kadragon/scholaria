@@ -38,7 +38,8 @@ test.describe("Chat Q&A", () => {
   });
 
   test("should send a message and receive response", async () => {
-    // Topic should already be selected from previous test
+    // Ensure topic is selected
+    await chatPage.selectTopic(topicName);
 
     const question = "What is the capital of France?";
     await chatPage.sendMessage(question);
