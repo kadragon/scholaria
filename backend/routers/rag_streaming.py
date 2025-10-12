@@ -50,6 +50,7 @@ async def stream_answer(
             async for event_data in rag_service.query_stream(
                 query=request.question,
                 topic_ids=[request.topic_id],
+                session_id=request.session_id,
             ):
                 yield {"data": event_data}
         except Exception as e:
