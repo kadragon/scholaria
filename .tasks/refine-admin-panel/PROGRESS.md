@@ -11,10 +11,11 @@ Phase 6.2.1 완료: Refine Admin Panel POC 구축 (Topics CRUD + JWT 인증)
 ## Completed Steps
 - [x] Research 완료: Refine 스택 조사, 기존 Django Admin 기능 분석
 - [x] Plan 작성: 3단계 상세 계획 수립 (6.1/6.2/6.3)
-- [x] **Step 6.1 완료**: FastAPI Bulk Operations API 구현 ✅
+- [x] **Step 6.1 완료**: FastAPI Bulk Operations API 구현 ✅ (2025-10-12)
   - [x] Pydantic 스키마 추가 (BulkAssignContext, BulkRegenerateEmbeddings, BulkUpdateSystemPrompt)
   - [x] 3개 bulk endpoints 구현 (assign-context-to-topic, regenerate-embeddings, update-system-prompt)
-  - [x] 10/10 테스트 통과 (TDD Red→Green 완료)
+  - [x] Processing status endpoint 추가 (/contexts/{id}/processing-status)
+  - [x] 16/16 테스트 통과 (TDD Red→Green 완료)
   - [x] Ruff + mypy 검증 통과
   - [x] Association table SQLite autoincrement 수정 (Integer PRIMARY KEY)
 - [x] **Step 6.2.1: Refine 프로젝트 초기화** ✅

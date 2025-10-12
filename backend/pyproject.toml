@@ -130,6 +130,7 @@ module = [
     "sentence_transformers.*",
     "llama_index.*",
     "minio.*",
+    "redis.*",
 ]
 ignore_missing_imports = true
 

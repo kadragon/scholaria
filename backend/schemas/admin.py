@@ -203,3 +203,12 @@ class FeedbackCommentOut(BaseModel):
     @field_serializer("created_at")
     def serialize_created_at(self, value: datetime) -> str:
         return to_local_iso(value)
+
+
+class ProcessingStatusResponse(BaseModel):
+    """Response schema for context processing status."""
+
+    status: str = Field(
+        description="Processing status: PENDING, PROCESSING, COMPLETED, FAILED"
+    )
+    progress: int = Field(ge=0, le=100, description="Progress percentage (0-100)")

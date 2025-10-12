@@ -19,6 +19,7 @@ from backend.schemas.admin import (
     AdminContextUpdate,
     AdminFaqQaCreate,
     ContextListResponse,
+    ProcessingStatusResponse,
 )
 from backend.schemas.context import ContextItemOut
 from backend.tasks.embeddings import regenerate_embedding_task
@@ -315,3 +316,31 @@ async def update_context_item(
         regenerate_embedding_task.delay(item.id)
 
     return item
+
+
+@router.get("/{id}/processing-status", response_model=ProcessingStatusResponse)
+async def get_context_processing_status(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> ProcessingStatusResponse:
+    """Get processing status for a context."""
+    ctx = db.query(Context).filter(Context.id == id).first()
+    if not ctx:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Context not found"
+        )
+
+    # Calculate progress based on processing status
+    if ctx.processing_status == "COMPLETED":
+        progress = 100
+    elif ctx.processing_status == "FAILED":
+        progress = 0
+    elif ctx.processing_status == "PROCESSING":
+        # For simplicity, assume 50% progress when processing
+        # In a real implementation, you might track actual progress
+        progress = 50
+    else:  # PENDING
+        progress = 0
+
+    return ProcessingStatusResponse(status=ctx.processing_status, progress=progress)
