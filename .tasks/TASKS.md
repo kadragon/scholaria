@@ -11,18 +11,18 @@
 
 ## 진행 중
 
-- [ ] **E2E 테스트 도입 (Playwright)** — 핵심 플로우 검증, App.tsx/ChatPage/Analytics 커버, 시각적 회귀 테스트 기반 마련 (Phase 1-2 완료, 23/33 통과 70%, Celery worker 이슈로 RAG 의존 테스트 5개 skip)
-- [ ] **Celery Worker Docker 설정 수정** — venv 경로 불일치 문제로 컨테이너 실행 실패, E2E 테스트에서 RAG 응답 생성 불가 (우선순위: 중, 영향: E2E 5개 테스트 skip)
+- [x] **E2E 테스트 도입 (Playwright)** — 핵심 플로우 검증, App.tsx/ChatPage/Analytics 커버, 시각적 회귀 테스트 기반 마련 (Phase 1-9 완료, 31/32 통과 96.9%, 백엔드 세션 처리 개선으로 다중 메시지 대화 지원, CI/CD 완전 통합, 프로덕션 준비 완료)
 
 ## 단기 백로그
 
 - [x] **React Router v7 업그레이드** — 기존 v6 라우팅 구성을 v7 API에 맞춰 마이그레이션, 관련 네비게이션/라우터 훅 영향도 점검 (이미 완료됨, 검증 완료, 2025-10-10)
+- [x] **Celery Worker Docker 설정 수정** — venv 경로 불일치 문제 해결, isolated uv environment 적용, torch 설치 성공 (2025-10-12)
 
 ## 선택적 향상안
 
 - [x] **성능 관측 강화 (OpenTelemetry)** — 8개 Phase 완료 (기반 구축, 커스텀 스팬, 메트릭, Jaeger, Prometheus, Grafana, 테스트, 문서화), 223개 테스트, 83% 커버리지, ~4% 오버헤드 (2025-10-10)
 - [x] **피드백 루프 확장** — 좋아요/싫어요 + 자유 서술 피드백 입력 UI (챗 인터페이스, `/api/history/{id}/feedback`)
-- [ ] **E2E 테스트 도입 (Playwright)** — 핵심 사용자 플로우 검증 (로그인→토픽 생성→Q&A, 컨텍스트 업로드→인제스션→검색, 피드백→분석), 시각적 회귀 테스트 기반 마련
+- [x] **E2E 테스트 도입 (Playwright)** — 핵심 사용자 플로우 검증 (로그인→토픽 생성→Q&A, 컨텍스트 업로드→인제스션→검색, 피드백→분석), 시각적 회귀 테스트 기반 마련
 
 ## Frontend 테스트 계획
 
@@ -39,6 +39,8 @@
 
 ## 최근 완료 하이라이트
 
+- **Celery Worker Docker 설정 수정 완료** — venv 경로 불일치 해결, isolated uv environment 적용, torch 설치 성공, E2E 테스트 RAG 응답 재활성화 (2025-10-12)
+- **E2E 테스트 OpenAI API 키 통합** — Playwright dotenv 설정, Docker 환경변수 보완, Celery Redis 연결 해결 (2025-10-12)
 - **OpenTelemetry 완전 통합 (Phase 1-8 완료)** — SDK 통합, 커스텀 RAG 스팬, 메트릭 수집, Jaeger (traces), Prometheus (metrics), Grafana (6개 패널 대시보드), 통합/성능 테스트, 포괄적 문서화 (OBSERVABILITY.md 400+줄), 26개 파일 변경, ~11.5시간 소요 (2025-10-10)
 - **Phase 6 커버리지 확장** — 40.91% → 51.29%, 20개 테스트 추가 (SetupPage, useCommandPalette, TopicSelector, MessageList, AnalyticsSkeleton), 임계값 45% 상향 (2025-10-09)
 - **백엔드 커버리지 임계값 설정** — 85% 커버리지, 80% 임계값, backend-ci.yml 3개 잡 (test+coverage, lint, typecheck) (2025-10-09)

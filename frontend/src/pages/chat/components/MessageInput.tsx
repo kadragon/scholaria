@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react";
+import { useState, useRef, type KeyboardEvent } from "react";
 import { Send } from "lucide-react";
 
 interface MessageInputProps {
@@ -13,6 +13,7 @@ export const MessageInput = ({
   isStreaming = false,
 }: MessageInputProps) => {
   const [input, setInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = () => {
     if (!input.trim() || disabled || isStreaming) return;
@@ -32,6 +33,7 @@ export const MessageInput = ({
       <div className="max-w-4xl mx-auto">
         <div className="relative">
           <textarea
+            ref={textareaRef}
             className="w-full border-2 border-secondary-300 rounded-xl p-4 pr-24 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-secondary-50 disabled:text-secondary-400 transition-all shadow-sm"
             placeholder={
               disabled
@@ -45,6 +47,7 @@ export const MessageInput = ({
             disabled={disabled || isStreaming}
           />
           <button
+            data-testid="send-button"
             className="absolute bottom-3 right-3 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 disabled:from-secondary-400 disabled:to-secondary-500 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg active:scale-95"
             onClick={handleSend}
             disabled={disabled || !input.trim() || isStreaming}

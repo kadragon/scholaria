@@ -16,7 +16,10 @@ from typing import Any
 
 import redis.asyncio as redis
 from openai import AsyncOpenAI
+from sqlalchemy.orm import Session
 
+from backend.models.base import get_db
+from backend.models.history import QuestionHistory
 from backend.observability import get_meter, get_tracer
 from backend.retrieval.embeddings import EmbeddingService
 from backend.retrieval.monitoring import OpenAIUsageMonitor
@@ -331,10 +334,43 @@ Please provide a comprehensive answer based on the context above. If the context
 
             return answer, usage_info
 
+    async def _get_conversation_history(
+        self, session_id: str, current_question: str, db: Session
+    ) -> str:
+        """Retrieve and format conversation history for the current session."""
+        try:
+            histories = await asyncio.to_thread(
+                lambda: db.query(QuestionHistory)
+                .filter(QuestionHistory.session_id == session_id)
+                .order_by(QuestionHistory.created_at.asc())
+                .all()
+            )
+
+            if not histories:
+                return ""
+
+            # Format conversation history, excluding the current question if it's already in history
+            conversation_parts = []
+            for history in histories:
+                # Skip if this is the current question being asked
+                if history.question.strip().lower() == current_question.strip().lower():
+                    continue
+
+                conversation_parts.append(f"User: {history.question}")
+                conversation_parts.append(f"Assistant: {history.answer}")
+
+            return (
+                "\n\n".join(conversation_parts) + "\n\n" if conversation_parts else ""
+            )
+        except Exception as e:
+            logger.warning("Failed to retrieve conversation history: %s", str(e))
+            return ""
+
     async def query_stream(
         self,
         query: str,
         topic_ids: list[int],
+        session_id: str | None = None,
         limit: int | None = None,
         rerank_top_k: int | None = None,
     ) -> AsyncGenerator[str]:
@@ -360,6 +396,17 @@ Please provide a comprehensive answer based on the context above. If the context
             rerank_top_k = (
                 rerank_top_k if rerank_top_k is not None else self.rag_rerank_top_k
             )
+
+            # Get conversation history if session_id is provided
+            conversation_history = ""
+            if session_id:
+                db = next(get_db())
+                try:
+                    conversation_history = await self._get_conversation_history(
+                        session_id, query, db
+                    )
+                finally:
+                    db.close()
 
             query_embedding = await asyncio.to_thread(
                 self.embedding_service.generate_embedding, query
@@ -394,7 +441,9 @@ Please provide a comprehensive answer based on the context above. If the context
             context_text = self._prepare_context(reranked_results)
 
             chunk_index = 0
-            async for chunk in self._generate_answer_stream(query, context_text):
+            async for chunk in self._generate_answer_stream(
+                query, context_text, conversation_history
+            ):
                 yield json.dumps(
                     {
                         "type": "answer_chunk",
@@ -427,21 +476,30 @@ Please provide a comprehensive answer based on the context above. If the context
             )
 
     async def _generate_answer_stream(
-        self, query: str, context: str
+        self, query: str, context: str, conversation_history: str = ""
     ) -> AsyncGenerator[str]:
         """Generate streaming answer using OpenAI API."""
         if not context:
             yield "I couldn't find any relevant information to answer your question."
             return
 
-        prompt = f"""You are a helpful assistant that answers questions based on the provided context.
+        # Build prompt with conversation history if available
+        prompt_parts = [
+            "You are a helpful assistant that answers questions based on the provided context."
+        ]
 
-Context:
-{context}
+        if conversation_history:
+            prompt_parts.append(f"\nPrevious conversation:\n{conversation_history}")
 
-Question: {query}
+        prompt_parts.extend(
+            [
+                f"\nContext:\n{context}",
+                f"\nQuestion: {query}",
+                "\nPlease provide a comprehensive answer based on the context above. If the context doesn't contain enough information to fully answer the question, acknowledge this in your response. Include relevant details from the sources where appropriate.",
+            ]
+        )
 
-Please provide a comprehensive answer based on the context above. If the context doesn't contain enough information to fully answer the question, acknowledge this in your response. Include relevant details from the sources where appropriate."""
+        prompt = "".join(prompt_parts)
 
         self.monitor.track_request_timestamp("chat_completions")
 

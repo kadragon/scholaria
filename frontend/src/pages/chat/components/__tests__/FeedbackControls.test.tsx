@@ -38,7 +38,7 @@ describe("FeedbackControls", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /좋아요/ }));
+    fireEvent.click(screen.getByTestId("feedback-option-positive"));
     fireEvent.change(screen.getByPlaceholderText(/자유 서술 피드백/), {
       target: { value: "정말 도움이 되었어요" },
     });

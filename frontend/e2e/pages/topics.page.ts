@@ -19,7 +19,7 @@ export class TopicsPage {
     this.descriptionInput = page.locator("#description");
     this.systemPromptInput = page.locator("#systemPrompt");
     this.submitButton = page.getByRole("button", {
-      name: /생성/,
+      name: /생성|업데이트/,
     });
     this.table = page.getByRole("table");
     this.searchInput = page.getByPlaceholder("토픽 검색...");
@@ -52,20 +52,14 @@ export class TopicsPage {
 
   async editTopic(topicName: string) {
     const row = await this.table
-      .locator("tr")
-      .filter({
-        has: this.page.locator(`td:nth-child(2):text-is("${topicName}")`),
-      })
+      .locator(`[data-topic-name="${topicName}"]`)
       .first();
-    await row.getByRole("button", { name: "편집" }).click();
+    await row.getByTestId("topic-edit-button").click();
   }
 
   async deleteTopic(topicName: string) {
     const row = await this.table
-      .locator("tr")
-      .filter({
-        has: this.page.locator(`td:nth-child(2):text-is("${topicName}")`),
-      })
+      .locator(`[data-topic-name="${topicName}"]`)
       .first();
     await row.getByRole("button", { name: "삭제" }).click();
   }
@@ -76,11 +70,6 @@ export class TopicsPage {
   }
 
   getTopicRow(topicName: string) {
-    return this.table
-      .locator("tr")
-      .filter({
-        has: this.page.locator(`td:nth-child(2):text-is("${topicName}")`),
-      })
-      .first();
+    return this.table.locator(`[data-topic-name="${topicName}"]`).first();
   }
 }

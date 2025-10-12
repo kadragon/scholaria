@@ -1,15 +1,19 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+
+// Load environment variables from project root .env file
+config({ path: "../../.env" });
 
 export default defineConfig({
   testDir: "./e2e/tests",
 
-  fullyParallel: true,
+  fullyParallel: false,
 
   forbidOnly: !!process.env.CI,
 
   retries: process.env.CI ? 2 : 0,
 
-  workers: process.env.CI ? 1 : 4,
+  workers: 1,
 
   reporter: [
     ["html", { open: "never" }],
@@ -18,7 +22,7 @@ export default defineConfig({
   ],
 
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: "http://localhost:5174",
 
     trace: "on-first-retry",
 
